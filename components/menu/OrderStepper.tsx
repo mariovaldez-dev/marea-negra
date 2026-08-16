@@ -20,7 +20,7 @@ import { TicketImageDownload } from '@/components/menu/TicketImageDownload'
 import { RestauranteCerradoModal } from '@/components/menu/RestauranteCerradoModal'
 import { generateWhatsAppMessageUrl } from '@/lib/utils/whatsapp'
 import { CustomSelect } from '@/components/ui/CustomSelect'
-import { getEstadoRestaurante } from '@/lib/actions/negocioEstado'
+import { DiaHorario, getEstadoRestaurante } from '@/lib/actions/negocioEstado'
 import { Award, Lock } from 'lucide-react'
 import {
   Flame,
@@ -144,7 +144,7 @@ export function OrderStepper({
           setCart(parsed)
         }
       }
-    } catch (e) {}
+    } catch (e) { }
   }, [])
 
   // Sincronizar automáticamente cualquier modificación del carrito en localStorage
@@ -840,11 +840,10 @@ export function OrderStepper({
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div
                     onClick={() => setTipoEntrega('local')}
-                    className={`flex flex-col items-center justify-center p-4 rounded-2xl border-2 transition-all cursor-pointer ${
-                      tipoEntrega === 'local'
+                    className={`flex flex-col items-center justify-center p-4 rounded-2xl border-2 transition-all cursor-pointer ${tipoEntrega === 'local'
                         ? 'border-turquesa bg-turquesa/10 dark:bg-turquesa/5'
                         : 'border-arena/30 dark:border-arena/20 bg-[#F4F0E8] dark:bg-carbon hover:border-turquesa/50'
-                    }`}
+                      }`}
                   >
                     <span className="text-3xl mb-1">🚗</span>
                     <span className={`font-sans font-bold text-sm tracking-wide ${tipoEntrega === 'local' ? 'text-turquesa' : 'text-negro dark:text-blanco'}`}>
@@ -857,11 +856,10 @@ export function OrderStepper({
 
                   <div
                     onClick={() => setTipoEntrega('didi')}
-                    className={`flex flex-col items-center justify-center p-4 rounded-2xl border-2 transition-all cursor-pointer ${
-                      tipoEntrega === 'didi'
+                    className={`flex flex-col items-center justify-center p-4 rounded-2xl border-2 transition-all cursor-pointer ${tipoEntrega === 'didi'
                         ? 'border-oro bg-oro/10 dark:bg-oro/5'
                         : 'border-arena/30 dark:border-arena/20 bg-[#F4F0E8] dark:bg-carbon hover:border-oro/50'
-                    }`}
+                      }`}
                   >
                     <span className="text-3xl mb-1">🛵</span>
                     <span className={`font-sans font-bold text-sm tracking-wide ${tipoEntrega === 'didi' ? 'text-oro' : 'text-negro dark:text-blanco'}`}>
