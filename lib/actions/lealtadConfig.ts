@@ -2,6 +2,7 @@
 
 import { createServerClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
+import * as Sentry from '@sentry/nextjs'
 
 export interface RecompensaLealtadItem {
   id?: number
@@ -41,6 +42,10 @@ export async function getRecompensasLealtadList(): Promise<RecompensaLealtadItem
     }
   } catch (e) {
     // Si la tabla no existe en el esquema de Supabase, pasamos a consultar el respaldo en cupones
+    Sentry.captureException(e, {
+      tags: { module: 'lealtadConfig', action: 'fallback' },
+      extra: { context: 'Fallo al acceder a tabla recompensas_lealtad, usando cupones' }
+    })
   }
 
   // 2. Respaldo transparente en la tabla cupones existente
@@ -69,6 +74,9 @@ export async function getRecompensasLealtadList(): Promise<RecompensaLealtadItem
     }
   } catch (e) {
     console.error('Error consultando cupones respaldo:', e)
+    Sentry.captureException(e, {
+      tags: { module: 'lealtadConfig', action: 'getRecompensasLealtadList' }
+    })
   }
 
   return []
@@ -110,6 +118,10 @@ export async function saveRecompensaLealtad(item: RecompensaLealtadItem) {
     }
   } catch (err: any) {
     savedSuccess = false
+    Sentry.captureException(err, {
+      tags: { module: 'lealtadConfig', action: 'fallbackSave' },
+      extra: { context: 'Fallo al guardar en recompensas_lealtad' }
+    })
   }
 
   // 2. Si la tabla recompensas_lealtad no existe aún en la BDD remota, guardar transparente en la tabla cupones
@@ -144,6 +156,7 @@ export async function deleteRecompensaLealtad(id: number) {
   try {
     await supabase.from('recompensas_lealtad').delete().eq('id', id)
   } catch (e) {
+    Sentry.captureException(e, { tags: { module: 'lealtadConfig', action: 'fallbackDelete' } })
     await supabase.from('cupones').delete().eq('id', id)
   }
 
@@ -163,6 +176,7 @@ export async function toggleRecompensaLealtadActivo(id: number, currentActivo: b
       .update({ activo: !currentActivo })
       .eq('id', id)
   } catch (e) {
+    Sentry.captureException(e, { tags: { module: 'lealtadConfig', action: 'fallbackToggleActivo' } })
     await supabase
       .from('cupones')
       .update({ activo: !currentActivo })
@@ -175,8 +189,17 @@ export async function toggleRecompensaLealtadActivo(id: number, currentActivo: b
   return { success: true }
 }
 
+export interface LealtadConfig {
+  meta1_pedidos: number;
+  recompensa1_producto: string;
+  meta2_pedidos: number;
+  recompensa2_producto: string;
+  meta3_pedidos: number;
+  recompensa3_producto: string;
+}
+
 // Compatibilidad con getLealtadConfig
-export async function getLealtadConfig() {
+export async function getLealtadConfig(): Promise<LealtadConfig | null> {
   const list = await getRecompensasLealtadList()
   if (list.length === 0) return null
 

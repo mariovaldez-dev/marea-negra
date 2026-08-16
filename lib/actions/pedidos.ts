@@ -3,6 +3,7 @@
 import { createServerClient } from '@/lib/supabase/server'
 import { EstadoPedido, MetodoPago } from '@/lib/types/database'
 import { revalidatePath } from 'next/cache'
+import * as Sentry from '@sentry/nextjs'
 
 export async function updatePedidoEstado(pedidoId: number, nuevoEstado: EstadoPedido) {
   const supabase = createServerClient()
@@ -83,6 +84,10 @@ export async function updatePedidoEstado(pedidoId: number, nuevoEstado: EstadoPe
       }
     } catch (e) {
       console.warn('Aviso: error en autodescuento de inventario:', e)
+      Sentry.captureException(e, {
+        tags: { module: 'pedidos', action: 'autoDescuentoInventario' },
+        extra: { pedidoId }
+      })
     }
   }
 

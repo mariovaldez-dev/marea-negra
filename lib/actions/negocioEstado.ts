@@ -2,6 +2,7 @@
 
 import { createServerClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
+import * as Sentry from '@sentry/nextjs'
 
 export interface DiaHorario {
   id: string // 'lunes' | 'martes' | 'miercoles' | 'jueves' | 'viernes' | 'sabado' | 'domingo'
@@ -81,6 +82,7 @@ function calcularAperturaPorHorario(horarios: DiaHorario[]): boolean {
 
     return currentTimeMin >= aperturaMin && currentTimeMin <= cierreMin
   } catch (e) {
+    Sentry.captureException(e, { tags: { module: 'negocioEstado', action: 'calcularAperturaPorHorario' } })
     return true
   }
 }
@@ -107,7 +109,9 @@ export async function getConfigHorariosNegocio(): Promise<ConfigHorariosNegocio>
         horarios_dias: Array.isArray(data.horarios_dias) ? data.horarios_dias : DEFAULT_HORARIOS,
       }
     }
-  } catch (e) {}
+  } catch (e) {
+    Sentry.captureException(e, { tags: { module: 'negocioEstado', action: 'getConfigHorarios_main' } })
+  }
 
   // 2. Fallback dual desde 'cupones'
   try {
@@ -128,7 +132,9 @@ export async function getConfigHorariosNegocio(): Promise<ConfigHorariosNegocio>
         horarios_dias: Array.isArray(parsed.horarios_dias) ? parsed.horarios_dias : DEFAULT_HORARIOS,
       }
     }
-  } catch (e) {}
+  } catch (e) {
+    Sentry.captureException(e, { tags: { module: 'negocioEstado', action: 'getConfigHorarios_fallback' } })
+  }
 
   return {
     abierto_manual: true,
@@ -182,6 +188,7 @@ export async function saveConfigHorariosNegocio(config: ConfigHorariosNegocio) {
     }
   } catch (err) {
     console.error('❌ Error capturado en configuracion_negocio:', err)
+    Sentry.captureException(err, { tags: { module: 'negocioEstado', action: 'saveConfig_main' } })
   }
 
   // 2. Guardar respaldo dual en la tabla 'cupones' (código reservado 'CONFIG_NEGOCIO_FULL_JSON')
@@ -220,6 +227,7 @@ export async function saveConfigHorariosNegocio(config: ConfigHorariosNegocio) {
     mainSaved = true 
   } catch (errCupon: any) {
     console.error('❌ Aviso en respaldo dual cupones:', errCupon.message)
+    Sentry.captureException(errCupon, { tags: { module: 'negocioEstado', action: 'saveConfig_fallback' } })
   }
 
   if (!mainSaved) {

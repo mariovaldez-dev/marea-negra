@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@hello-pangea/dnd": "^16.6.0",
+    "@sentry/nextjs": "^10.70.0",
     "@supabase/ssr": "^0.3.0",
     "@supabase/supabase-js": "^2.43.0",
     "firebase": "^12.17.1",

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createServerClient } from '@/lib/supabase/server'
 import { enviarATodos } from '@/lib/firebase/admin'
+import * as Sentry from '@sentry/nextjs'
 
 export async function POST(req: Request) {
   try {
@@ -45,6 +46,10 @@ export async function POST(req: Request) {
 
     if (tokenErr) {
       console.error('Error fetching fcm_tokens:', tokenErr)
+      Sentry.captureException(tokenErr, {
+        tags: { module: 'api_fcm', action: 'send_route_fetch_tokens' },
+        extra: { pedidoId }
+      })
       return NextResponse.json({ error: 'Error obteniendo tokens' }, { status: 500 })
     }
 
@@ -67,6 +72,9 @@ export async function POST(req: Request) {
     return NextResponse.json({ sent: tokensArray.length })
   } catch (error) {
     console.error('Error en /api/fcm/send:', error)
+    Sentry.captureException(error, {
+      tags: { module: 'api_fcm', action: 'send_route_catch' }
+    })
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 })
   }
 }

@@ -5,6 +5,7 @@ import { Pedido } from '@/lib/types/database'
 import { getLealtadConfig, LealtadConfig } from '@/lib/actions/lealtadConfig'
 import { getMazatlanMidnightExpiration } from '@/lib/actions/cupones'
 import { hashPassword, verifyPassword, validatePasswordStrength } from '@/lib/security/passwordHash'
+import * as Sentry from '@sentry/nextjs'
 
 export interface ClientePerfilStats {
   telefono: string
@@ -101,6 +102,10 @@ export async function registrarClienteClub(formData: {
     )
   } catch (e) {
     console.warn('Aviso al generar cupón de bienvenida en BDD:', e)
+    Sentry.captureException(e, {
+      tags: { module: 'clienteCuenta', action: 'generarCuponBienvenida' },
+      extra: { telefono: cleanPhone }
+    })
   }
 
   return {

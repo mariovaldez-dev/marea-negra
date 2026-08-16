@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createServerClient } from '@/lib/supabase/server'
+import * as Sentry from '@sentry/nextjs'
 
 export async function POST(req: Request) {
   try {
@@ -29,12 +30,19 @@ export async function POST(req: Request) {
 
     if (insertError) {
       console.error('Error guardando el token FCM:', insertError)
+      Sentry.captureException(insertError, {
+        tags: { module: 'api_fcm', action: 'save_token_db' },
+        extra: { userId: user.id }
+      })
       return NextResponse.json({ error: 'Database error' }, { status: 500 })
     }
 
     return NextResponse.json({ ok: true })
   } catch (error) {
     console.error('Error in save-token route:', error)
+    Sentry.captureException(error, {
+      tags: { module: 'api_fcm', action: 'save_token_catch' }
+    })
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 })
   }
 }
