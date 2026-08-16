@@ -2,7 +2,6 @@
 
 import React, { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { saveCupon } from '@/lib/actions/cupones'
 import { registrarClienteClub } from '@/lib/actions/clienteCuenta'
 import { validatePasswordStrength } from '@/lib/security/passwordHash'
 import { ThemeToggle } from '@/components/ui/ThemeToggle'
@@ -52,7 +51,7 @@ export default function RegisterClubPage() {
     setIsSubmitting(true)
 
     try {
-      // Registrar cliente en Supabase clientes_club con contraseña encriptada
+      // Registrar cliente en Supabase clientes_club con contraseña encriptada (y crea cupones)
       const resReg = await registrarClienteClub({
         nombre,
         telefono,
@@ -60,31 +59,8 @@ export default function RegisterClubPage() {
         email,
       })
 
-      const cleanName = nombre.trim().replace(/\s+/g, '').slice(0, 4).toUpperCase()
-      const randomSuffix1 = Math.floor(100 + Math.random() * 900)
-      const randomSuffix2 = Math.floor(100 + Math.random() * 900)
-
-      // 1. Código de cupón único de bienvenida de uso único (1 solo canje por cliente)
-      const userCouponCode = `BIENVENIDO-${cleanName}-${randomSuffix1}`
-
-      // 2. Código de referidos único para compartir con sus amigos (máximo 5 canjes)
-      const refCode = resReg.codigoReferido || `MAREA-${cleanName}-${randomSuffix2}`
-
-      // Guardar cupón personal de bienvenida único en Supabase (usos_maximos: 1)
-      await saveCupon({
-        codigo: userCouponCode,
-        descuento_porcentaje: 10,
-        usos_maximos: 1, // ¡Estricto uso único por persona!
-        activo: true,
-      })
-
-      // Guardar cupón de referidos en Supabase (usos_maximos: 5)
-      await saveCupon({
-        codigo: refCode,
-        descuento_porcentaje: 10,
-        usos_maximos: 5,
-        activo: true,
-      })
+      const userCouponCode = resReg.welcomeCouponCode || `BIENVENIDO-${nombre.slice(0,4).toUpperCase()}`
+      const refCode = resReg.codigoReferido
 
       if (typeof window !== 'undefined') {
         localStorage.setItem('marea_cliente_nombre', nombre.trim())

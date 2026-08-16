@@ -22,7 +22,7 @@ const spaceGrotesk = Space_Grotesk({
 })
 
 export const metadata: Metadata = {
-  title: 'Marea Negra - Aguachiles & Cocteles',
+  title: 'Marea Negra - Aguachiles',
   description: 'Sinaloa Auténtico · Mariscos del Día · Pedidos en Línea Directos en Sinaloa, México',
   manifest: '/manifest.json',
   appleWebApp: {

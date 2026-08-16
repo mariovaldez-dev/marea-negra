@@ -2,6 +2,9 @@
 
 import { useState, useEffect } from 'react'
 
+// Variable global para evitar que Safari/Chrome recolecten el objeto antes de que hable (Bug conocido de Garbage Collection)
+let globalUtterance: SpeechSynthesisUtterance | null = null;
+
 export function useWebNotifications() {
   const [permission, setPermission] = useState<NotificationPermission>('default')
   const [isSupported, setIsSupported] = useState(false)
@@ -33,45 +36,35 @@ export function useWebNotifications() {
     }
   }, [])
 
-  // Reproducir boz de alerta "¡Nuevo pedido recibido!" con Web Speech API
-  const speakNewOrderVoice = (times = 3) => {
-    if (typeof window === 'undefined' || !('speechSynthesis' in window)) return
-
+  // Reproducir voz de alerta "¡Nuevo pedido recibido!" (Solución final 100% nativa con archivo local M4A)
+  const speakNewOrderVoice = (times = 1) => {
+    if (typeof window === 'undefined') return
+    
+    // Almacenamos físicamente la voz en el servidor para evitar bloqueos del navegador
+    // o dependencias del sistema operativo.
     try {
-      window.speechSynthesis.cancel() // Limpiar discursos previos
+      const audioUrl = '/nuevo_pedido.m4a'
+      const audio = new Audio(audioUrl)
+      audio.volume = 1.0
 
-      const text = '¡Atención! ¡Nuevo pedido recibido en Marea Negra! ¡Nuevo pedido!'
       let currentIteration = 0
-
-      const speakNext = () => {
-        if (currentIteration >= times) return
-
-        const utterance = new SpeechSynthesisUtterance(text)
-        utterance.lang = 'es-MX'
-        utterance.rate = 1.05
-        utterance.pitch = 1.15
-        utterance.volume = 1.0
-
-        const voices = window.speechSynthesis.getVoices()
-        const esVoice =
-          voices.find((v) => v.lang === 'es-MX' || v.lang === 'es_MX') ||
-          voices.find((v) => v.lang.startsWith('es'))
-
-        if (esVoice) utterance.voice = esVoice
-
-        utterance.onend = () => {
-          currentIteration++
-          if (currentIteration < times) {
-            setTimeout(speakNext, 700)
-          }
+      
+      audio.onended = () => {
+        currentIteration++
+        if (currentIteration < times) {
+          setTimeout(() => {
+            audio.currentTime = 0
+            audio.play().catch(() => {})
+          }, 500)
         }
-
-        window.speechSynthesis.speak(utterance)
       }
 
-      speakNext()
+      audio.play().catch((e) => {
+        console.warn('Fallo al reproducir archivo de audio local M4A:', e)
+      })
+
     } catch (e) {
-      console.warn('Error en Web Speech API:', e)
+      console.error('Error fallback audio M4A:', e)
     }
   }
 
@@ -120,7 +113,7 @@ export function useWebNotifications() {
           gain2.connect(ctx.destination)
           osc3.start(now2)
           osc3.stop(now2 + 1.5)
-        } catch (e) {}
+        } catch (e) { }
       }, 250)
     } catch (err) {
       console.warn('Audio Context error:', err)
@@ -139,7 +132,7 @@ export function useWebNotifications() {
         navigator.serviceWorker.ready.then((reg) => {
           reg.showNotification(title || '¡NUEVO PEDIDO RECIBIDO! 🦐', {
             body: body || 'Se ha registrado una nueva comanda en Marea Negra.',
-            icon: '/favicon.ico',
+            icon: '/icons/icon-192x192.png',
             vibrate: [300, 100, 300, 100, 500],
             data: { url },
             tag: 'marea-negra-pedido-nuevo',
@@ -149,7 +142,7 @@ export function useWebNotifications() {
       } else {
         const notif = new Notification(title || '¡NUEVO PEDIDO RECIBIDO! 🦐', {
           body: body || 'Se ha registrado una nueva comanda en Marea Negra.',
-          icon: '/favicon.ico',
+          icon: '/icons/icon-192x192.png',
         })
         notif.onclick = () => {
           window.focus()

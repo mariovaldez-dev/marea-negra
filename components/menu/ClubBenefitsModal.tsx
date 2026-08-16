@@ -4,11 +4,20 @@ import React, { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { Gift, Sparkles, X, CheckCircle2, ArrowRight, ShieldCheck } from 'lucide-react'
 
-export function ClubBenefitsModal() {
+export function ClubBenefitsModal({
+  isOpen: externalIsOpen,
+  onClose: externalOnClose,
+}: {
+  isOpen?: boolean
+  onClose?: () => void
+} = {}) {
   const router = useRouter()
-  const [isOpen, setIsOpen] = useState(false)
+  const [internalIsOpen, setInternalIsOpen] = useState(false)
+
+  const isModalOpen = externalIsOpen !== undefined ? externalIsOpen : internalIsOpen
 
   useEffect(() => {
+    if (externalIsOpen !== undefined) return // Si es controlado externamente, no aplicar el timer
     if (typeof window === 'undefined') return
 
     // Si el usuario ya está registrado en el Club, no mostrar el modal de enganche
@@ -17,15 +26,15 @@ export function ClubBenefitsModal() {
 
     // Mostrar SIEMPRE el modal al cargar/recargar la página si no se ha registrado aún
     const timer = setTimeout(() => {
-      setIsOpen(true)
+      setInternalIsOpen(true)
     }, 1200)
 
     return () => clearTimeout(timer)
-  }, [])
+  }, [externalIsOpen])
 
   // BLOQUEAR EL SCROLL DEL BODY/FONDO CUANDO EL MODAL ESTÉ ABIERTO
   useEffect(() => {
-    if (!isOpen || typeof window === 'undefined') return
+    if (!isModalOpen || typeof window === 'undefined') return
 
     const originalOverflow = document.body.style.overflow
     const originalTouchAction = document.body.style.touchAction
@@ -37,18 +46,21 @@ export function ClubBenefitsModal() {
       document.body.style.overflow = originalOverflow
       document.body.style.touchAction = originalTouchAction
     }
-  }, [isOpen])
+  }, [isModalOpen])
 
   const handleClose = () => {
-    setIsOpen(false)
+    if (externalIsOpen === undefined) {
+      setInternalIsOpen(false)
+    }
+    if (externalOnClose) externalOnClose()
   }
 
   const handleAccept = () => {
-    setIsOpen(false)
+    handleClose()
     router.push('/registro')
   }
 
-  if (!isOpen) return null
+  if (!isModalOpen) return null
 
   return (
     <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-3 overflow-hidden touch-none overscroll-contain selection:bg-coral animate-in fade-in duration-200">

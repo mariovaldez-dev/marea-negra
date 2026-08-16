@@ -38,9 +38,18 @@ export function KitchenMonitor({ initialPedidos }: KitchenMonitorProps) {
   const { triggerOrderAlarm, playKitchenBellSound, speakNewOrderVoice, requestPermission } = useWebNotifications()
 
   const enableAudio = async () => {
-    await requestPermission()
+    if (Notification.permission !== 'granted') {
+      await requestPermission()
+    }
+    // Requiere interacción humana para desbloquear el AudioContext de los navegadores
     triggerOrderAlarm('¡ALERTAS Y VOZ DE COCINA ACTIVADAS!', 'Se anunciarán nuevos pedidos por voz parlante.')
     setSoundEnabled(true)
+    localStorage.setItem('marea_kitchen_sound', 'true')
+  }
+
+  const disableAudio = () => {
+    setSoundEnabled(false)
+    localStorage.setItem('marea_kitchen_sound', 'false')
   }
 
   // Función para consultar los pedidos más recientes de la base de datos
@@ -56,7 +65,9 @@ export function KitchenMonitor({ initialPedidos }: KitchenMonitorProps) {
         setPedidos((prev) => {
           // Si hay un pedido nuevo que no estaba en el estado previo, hacer sonar campana y hablar voz parlante
           if (data.length > prev.length) {
-            triggerOrderAlarm('¡NUEVO PEDIDO RECIBIDO! 🦐', 'Se ha registrado una nueva comanda en la cocina.')
+            if (soundEnabled || localStorage.getItem('marea_kitchen_sound') === 'true') {
+              triggerOrderAlarm('¡NUEVO PEDIDO RECIBIDO! 🦐', 'Se ha registrado una nueva comanda en la cocina.')
+            }
             setLastNotification(`¡NUEVO PEDIDO #${data[0]?.id || ''}! Cliente: ${data[0]?.cliente_nombre || ''}`)
           }
           return data
@@ -70,6 +81,12 @@ export function KitchenMonitor({ initialPedidos }: KitchenMonitorProps) {
   }
 
   useEffect(() => {
+    // 0. Recuperar estado de la alarma de localStorage al montar
+    const savedSound = localStorage.getItem('marea_kitchen_sound')
+    if (savedSound === 'true') {
+      setSoundEnabled(true)
+    }
+
     // 1. Suscripción Supabase Realtime (WebSockets)
     const channel = supabase
       .channel('realtime_pantalla_cocina')
@@ -117,6 +134,17 @@ export function KitchenMonitor({ initialPedidos }: KitchenMonitorProps) {
     }
   }
 
+  const handleReject = async (pedidoId: number) => {
+    setPedidos((prev) =>
+      prev.map((p) => (p.id === pedidoId ? { ...p, estado: 'cancelado' } : p))
+    )
+    try {
+      await updatePedidoEstado(pedidoId, 'cancelado')
+    } catch (err) {
+      console.error('Error al rechazar:', err)
+    }
+  }
+
   const pedidosActivos = pedidos.filter((p) =>
     ['nuevo', 'preparando'].includes(p.estado)
   )
@@ -134,7 +162,7 @@ export function KitchenMonitor({ initialPedidos }: KitchenMonitorProps) {
               <span>MONITOR DE COCINA EN TIEMPO REAL</span>
               {isRefreshing && <RefreshCw className="w-4 h-4 animate-spin text-turquesa" />}
             </h1>
-            <span className="font-serif italic text-xs text-coral">
+            <span className="font-sans italic text-xs text-coral">
               — Marea Negra Sinaloa · Comandas con Nivel de Picor e Instrucciones —
             </span>
           </div>
@@ -159,10 +187,14 @@ export function KitchenMonitor({ initialPedidos }: KitchenMonitorProps) {
             </button>
           ) : (
             <div className="flex items-center gap-2">
-              <div className="bg-turquesa/10 border border-turquesa/30 text-turquesa px-4 py-2 rounded-full text-xs font-sans font-semibold flex items-center gap-2">
+              <button
+                onClick={disableAudio}
+                className="bg-turquesa/10 border border-turquesa/30 hover:bg-turquesa/20 hover:border-turquesa text-turquesa px-4 py-2 rounded-full text-xs font-sans font-semibold flex items-center gap-2 transition-colors cursor-pointer"
+                title="Haz clic para silenciar alarmas"
+              >
                 <Volume2 className="w-4 h-4" />
                 <span>VOZ Y ALARMA ACTIVADAS</span>
-              </div>
+              </button>
               <button
                 type="button"
                 onClick={() => speakNewOrderVoice(2)}
@@ -200,11 +232,10 @@ export function KitchenMonitor({ initialPedidos }: KitchenMonitorProps) {
           return (
             <div
               key={pedido.id}
-              className={`bg-[#050404] bg-dots-pattern border rounded-2xl p-6 flex flex-col justify-between gold-border-corner transition-all ${
-                isNuevo
+              className={`bg-[#050404] bg-dots-pattern border rounded-2xl p-6 flex flex-col justify-between gold-border-corner transition-all ${isNuevo
                   ? 'border-coral shadow-[0_0_30px_rgba(232,67,10,0.25)] animate-pulse'
                   : 'border-oro/30'
-              }`}
+                }`}
             >
               <div>
                 {/* Folio y Hora */}
@@ -265,7 +296,7 @@ export function KitchenMonitor({ initialPedidos }: KitchenMonitorProps) {
 
                         {/* Notas individuales por platillo */}
                         {item.notas_item && (
-                          <div className="text-xs font-serif italic text-coral bg-coral/10 p-1.5 rounded border border-coral/20">
+                          <div className="text-xs font-sans italic text-coral bg-coral/10 p-1.5 rounded border border-coral/20">
                             📝 Nota: "{item.notas_item}"
                           </div>
                         )}
@@ -278,14 +309,14 @@ export function KitchenMonitor({ initialPedidos }: KitchenMonitorProps) {
 
                 {/* Notas Generales */}
                 {pedido.notas && (
-                  <div className="p-3 bg-coral/10 border border-coral/30 rounded-lg mb-4 text-xs font-serif italic text-coral">
+                  <div className="p-3 bg-coral/10 border border-coral/30 rounded-lg mb-4 text-xs font-sans italic text-coral">
                     📌 Nota General: "{pedido.notas}"
                   </div>
                 )}
               </div>
 
               {/* Botones de Cambio de Estado en Un Toque */}
-              <div className="pt-2">
+              <div className="pt-2 flex flex-col gap-2.5">
                 {isNuevo ? (
                   <button
                     onClick={() => handleAdvanceStatus(pedido.id, 'nuevo')}
@@ -303,6 +334,18 @@ export function KitchenMonitor({ initialPedidos }: KitchenMonitorProps) {
                     <span>MARCAR COMO LISTO</span>
                   </button>
                 )}
+
+                {/* Botón secundario para rechazar comanda */}
+                <button
+                  onClick={() => {
+                    if (confirm(`¿Estás seguro de que deseas RECHAZAR la comanda #${pedido.id}?`)) {
+                      handleReject(pedido.id)
+                    }
+                  }}
+                  className="w-full bg-carbon border border-red-900/50 text-red-500/70 hover:bg-red-900/20 hover:text-red-400 font-sans font-bold text-[10px] tracking-wider py-2 rounded-xl transition-all"
+                >
+                  RECHAZAR COMANDA 🚫
+                </button>
               </div>
             </div>
           )
@@ -315,7 +358,7 @@ export function KitchenMonitor({ initialPedidos }: KitchenMonitorProps) {
           <h3 className="font-display text-3xl text-blanco">
             COCINA SIN PEDIDOS PENDIENTES
           </h3>
-          <p className="font-serif italic text-sm text-arena/60">
+          <p className="font-sans italic text-sm text-arena/60">
             La pantalla se actualizará automáticamente y emitirá una alerta sonora en cuanto ingrese una comanda con picor configurado.
           </p>
         </div>

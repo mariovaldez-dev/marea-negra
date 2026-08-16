@@ -413,10 +413,27 @@ export function KanbanBoard({
                                       <span className="text-[10px] font-mono font-bold text-turquesa tracking-wider">
                                         #{pedido.id}
                                       </span>
-                                      <span className="text-[10px] font-sans font-bold text-arena/40 group-hover:text-turquesa flex items-center gap-0.5 transition-colors">
-                                        <Eye className="w-3 h-3" />
-                                        <span>VER</span>
-                                      </span>
+                                      <div className="flex items-center gap-2">
+                                        <span className="text-[10px] font-sans font-bold text-arena/40 group-hover:text-turquesa flex items-center gap-0.5 transition-colors">
+                                          <Eye className="w-3 h-3" />
+                                          <span>VER</span>
+                                        </span>
+                                        {/* Botón rápido de Rechazar (solo si no está cancelado ni entregado) */}
+                                        {pedido.estado !== 'entregado' && pedido.estado !== 'cancelado' && (
+                                          <button
+                                            onClick={(e) => {
+                                              e.stopPropagation()
+                                              if (confirm(`¿Seguro que deseas RECHAZAR/CANCELAR el pedido #${pedido.id}?`)) {
+                                                handleStatusChange(pedido.id, 'cancelado')
+                                              }
+                                            }}
+                                            className="text-[10px] font-sans font-bold text-red-500/50 hover:text-red-400 hover:bg-red-900/30 px-1.5 py-0.5 rounded transition-all"
+                                            title="Rechazar Comanda"
+                                          >
+                                            <X className="w-3 h-3" />
+                                          </button>
+                                        )}
+                                      </div>
                                     </div>
                                     <h4 className="font-sans font-bold text-sm md:text-base text-blanco truncate leading-snug group-hover:text-turquesa transition-colors">
                                       {pedido.cliente_nombre}
@@ -540,12 +557,13 @@ export function KanbanBoard({
               <span className="text-[11px] font-sans font-bold text-arena/70 uppercase tracking-wider">
                 Cambiar Estado de la Comanda:
               </span>
-              <div className="grid grid-cols-4 gap-2">
+              <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
                 {[
                   { id: 'nuevo', label: 'NUEVO', color: 'bg-coral text-blanco border-coral' },
                   { id: 'preparando', label: 'PREPARANDO', color: 'bg-oro text-negro border-oro' },
                   { id: 'listo', label: 'LISTO', color: 'bg-turquesa text-negro border-turquesa' },
                   { id: 'entregado', label: 'ENTREGADO', color: 'bg-arena/30 text-blanco border-arena/50' },
+                  { id: 'cancelado', label: 'RECHAZAR 🚫', color: 'bg-red-900/40 text-red-400 border-red-900/50 hover:bg-red-900/60' },
                 ].map((st) => {
                   const isCurrent = previewPedido.estado === st.id
                   return (

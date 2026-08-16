@@ -32,3 +32,29 @@ export function createServerClient() {
     }
   )
 }
+
+/**
+ * Cliente de Supabase con Service Role Key
+ * ATENCIÓN: Solo usar en Server Actions/Rutas seguras para bypassear RLS.
+ */
+export function createAdminClient() {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co'
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || ''
+  
+  if (!serviceRoleKey) {
+    console.warn('Falta SUPABASE_SERVICE_ROLE_KEY en el environment.')
+  }
+
+  // No necesitamos cookies para el admin client ya que no maneja sesión web
+  return createServerClientSSR(
+    url,
+    serviceRoleKey,
+    {
+      cookies: {
+        get() { return null },
+        set() {},
+        remove() {}
+      }
+    }
+  )
+}

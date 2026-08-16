@@ -64,8 +64,8 @@ export function TicketPrintModal({ pedido, onClose }: TicketPrintModalProps) {
         >
           <div className="text-center font-bold text-base tracking-wider uppercase border-b border-black/30 pb-2">
             MAREA NEGRA
-            <div className="text-[10px] font-normal tracking-normal">AGUACHILES & COCTELES</div>
-            <div className="text-[9px] font-normal text-black/70 mt-0.5">SINALOA, MÉXICO</div>
+            <div className="text-[10px] font-normal tracking-normal">AGUACHILES</div>
+            <div className="text-[9px] font-normal text-black/70 mt-0.5">CULIACÁN, SINALOA, MÉXICO</div>
           </div>
 
           <div className="flex justify-between items-center text-xs font-bold pt-1">

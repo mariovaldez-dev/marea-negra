@@ -4,7 +4,8 @@ import React, { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { ThemeToggle } from '@/components/ui/ThemeToggle'
-import { getClienteCuentaByTelefono, ClientePerfilStats } from '@/lib/actions/clienteCuenta'
+import { ClubBenefitsModal } from '@/components/menu/ClubBenefitsModal'
+import { getClienteCuentaByTelefono, ClientePerfilStats, loginClienteConPassword } from '@/lib/actions/clienteCuenta'
 import {
   Phone,
   Search,
@@ -28,18 +29,31 @@ import {
 export default function MiCuentaPage() {
   const router = useRouter()
   const [telefonoInput, setTelefonoInput] = useState('')
+  const [passwordInput, setPasswordInput] = useState('')
+  const [errorMsg, setErrorMsg] = useState('')
   const [loading, setLoading] = useState(false)
   const [perfil, setPerfil] = useState<ClientePerfilStats | null>(null)
-  const [searched, setSearched] = useState(false)
+  const [initialLoadDone, setInitialLoadDone] = useState(false)
+  const [isModalOpen, setIsModalOpen] = useState(false)
 
   useEffect(() => {
     if (typeof window === 'undefined') return
     const savedPhone = localStorage.getItem('marea_cliente_telefono')
     if (savedPhone) {
-      setTelefonoInput(savedPhone)
       cargarPerfil(savedPhone)
+    } else {
+      setInitialLoadDone(true)
     }
   }, [])
+
+  useEffect(() => {
+    if (!isModalOpen && typeof window !== 'undefined') {
+      const savedPhone = localStorage.getItem('marea_cliente_telefono')
+      if (savedPhone && !perfil) {
+        cargarPerfil(savedPhone)
+      }
+    }
+  }, [isModalOpen])
 
   const handleLogout = () => {
     if (typeof window !== 'undefined') {
@@ -48,7 +62,6 @@ export default function MiCuentaPage() {
       localStorage.removeItem('marea_club_registered')
     }
     setPerfil(null)
-    setSearched(false)
     setTelefonoInput('')
   }
 
@@ -60,7 +73,6 @@ export default function MiCuentaPage() {
     try {
       const data = await getClienteCuentaByTelefono(clean)
       setPerfil(data)
-      setSearched(true)
       if (data) {
         localStorage.setItem('marea_cliente_telefono', clean)
       }
@@ -68,13 +80,33 @@ export default function MiCuentaPage() {
       console.error('Error cargando perfil:', err)
     } finally {
       setLoading(false)
+      setInitialLoadDone(true)
     }
   }
 
-  const handleSearchSubmit = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!telefonoInput.trim()) return
-    cargarPerfil(telefonoInput)
+    setErrorMsg('')
+    
+    if (!telefonoInput || !passwordInput) {
+      setErrorMsg('Ingresa tu celular y contraseña.')
+      return
+    }
+
+    setLoading(true)
+    try {
+      const res = await loginClienteConPassword(telefonoInput, passwordInput)
+      if (res.success && res.cuenta) {
+        setPerfil(res.cuenta)
+        localStorage.setItem('marea_cliente_telefono', res.cuenta.telefono)
+        localStorage.setItem('marea_cliente_nombre', res.cuenta.nombreCliente)
+      }
+    } catch (err: any) {
+      setErrorMsg(err.message || 'Error al iniciar sesión.')
+    } finally {
+      setLoading(false)
+      setInitialLoadDone(true)
+    }
   }
 
   const getStatusBadge = (estado: string) => {
@@ -117,75 +149,93 @@ export default function MiCuentaPage() {
 
       {/* CONTENIDO PRINCIPAL */}
       <main className="max-w-5xl mx-auto px-4 md:px-6 py-10 w-full flex-1 flex flex-col gap-8">
-        {/* BUSCADOR DE CUENTA POR CELULAR */}
-        <div className="bg-white dark:bg-[#050404] bg-dots-pattern border border-oro/30 rounded-3xl p-6 md:p-8 gold-border-corner shadow-2xl flex flex-col items-center text-center gap-5">
-          <div className="p-3.5 bg-turquesa/10 border border-turquesa/30 rounded-2xl text-turquesa">
-            <Award className="w-8 h-8" />
-          </div>
-
-          <div className="flex flex-col gap-1 max-w-xl">
-            <span className="text-xs font-sans font-bold tracking-widest text-turquesa uppercase">
-              MI CUENTA & PLAN DE LEALTAD
-            </span>
-            <h2 className="font-display text-3xl md:text-4xl text-negro dark:text-blanco">
-              CONSULTA TUS PEDIDOS Y RECOMPENSAS
-            </h2>
-            <p className="font-serif italic text-sm text-negro/70 dark:text-arena/80">
-              Sin contraseñas difíciles. Ingresa tu número celular de 10 dígitos para ver tus beneficios.
-            </p>
-          </div>
-
-          <form onSubmit={handleSearchSubmit} className="w-full max-w-md flex flex-col sm:flex-row gap-2 mt-2">
-            <div className="relative flex-1">
-              <Phone className="w-5 h-5 text-arena/60 absolute left-4 top-3.5" />
-              <input
-                type="tel"
-                required
-                maxLength={10}
-                placeholder="Ingresa tu celular (10 dígitos)"
-                value={telefonoInput}
-                onChange={(e) => setTelefonoInput(e.target.value)}
-                className="w-full bg-[#F4F0E8] dark:bg-carbon border border-arena/30 dark:border-arena/20 rounded-xl pl-12 pr-4 py-3 text-base text-negro dark:text-blanco font-sans font-bold focus:border-turquesa focus:outline-none"
-              />
+        {/* ESTADO NO LOGUEADO (FORMULARIO DE LOGIN) */}
+        {initialLoadDone && !perfil && (
+          <div className="bg-white dark:bg-[#050404] bg-dots-pattern border border-oro/30 rounded-3xl p-8 md:p-12 gold-border-corner shadow-2xl flex flex-col items-center gap-6 max-w-md mx-auto w-full animate-in fade-in zoom-in duration-500">
+            <div className="p-4 bg-coral/10 border border-coral/30 rounded-full text-coral shadow-[0_0_20px_rgba(232,67,10,0.2)]">
+              <Award className="w-10 h-10 md:w-12 md:h-12" />
             </div>
-            <button
-              type="submit"
-              disabled={loading}
-              className="bg-turquesa text-negro font-sans font-bold text-xs tracking-wider px-6 py-3.5 rounded-xl hover:bg-blanco transition-all flex items-center justify-center gap-2 shadow-lg disabled:opacity-50"
-            >
-              {loading ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
-              ) : (
-                <>
-                  <Search className="w-4 h-4" />
-                  <span>INGRESAR</span>
-                </>
+
+            <div className="flex flex-col gap-2 w-full text-center">
+              <span className="text-xs font-sans font-bold tracking-widest text-turquesa uppercase">
+                CLUB DE LEALTAD
+              </span>
+              <h2 className="font-display text-3xl md:text-4xl text-negro dark:text-blanco leading-tight">
+                INICIAR SESIÓN
+              </h2>
+              <p className="font-serif italic text-sm text-negro/70 dark:text-arena/80">
+                Accede para ver tu historial de pedidos, tus puntos y recompensas.
+              </p>
+            </div>
+
+            <form onSubmit={handleLogin} className="w-full flex flex-col gap-4 mt-2">
+              <div className="flex flex-col gap-1.5">
+                <label className="text-xs font-sans font-bold text-negro/70 dark:text-arena/70 uppercase tracking-wider">
+                  Número Celular
+                </label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <Phone className="w-5 h-5 text-negro/40 dark:text-arena/40" />
+                  </div>
+                  <input
+                    type="tel"
+                    placeholder="Ej. 6671234567"
+                    value={telefonoInput}
+                    onChange={(e) => setTelefonoInput(e.target.value.replace(/\D/g, ''))}
+                    className="w-full bg-[#F4F0E8] dark:bg-carbon border border-arena/30 dark:border-arena/10 text-negro dark:text-blanco font-mono text-lg rounded-xl pl-10 pr-4 py-3 focus:outline-none focus:border-turquesa dark:focus:border-turquesa transition-colors"
+                    maxLength={10}
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-1.5">
+                <label className="text-xs font-sans font-bold text-negro/70 dark:text-arena/70 uppercase tracking-wider">
+                  Contraseña
+                </label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <ShieldCheck className="w-5 h-5 text-negro/40 dark:text-arena/40" />
+                  </div>
+                  <input
+                    type="password"
+                    placeholder="••••••••"
+                    value={passwordInput}
+                    onChange={(e) => setPasswordInput(e.target.value)}
+                    className="w-full bg-[#F4F0E8] dark:bg-carbon border border-arena/30 dark:border-arena/10 text-negro dark:text-blanco font-sans text-lg rounded-xl pl-10 pr-4 py-3 focus:outline-none focus:border-turquesa dark:focus:border-turquesa transition-colors"
+                    required
+                  />
+                </div>
+              </div>
+
+              {errorMsg && (
+                <div className="text-coral text-sm font-sans bg-coral/10 p-3 rounded-lg border border-coral/20 text-center">
+                  {errorMsg}
+                </div>
               )}
-            </button>
-          </form>
 
-          <div className="flex items-center gap-1.5 text-[11px] font-sans text-negro/50 dark:text-arena/50 mt-1">
-            <ShieldCheck className="w-4 h-4 text-turquesa" />
-            <span>Acceso seguro mediante celular sin recordar contraseñas.</span>
-          </div>
-        </div>
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full mt-2 bg-turquesa text-negro hover:bg-turquesa/90 disabled:opacity-50 font-sans font-bold tracking-wider py-4 rounded-xl shadow-xl transition-all hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-2"
+              >
+                {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <CheckCircle2 className="w-5 h-5" />}
+                <span>{loading ? 'ACCEDIENDO...' : 'ENTRAR A MI CUENTA'}</span>
+              </button>
+            </form>
 
-        {/* SI NO HA BUSCADO O NO TIENE PEDIDOS */}
-        {searched && !perfil && (
-          <div className="bg-white dark:bg-carbon border border-coral/30 rounded-2xl p-8 text-center flex flex-col items-center gap-3">
-            <ShoppingBag className="w-12 h-12 text-coral/60" />
-            <h3 className="font-display text-2xl text-negro dark:text-blanco">
-              NO ENCONTRAMOS PEDIDOS CON EL CELULAR {telefonoInput}
-            </h3>
-            <p className="font-serif italic text-sm text-negro/70 dark:text-arena/70 max-w-md">
-              Aún no registras tu primer pedido con este número o el número es incorrecto. ¡Haz tu orden hoy para empezar a acumular recompensas!
-            </p>
-            <button
-              onClick={() => router.push('/pedir')}
-              className="mt-2 bg-coral text-blanco font-sans font-bold text-xs px-6 py-3.5 rounded-xl shadow-lg hover:bg-coral/80"
-            >
-              HACER MI PRIMER PEDIDO 🦐
-            </button>
+            <div className="w-full border-t border-arena/20 dark:border-arena/10 pt-6 mt-2 flex flex-col items-center gap-3">
+              <span className="font-serif italic text-sm text-negro/60 dark:text-arena/60">
+                ¿Aún no tienes cuenta?
+              </span>
+              <button
+                onClick={() => router.push('/registro')}
+                className="w-full bg-carbon text-blanco border border-arena/20 hover:border-coral font-sans font-bold text-sm tracking-wider px-6 py-3.5 rounded-xl transition-all flex items-center justify-center gap-2"
+              >
+                <Sparkles className="w-4 h-4 text-coral" />
+                <span>ÚNETE GRATIS AL CLUB</span>
+              </button>
+            </div>
           </div>
         )}
 
@@ -237,6 +287,30 @@ export default function MiCuentaPage() {
                   >
                     <LogOut className="w-4 h-4" />
                   </button>
+                </div>
+              </div>
+
+              {/* SECCIÓN NUEVA: DATOS AMPLIADOS DEL CLIENTE */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div className="bg-carbon border border-arena/10 rounded-2xl p-4 flex flex-col gap-1 items-start shadow-md">
+                  <span className="text-[10px] font-sans uppercase text-turquesa font-bold">Email</span>
+                  <span className="font-mono text-sm text-blanco break-all">{perfil.email || 'No registrado'}</span>
+                </div>
+                <div className="bg-carbon border border-arena/10 rounded-2xl p-4 flex flex-col gap-1 items-start shadow-md">
+                  <span className="text-[10px] font-sans uppercase text-oro font-bold">Puntos Totales</span>
+                  <span className="font-display text-2xl text-blanco">{perfil.puntos || 0}</span>
+                </div>
+                <div className="bg-carbon border border-arena/10 rounded-2xl p-4 flex flex-col gap-1 items-start shadow-md col-span-2 md:col-span-2">
+                  <span className="text-[10px] font-sans uppercase text-coral font-bold">Código de Referido</span>
+                  <div className="flex items-center justify-between w-full">
+                    <span className="font-mono text-lg text-blanco">{perfil.codigoReferido || 'MAREA-N/A'}</span>
+                    <button
+                      onClick={() => navigator.clipboard.writeText(perfil.codigoReferido || '')}
+                      className="text-[10px] bg-arena/10 hover:bg-arena/20 text-arena px-3 py-1.5 rounded-lg transition-colors"
+                    >
+                      COPIAR
+                    </button>
+                  </div>
                 </div>
               </div>
 
@@ -357,6 +431,12 @@ export default function MiCuentaPage() {
           </div>
         )}
       </main>
+      
+      {/* MODAL DE LOGIN/BENEFICIOS */}
+      <ClubBenefitsModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+      />
     </div>
   )
 }
