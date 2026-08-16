@@ -59,6 +59,11 @@ export default function RegisterClubPage() {
         email,
       })
 
+      if (!resReg.success) {
+        setErrorMsg(resReg.error || 'Ocurrió un error al procesar tu registro.')
+        return
+      }
+
       const userCouponCode = resReg.welcomeCouponCode || `BIENVENIDO-${nombre.slice(0,4).toUpperCase()}`
       const refCode = resReg.codigoReferido
 
@@ -94,17 +99,25 @@ export default function RegisterClubPage() {
     setTimeout(() => setCopied(false), 3000)
   }
 
+  const handleBack = () => {
+    if (typeof window !== 'undefined' && window.history.length > 1) {
+      router.back()
+    } else {
+      router.push('/')
+    }
+  }
+
   return (
     <div className="min-h-screen bg-[#F4F0E8] text-negro dark:bg-negro dark:text-blanco flex flex-col justify-between selection:bg-coral transition-colors duration-300">
       {/* HEADER ADAPTABLE */}
       <header className="sticky top-0 z-40 bg-[#F4F0E8] dark:bg-negro border-b border-arena/30 dark:border-arena/10 px-6 py-4 pt-[calc(1rem+env(safe-area-inset-top,0px))] transition-colors">
         <div className="max-w-4xl mx-auto flex items-center justify-between">
           <button
-            onClick={() => router.push('/')}
-            className="text-xs md:text-sm font-sans font-bold text-negro/70 dark:text-arena/70 hover:text-coral flex items-center gap-1"
+            onClick={handleBack}
+            className="text-xs md:text-sm font-sans font-bold text-negro/70 dark:text-arena/70 hover:text-coral flex items-center gap-1 transition-colors"
           >
             <ChevronLeft className="w-5 h-5" />
-            <span>Menú</span>
+            <span>Volver</span>
           </button>
 
           <h1 className="font-display text-2xl md:text-3xl text-coral tracking-wider">

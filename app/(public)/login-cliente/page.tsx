@@ -52,6 +52,7 @@ export default function LoginClientePage() {
         if (typeof window !== 'undefined') {
           localStorage.setItem('marea_cliente_telefono', cleanPhone)
           localStorage.setItem('marea_cliente_nombre', res.cuenta.nombreCliente)
+          localStorage.setItem('marea_club_registered', 'true')
         }
         router.push(redirectUrl)
       }
@@ -63,23 +64,38 @@ export default function LoginClientePage() {
     }
   }
 
+  const [resetError, setResetError] = useState<string | null>(null)
+
   const handleResetSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    setResetError(null)
     if (!resetPhone.trim() || !newPassword.trim()) return
 
     setLoading(true)
     try {
       const res = await restablecerPasswordCliente(resetPhone, newPassword)
-      setResetSuccess(res.message)
-      setTimeout(() => {
-        setShowReset(false)
-        setResetSuccess(null)
-        setTelefono(resetPhone)
-      }, 2000)
+      if (res.success) {
+        setResetSuccess(res.message || '¡Contraseña actualizada exitosamente!')
+        setTimeout(() => {
+          setShowReset(false)
+          setResetSuccess(null)
+          setTelefono(resetPhone)
+        }, 2000)
+      } else {
+        setResetError(res.error || 'Error al cambiar contraseña.')
+      }
     } catch (err: any) {
-      alert(err.message || 'Error al cambiar contraseña')
+      setResetError(err.message || 'Error al cambiar contraseña.')
     } finally {
       setLoading(false)
+    }
+  }
+
+  const handleBack = () => {
+    if (typeof window !== 'undefined' && window.history.length > 1) {
+      router.back()
+    } else {
+      router.push('/')
     }
   }
 
@@ -89,11 +105,11 @@ export default function LoginClientePage() {
       <header className="sticky top-0 z-40 bg-[#F4F0E8] dark:bg-negro border-b border-arena/30 dark:border-arena/10 px-6 py-4 pt-[calc(1rem+env(safe-area-inset-top,0px))]">
         <div className="max-w-4xl mx-auto flex items-center justify-between">
           <button
-            onClick={() => router.push('/')}
-            className="text-xs md:text-sm font-sans font-bold text-negro/70 dark:text-arena/70 hover:text-coral flex items-center gap-1"
+            onClick={handleBack}
+            className="text-xs md:text-sm font-sans font-bold text-negro/70 dark:text-arena/70 hover:text-coral flex items-center gap-1 transition-colors"
           >
             <ChevronLeft className="w-5 h-5" />
-            <span>Inicio</span>
+            <span>Volver</span>
           </button>
 
           <h1 className="font-display text-2xl md:text-3xl text-coral tracking-wider">
@@ -258,6 +274,11 @@ export default function LoginClientePage() {
               </div>
             ) : (
               <form onSubmit={handleResetSubmit} className="flex flex-col gap-4">
+                {resetError && (
+                  <div className="bg-coral/10 border border-coral/30 text-coral p-3 rounded-xl text-xs font-sans font-bold">
+                    ⚠️ {resetError}
+                  </div>
+                )}
                 <div className="flex flex-col gap-1.5">
                   <label className="text-xs font-sans uppercase font-bold text-arena">
                     Tu Celular de Contacto *

@@ -34,15 +34,16 @@ export async function registrarClienteClub(formData: {
   const cleanPhone = formData.telefono.replace(/\D/g, '')
 
   if (!cleanPhone || cleanPhone.length < 7) {
-    throw new Error('Ingresa un número celular válido (mínimo 7 a 10 dígitos).')
+    return { success: false, error: 'Ingresa un número celular válido (mínimo 7 a 10 dígitos).' }
   }
 
   // 1. Validar fortaleza estricta de la contraseña
   const strength = validatePasswordStrength(formData.password)
   if (!strength.isValid) {
-    throw new Error(
-      'La contraseña no cumple con los requisitos de seguridad: debe tener al menos 8 caracteres, 1 mayúscula, 1 minúscula y 1 número.'
-    )
+    return {
+      success: false,
+      error: 'La contraseña no cumple con los requisitos de seguridad: debe tener al menos 8 caracteres, 1 mayúscula, 1 minúscula y 1 número.'
+    }
   }
 
   // 2. Encriptar contraseña con Hash salado PBKDF2 + SHA512
@@ -58,7 +59,7 @@ export async function registrarClienteClub(formData: {
   const cleanName = formData.nombre.trim().replace(/\s+/g, '').slice(0, 4).toUpperCase()
   const randomSuffix1 = Math.floor(100 + Math.random() * 900)
   const randomSuffix2 = Math.floor(100 + Math.random() * 900)
-  
+
   const codigoReferido = clienteExistente?.codigo_referido || `MAREA-${cleanName}-${randomSuffix1}`
 
   if (clienteExistente) {
@@ -73,7 +74,7 @@ export async function registrarClienteClub(formData: {
       })
       .eq('telefono', cleanPhone)
 
-    if (updateErr) throw new Error(`Error al actualizar cuenta: ${updateErr.message}`)
+    if (updateErr) return { success: false, error: `Error al actualizar cuenta: ${updateErr.message}` }
   } else {
     const { error: insertErr } = await adminSupabase.from('clientes_club').insert({
       id: crypto.randomUUID(),
@@ -85,7 +86,7 @@ export async function registrarClienteClub(formData: {
       puntos: 10,
     })
 
-    if (insertErr) throw new Error(`Error al crear cuenta: ${insertErr.message}`)
+    if (insertErr) return { success: false, error: `Error al crear cuenta: ${insertErr.message}` }
   }
 
   // 3. GENERAR CUPONES CON ADMIN CLIENT (Bypasseando RLS)
@@ -138,11 +139,11 @@ export async function loginClienteConPassword(telefonoInput: string, passwordInp
   const cleanPhone = telefonoInput.replace(/\D/g, '')
 
   if (!cleanPhone) {
-    throw new Error('Ingresa tu número celular de 10 dígitos.')
+    return { success: false, error: 'Ingresa tu número celular de 10 dígitos.' }
   }
 
   if (!passwordInput || passwordInput.trim().length < 1) {
-    throw new Error('Ingresa tu contraseña de acceso.')
+    return { success: false, error: 'Ingresa tu contraseña de acceso.' }
   }
 
   // Buscar si el cliente existe en el club y obtener su hash
@@ -154,17 +155,17 @@ export async function loginClienteConPassword(telefonoInput: string, passwordInp
     .single()
 
   if (!clienteReg || !clienteReg.password_hash) {
-    throw new Error('No se encontró ninguna cuenta asociada a este número celular. Por favor regístrate.')
+    return { success: false, error: 'No se encontró ninguna cuenta asociada a este número celular. Por favor regístrate.' }
   }
 
   // Verificar el Hash de la contraseña
   const isValid = verifyPassword(passwordInput, clienteReg.password_hash)
   if (!isValid) {
-    throw new Error('Contraseña incorrecta. Por favor intenta de nuevo.')
+    return { success: false, error: 'Número de teléfono o contraseña incorrecta. Por favor intenta de nuevo.' }
   }
 
   const cuenta = await getClienteCuentaByTelefono(cleanPhone)
-  
+
   return {
     success: true,
     cuenta,
@@ -175,24 +176,48 @@ export async function restablecerPasswordCliente(telefonoInput: string, nuevaPas
   const cleanPhone = telefonoInput.replace(/\D/g, '')
 
   if (!cleanPhone || cleanPhone.length < 7) {
-    throw new Error('Ingresa un número celular válido.')
+    return { success: false, error: 'Ingresa un número celular válido (mínimo 7 a 10 dígitos).' }
   }
 
   const strength = validatePasswordStrength(nuevaPasswordInput)
   if (!strength.isValid) {
-    throw new Error(
-      'La nueva contraseña debe tener al menos 8 caracteres, 1 mayúscula, 1 minúscula y 1 número.'
-    )
+    return {
+      success: false,
+      error: 'La nueva contraseña debe tener al menos 8 caracteres, 1 mayúscula, 1 minúscula y 1 número.'
+    }
   }
 
-  const encryptedHash = hashPassword(nuevaPasswordInput)
-  const supabase = createServerClient()
-  const { error } = await supabase
+  const adminSupabase = createAdminClient()
+
+  // 1. Verificar si el usuario existe
+  const { data: cliente, error: searchErr } = await adminSupabase
     .from('clientes_club')
-    .update({ email: `pass_${cleanPhone}` })
+    .select('id')
+    .eq('telefono', cleanPhone)
+    .single()
+
+  if (!cliente || searchErr) {
+    return {
+      success: false,
+      error: 'No se encontró ninguna cuenta asociada a este número celular.'
+    }
+  }
+
+  // 2. Encriptar y actualizar password_hash
+  const encryptedHash = hashPassword(nuevaPasswordInput)
+  const { error: updateErr } = await adminSupabase
+    .from('clientes_club')
+    .update({ password_hash: encryptedHash })
     .eq('telefono', cleanPhone)
 
-  return { success: true, message: '¡Contraseña encriptada y actualizada exitosamente!' }
+  if (updateErr) {
+    return {
+      success: false,
+      error: `Error al actualizar contraseña: ${updateErr.message}`
+    }
+  }
+
+  return { success: true, message: '¡Contraseña actualizada exitosamente!' }
 }
 
 export async function getClienteCuentaByTelefono(telefonoInput: string): Promise<ClientePerfilStats | null> {

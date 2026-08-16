@@ -100,6 +100,9 @@ export default function MiCuentaPage() {
         setPerfil(res.cuenta)
         localStorage.setItem('marea_cliente_telefono', res.cuenta.telefono)
         localStorage.setItem('marea_cliente_nombre', res.cuenta.nombreCliente)
+        localStorage.setItem('marea_club_registered', 'true')
+      } else {
+        setErrorMsg(res.error || 'Credenciales incorrectas.')
       }
     } catch (err: any) {
       setErrorMsg(err.message || 'Error al iniciar sesión.')
@@ -149,8 +152,46 @@ export default function MiCuentaPage() {
 
       {/* CONTENIDO PRINCIPAL */}
       <main className="max-w-5xl mx-auto px-4 md:px-6 py-10 w-full flex-1 flex flex-col gap-8">
+        {/* SKELETON LOADER MIENTRAS CARGA LA CUENTA */}
+        {(!initialLoadDone || (loading && !perfil)) && (
+          <div className="flex flex-col gap-8 animate-pulse w-full">
+            {/* Skeleton Tarjeta de Socio */}
+            <div className="bg-white dark:bg-[#050404] border border-arena/30 dark:border-oro/30 rounded-3xl p-6 md:p-8 flex flex-col gap-6 shadow-xl">
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-arena/20 dark:border-arena/10 pb-6">
+                <div className="flex items-center gap-4">
+                  <div className="w-14 h-14 rounded-2xl bg-arena/20 dark:bg-carbon" />
+                  <div className="flex flex-col gap-2">
+                    <div className="h-3 w-32 bg-turquesa/20 rounded-full" />
+                    <div className="h-7 w-48 bg-arena/30 dark:bg-carbon rounded-lg" />
+                    <div className="h-3 w-28 bg-arena/20 dark:bg-carbon/70 rounded-full" />
+                  </div>
+                </div>
+                <div className="h-12 w-36 bg-arena/20 dark:bg-carbon rounded-2xl" />
+              </div>
+
+              {/* Grid 4 Stats */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                {[1, 2, 3, 4].map((n) => (
+                  <div key={n} className="h-20 bg-[#F4F0E8] dark:bg-carbon rounded-2xl border border-arena/20 dark:border-arena/10" />
+                ))}
+              </div>
+
+              {/* Barra Progreso */}
+              <div className="h-24 bg-[#F4F0E8] dark:bg-carbon/60 rounded-2xl border border-arena/20 dark:border-arena/10" />
+            </div>
+
+            {/* Skeleton Historial */}
+            <div className="flex flex-col gap-4">
+              <div className="h-8 w-56 bg-arena/30 dark:bg-carbon rounded-lg" />
+              {[1, 2].map((n) => (
+                <div key={n} className="h-32 bg-white dark:bg-[#050404] rounded-2xl border border-arena/20 dark:border-arena/10" />
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* ESTADO NO LOGUEADO (FORMULARIO DE LOGIN) */}
-        {initialLoadDone && !perfil && (
+        {initialLoadDone && !loading && !perfil && (
           <div className="bg-white dark:bg-[#050404] bg-dots-pattern border border-oro/30 rounded-3xl p-8 md:p-12 gold-border-corner shadow-2xl flex flex-col items-center gap-6 max-w-md mx-auto w-full animate-in fade-in zoom-in duration-500">
             <div className="p-4 bg-coral/10 border border-coral/30 rounded-full text-coral shadow-[0_0_20px_rgba(232,67,10,0.2)]">
               <Award className="w-10 h-10 md:w-12 md:h-12" />

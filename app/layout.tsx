@@ -30,6 +30,9 @@ export const metadata: Metadata = {
     statusBarStyle: 'black-translucent',
     title: 'Marea Negra',
   },
+  other: {
+    'mobile-web-app-capable': 'yes',
+  },
 }
 
 export const viewport: Viewport = {
@@ -56,6 +59,7 @@ export default function RootLayout({
       suppressHydrationWarning
     >
       <head>
+        <meta name="mobile-web-app-capable" content="yes" />
         {/* SCRIPT BLOQUEANTE ANTI-DESTELLO (FOUC): EVALÚA EL TEMA ANTES DE RENDERIZAR */}
         <script
           dangerouslySetInnerHTML={{

@@ -20,11 +20,16 @@ export function ClubBenefitsModal({
     if (externalIsOpen !== undefined) return // Si es controlado externamente, no aplicar el timer
     if (typeof window === 'undefined') return
 
-    // Si el usuario ya está registrado en el Club, no mostrar el modal de enganche
+    // Si el usuario ya está logueado o registrado en el Club, no mostrar el modal de enganche
     const registered = localStorage.getItem('marea_club_registered')
-    if (registered === 'true') return
+    const phone = localStorage.getItem('marea_cliente_telefono')
+    const name = localStorage.getItem('marea_cliente_nombre')
 
-    // Mostrar SIEMPRE el modal al cargar/recargar la página si no se ha registrado aún
+    if (registered === 'true' || Boolean(phone) || Boolean(name)) {
+      return
+    }
+
+    // Mostrar el modal a nuevos visitantes no registrados
     const timer = setTimeout(() => {
       setInternalIsOpen(true)
     }, 1200)

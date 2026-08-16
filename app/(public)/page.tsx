@@ -308,7 +308,7 @@ export default function PublicMenuPage() {
 
             <button
               onClick={() => setViewMode('carta')}
-              className="bg-oro text-negro dark:bg-carbon dark:text-oro hover:bg-oro/90 dark:hover:bg-oro/80 font-sans font-bold text-sm tracking-wider px-6 py-4 rounded-full border border-oro/30 transition-all flex items-center gap-2 shadow-lg"
+              className="bg-oro text-negro hover:bg-oro/90 dark:hover:bg-oro/80 font-sans font-bold text-sm tracking-wider px-6 py-4 rounded-full border border-oro/30 transition-all flex items-center gap-2 shadow-lg"
             >
               <FileText className="w-4 h-4 text-negro" />
               <span>CARTA TRADICIONAL</span>

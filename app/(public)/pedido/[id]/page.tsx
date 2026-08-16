@@ -19,6 +19,7 @@ import {
   RefreshCw,
   Sparkles,
   Gift,
+  XCircle,
 } from 'lucide-react'
 
 const PICOR_LABELS: Record<string, string> = {
@@ -137,17 +138,25 @@ export default function OrderStatusPage() {
     if (match) couponCodeMatch = match[1]
   }
 
+  const handleBack = () => {
+    if (typeof window !== 'undefined' && window.history.length > 1) {
+      router.back()
+    } else {
+      router.push('/micuenta')
+    }
+  }
+
   return (
     <div className="min-h-screen bg-[#F4F0E8] dark:bg-negro text-negro dark:text-blanco flex flex-col justify-between selection:bg-coral transition-colors duration-300">
       {/* HEADER STATUS */}
       <header className="sticky top-0 z-40 bg-[#F4F0E8] dark:bg-negro border-b border-arena/30 dark:border-arena/10 px-6 py-4">
         <div className="max-w-4xl mx-auto flex items-center justify-between">
           <button
-            onClick={() => router.push('/')}
-            className="text-xs md:text-sm font-sans font-bold text-negro/70 dark:text-arena/70 hover:text-coral flex items-center gap-1"
+            onClick={handleBack}
+            className="text-xs md:text-sm font-sans font-bold text-negro/70 dark:text-arena/70 hover:text-coral flex items-center gap-1 transition-colors"
           >
             <ChevronLeft className="w-5 h-5" />
-            <span>Volver al Menú</span>
+            <span>Volver</span>
           </button>
 
           <h1 className="font-display text-2xl md:text-3xl text-coral tracking-wider">
@@ -161,9 +170,49 @@ export default function OrderStatusPage() {
       {/* CONTENIDO PRINCIPAL DE SEGUIMIENTO */}
       <main className="max-w-2xl mx-auto px-4 md:px-6 py-8 w-full flex-1 flex flex-col gap-6">
         {loading ? (
-          <div className="py-20 text-center flex flex-col items-center justify-center gap-3">
-            <RefreshCw className="w-8 h-8 text-turquesa animate-spin" />
-            <span className="font-sans font-bold text-sm text-turquesa">Cargando estado del pedido #{pedidoId}...</span>
+          <div className="flex flex-col gap-6 animate-pulse w-full">
+            {/* Skeleton Card de Folio & Etapas */}
+            <div className="bg-white dark:bg-[#050404] border border-arena/30 dark:border-oro/30 rounded-2xl p-6 shadow-2xl flex flex-col gap-5">
+              <div className="flex justify-between items-center border-b border-arena/20 dark:border-arena/10 pb-3">
+                <div className="h-3 w-40 bg-turquesa/20 rounded-full" />
+                <div className="h-3 w-28 bg-arena/20 dark:bg-carbon rounded-full" />
+              </div>
+
+              <div className="flex flex-col items-center gap-2 py-2">
+                <div className="h-12 w-56 bg-arena/30 dark:bg-carbon rounded-xl" />
+                <div className="h-4 w-40 bg-arena/20 dark:bg-carbon/70 rounded-full" />
+              </div>
+
+              {/* Grid 4 Etapas */}
+              <div className="grid grid-cols-4 gap-2 pt-2">
+                {[1, 2, 3, 4].map((st) => (
+                  <div key={st} className="h-16 bg-[#F4F0E8] dark:bg-carbon rounded-xl border border-arena/20 dark:border-arena/10" />
+                ))}
+              </div>
+            </div>
+
+            {/* Skeleton Botón de Descarga */}
+            <div className="h-14 bg-arena/20 dark:bg-carbon rounded-2xl border border-arena/20 dark:border-arena/10" />
+
+            {/* Skeleton Detalle de Items */}
+            <div className="bg-white dark:bg-carbon border border-arena/30 dark:border-arena/10 rounded-2xl p-6 shadow-xl flex flex-col gap-4">
+              <div className="h-4 w-44 bg-turquesa/20 rounded-full" />
+              <div className="flex flex-col gap-4 pt-2 divide-y divide-arena/10">
+                {[1, 2].map((n) => (
+                  <div key={n} className="pt-3 first:pt-0 flex justify-between items-start">
+                    <div className="flex flex-col gap-2">
+                      <div className="h-5 w-48 bg-arena/30 dark:bg-negro rounded-lg" />
+                      <div className="h-3 w-32 bg-arena/20 dark:bg-negro/60 rounded-full" />
+                    </div>
+                    <div className="h-6 w-20 bg-coral/20 rounded-lg" />
+                  </div>
+                ))}
+              </div>
+              <div className="pt-4 border-t border-arena/20 flex justify-between items-center">
+                <div className="h-4 w-32 bg-arena/30 dark:bg-negro rounded-full" />
+                <div className="h-8 w-28 bg-oro/20 rounded-lg" />
+              </div>
+            </div>
           </div>
         ) : error || !pedido ? (
           <div className="bg-white dark:bg-carbon border border-coral/30 rounded-2xl p-8 text-center flex flex-col items-center justify-center gap-3 shadow-xl">
@@ -180,11 +229,15 @@ export default function OrderStatusPage() {
         ) : (
           <>
             {/* CARD ENCABEZADO CON ESTADO EN VIVO */}
-            <div className="bg-white dark:bg-[#050404] bg-dots-pattern border border-oro/30 rounded-2xl p-6 shadow-2xl gold-border-corner flex flex-col gap-4 text-center">
+            <div className={`bg-white dark:bg-[#050404] bg-dots-pattern border rounded-2xl p-6 shadow-2xl gold-border-corner flex flex-col gap-4 text-center ${
+              pedido.estado === 'cancelado' ? 'border-coral/50' : 'border-oro/30'
+            }`}>
               <div className="flex justify-between items-center border-b border-arena/10 pb-3">
-                <span className="text-xs font-sans font-bold text-turquesa uppercase tracking-widest flex items-center gap-1.5">
+                <span className={`text-xs font-sans font-bold uppercase tracking-widest flex items-center gap-1.5 ${
+                  pedido.estado === 'cancelado' ? 'text-coral' : 'text-turquesa'
+                }`}>
                   <Sparkles className="w-3.5 h-3.5" />
-                  <span>SEGUIMIENTO EN TIEMPO REAL</span>
+                  <span>{pedido.estado === 'cancelado' ? 'PEDIDO CANCELADO' : 'SEGUIMIENTO EN TIEMPO REAL'}</span>
                 </span>
                 <span className="text-xs font-sans font-bold text-arena/70">
                   {pedido.hora_recogida ? `Recogida: ${pedido.hora_recogida.slice(0, 5)} hrs` : 'Inmediato'}
@@ -200,61 +253,86 @@ export default function OrderStatusPage() {
                 </span>
               </div>
 
-              {/* BARRA DE ETAPAS EN VIVO */}
-              <div className="grid grid-cols-4 gap-2 pt-4">
-                {[
-                  { step: 1, label: '1. RECIBIDO', icon: Clock, desc: 'En cola' },
-                  { step: 2, label: '2. PREPARANDO', icon: Flame, desc: 'En cocina' },
-                  { step: 3, label: '3. ¡LISTO!', icon: CheckCircle2, desc: 'Listo' },
-                  { step: 4, label: '4. ENTREGADO', icon: PackageCheck, desc: 'Completado' },
-                ].map((st) => {
-                  const Icon = st.icon
-                  const isActive = currentStepIdx === st.step
-                  const isDone = currentStepIdx > st.step
+              {/* BANNER SI ESTÁ CANCELADO */}
+              {pedido.estado === 'cancelado' ? (
+                <div className="p-4 bg-coral/10 border border-coral/30 rounded-2xl text-center flex flex-col items-center gap-2 shadow-inner mt-2">
+                  <div className="w-10 h-10 rounded-full bg-coral/20 flex items-center justify-center text-coral">
+                    <XCircle className="w-6 h-6" />
+                  </div>
+                  <span className="font-display text-2xl text-coral tracking-wider">
+                    PEDIDO CANCELADO / RECHAZADO
+                  </span>
+                  <p className="font-sans text-xs text-negro/80 dark:text-arena/80 max-w-md">
+                    Esta comanda fue cancelada y no está siendo procesada en cocina. Si tienes dudas, contáctanos por WhatsApp o realiza una nueva orden.
+                  </p>
+                  <button
+                    onClick={() => router.push('/pedir')}
+                    className="mt-2 bg-coral text-blanco font-sans font-bold text-xs px-5 py-2.5 rounded-full hover:bg-coral/90 transition-all shadow-md"
+                  >
+                    REALIZAR NUEVO PEDIDO
+                  </button>
+                </div>
+              ) : (
+                /* BARRA DE ETAPAS EN VIVO NORMAL */
+                <div className="grid grid-cols-4 gap-2 pt-4">
+                  {[
+                    { step: 1, label: '1. RECIBIDO', icon: Clock, desc: 'En cola' },
+                    { step: 2, label: '2. PREPARANDO', icon: Flame, desc: 'En cocina' },
+                    { step: 3, label: '3. ¡LISTO!', icon: CheckCircle2, desc: 'Listo' },
+                    { step: 4, label: '4. ENTREGADO', icon: PackageCheck, desc: 'Completado' },
+                  ].map((st) => {
+                    const Icon = st.icon
+                    const isActive = currentStepIdx === st.step
+                    const isDone = currentStepIdx > st.step
 
-                  return (
-                    <div
-                      key={st.step}
-                      className={`flex flex-col items-center gap-1 p-2 rounded-xl border transition-all ${
-                        isActive
-                          ? 'bg-coral/10 border-coral text-coral shadow-lg animate-pulse'
-                          : isDone
-                          ? 'bg-turquesa/10 border-turquesa text-turquesa'
-                          : 'bg-[#F4F0E8] dark:bg-carbon border-arena/20 text-arena/40'
-                      }`}
-                    >
-                      <Icon className={`w-5 h-5 ${isActive ? 'animate-bounce' : ''}`} />
-                      <span className="text-[10px] font-sans font-bold tracking-wider">{st.label}</span>
-                    </div>
-                  )
-                })}
-              </div>
+                    return (
+                      <div
+                        key={st.step}
+                        className={`flex flex-col items-center gap-1 p-2 rounded-xl border transition-all ${
+                          isActive
+                            ? 'bg-coral/10 border-coral text-coral shadow-lg animate-pulse'
+                            : isDone
+                            ? 'bg-turquesa/10 border-turquesa text-turquesa'
+                            : 'bg-[#F4F0E8] dark:bg-carbon border-arena/20 text-arena/40'
+                        }`}
+                      >
+                        <Icon className={`w-5 h-5 ${isActive ? 'animate-bounce' : ''}`} />
+                        <span className="text-[10px] font-sans font-bold tracking-wider">{st.label}</span>
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
             </div>
 
-            {/* BOTÓN PARA DESCARGAR COMPROBANTE EN FOTO (PNG) CON DESCUENTO */}
-            <TicketImageDownload
-              pedidoId={pedido.id}
-              clienteNombre={pedido.cliente_nombre}
-              clienteTelefono={pedido.cliente_telefono}
-              metodoPago={pedido.metodo_pago}
-              horaRecogida={pedido.hora_recogida}
-              notasGenerales={pedido.notas}
-              subtotal={rawSubtotal}
-              descuento={discountAmount}
-              cuponCodigo={couponCodeMatch}
-              total={orderTotal}
-              items={formattedTicketItems}
-            />
+            {/* BOTÓN PARA DESCARGAR COMPROBANTE EN FOTO (PNG) - SOLO SI NO ESTÁ CANCELADO */}
+            {pedido.estado !== 'cancelado' && (
+              <>
+                <TicketImageDownload
+                  pedidoId={pedido.id}
+                  clienteNombre={pedido.cliente_nombre}
+                  clienteTelefono={pedido.cliente_telefono}
+                  metodoPago={pedido.metodo_pago}
+                  horaRecogida={pedido.hora_recogida}
+                  notasGenerales={pedido.notas}
+                  subtotal={rawSubtotal}
+                  descuento={discountAmount}
+                  cuponCodigo={couponCodeMatch}
+                  total={orderTotal}
+                  items={formattedTicketItems}
+                />
 
-            {/* SECCIÓN ADJUNTAR FICHA O COMPROBANTE PDF DE PAGO (TRANSFERENCIA / OXXO) */}
-            {(pedido.metodo_pago === 'transferencia' || pedido.metodo_pago === 'oxxo') && (
-              <ComprobanteUploader
-                pedidoId={pedido.id}
-                currentComprobanteUrl={pedido.comprobante_url}
-                onSuccess={(url) => {
-                  setPedido((prev: any) => (prev ? { ...prev, comprobante_url: url } : prev))
-                }}
-              />
+                {/* SECCIÓN ADJUNTAR FICHA O COMPROBANTE PDF DE PAGO (TRANSFERENCIA / OXXO) */}
+                {(pedido.metodo_pago === 'transferencia' || pedido.metodo_pago === 'oxxo') && (
+                  <ComprobanteUploader
+                    pedidoId={pedido.id}
+                    currentComprobanteUrl={pedido.comprobante_url}
+                    onSuccess={(url) => {
+                      setPedido((prev: any) => (prev ? { ...prev, comprobante_url: url } : prev))
+                    }}
+                  />
+                )}
+              </>
             )}
 
             {/* DETALLE COMPLETO DE LA COMANDA */}
