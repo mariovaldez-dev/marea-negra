@@ -14,10 +14,10 @@ export interface ClientePerfilStats {
   pedidosEntregados: number
   totalInvertido: number
   nivelLealtad: 'Socio Marea' | 'Capitán Aguachile' | 'Leyenda Marea Negra'
-  proximaRecompensa: string
-  pedidosFaltantesParaRecompensa: number
+  proximaRecompensa: string | null
+  pedidosFaltantesParaRecompensa: number | null
   pedidosHistorial: Pedido[]
-  lealtadConfig: LealtadConfig
+  lealtadConfig: LealtadConfig | null
 }
 
 export async function registrarClienteClub(formData: {
@@ -195,17 +195,22 @@ export async function getClienteCuentaByTelefono(telefonoInput: string): Promise
 
   // Plan de Lealtad Dinámico e Integrado
   let nivelLealtad: 'Socio Marea' | 'Capitán Aguachile' | 'Leyenda Marea Negra' = 'Socio Marea'
-  let proximaRecompensa = configLealtad.recompensa1_producto
-  let pedidosFaltantesParaRecompensa = Math.max(0, configLealtad.meta1_pedidos - totalPedidos)
+  let proximaRecompensa: string | null = null
+  let pedidosFaltantesParaRecompensa: number | null = null
 
-  if (totalPedidos >= configLealtad.meta3_pedidos) {
-    nivelLealtad = 'Leyenda Marea Negra'
-    proximaRecompensa = configLealtad.recompensa3_producto
-    pedidosFaltantesParaRecompensa = 0
-  } else if (totalPedidos >= configLealtad.meta1_pedidos) {
-    nivelLealtad = 'Capitán Aguachile'
-    proximaRecompensa = configLealtad.recompensa2_producto
-    pedidosFaltantesParaRecompensa = Math.max(0, configLealtad.meta2_pedidos - totalPedidos)
+  if (configLealtad) {
+    proximaRecompensa = configLealtad.recompensa1_producto
+    pedidosFaltantesParaRecompensa = Math.max(0, configLealtad.meta1_pedidos - totalPedidos)
+
+    if (totalPedidos >= configLealtad.meta3_pedidos) {
+      nivelLealtad = 'Leyenda Marea Negra'
+      proximaRecompensa = configLealtad.recompensa3_producto
+      pedidosFaltantesParaRecompensa = 0
+    } else if (totalPedidos >= configLealtad.meta1_pedidos) {
+      nivelLealtad = 'Capitán Aguachile'
+      proximaRecompensa = configLealtad.recompensa2_producto
+      pedidosFaltantesParaRecompensa = Math.max(0, configLealtad.meta2_pedidos - totalPedidos)
+    }
   }
 
   return {

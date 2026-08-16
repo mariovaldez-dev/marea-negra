@@ -1,4 +1,5 @@
-import * as admin from 'firebase-admin'
+import { initializeApp, getApps, cert } from 'firebase-admin/app'
+import { getMessaging } from 'firebase-admin/messaging'
 
 interface PedidoNotif {
   id: number
@@ -10,10 +11,10 @@ interface PedidoNotif {
 }
 
 // Inicializar la app Admin solo una vez
-if (!admin.apps.length) {
+if (getApps().length === 0) {
   try {
-    admin.initializeApp({
-      credential: admin.credential.cert({
+    initializeApp({
+      credential: cert({
         projectId: process.env.FIREBASE_PROJECT_ID,
         clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
         // Manejar escapes de línea en la clave privada
@@ -56,7 +57,7 @@ export async function enviarNotificacion(token: string, pedido: PedidoNotif) {
   }
 
   try {
-    await admin.messaging().send(message)
+    await getMessaging().send(message)
   } catch (error) {
     console.error('Error enviando notificación a token', token, error)
   }

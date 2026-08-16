@@ -241,36 +241,38 @@ export default function MiCuentaPage() {
               </div>
 
               {/* BARRA DE PROGRESO DEL PLAN DE LEALTAD */}
-              <div className="bg-carbon/80 border border-arena/20 rounded-2xl p-5 flex flex-col gap-3">
-                <div className="flex flex-col md:flex-row md:items-center justify-between gap-2">
-                  <span className="text-xs font-sans font-bold uppercase text-limon tracking-wider flex items-center gap-1.5">
-                    <Gift className="w-4 h-4" />
-                    <span>TU PRÓXIMA RECOMPENSA DE LEALTAD:</span>
-                  </span>
-                  <span className="font-serif italic text-xs text-arena/80">
-                    {perfil.pedidosFaltantesParaRecompensa > 0
-                      ? `¡Solo te faltan ${perfil.pedidosFaltantesParaRecompensa} pedido(s) más!`
-                      : '¡Felicidades! Alcanzaste el Nivel VIP Leyenda'}
-                  </span>
-                </div>
+              {perfil.lealtadConfig && perfil.proximaRecompensa && perfil.pedidosFaltantesParaRecompensa !== null && (
+                <div className="bg-carbon/80 border border-arena/20 rounded-2xl p-5 flex flex-col gap-3">
+                  <div className="flex flex-col md:flex-row md:items-center justify-between gap-2">
+                    <span className="text-xs font-sans font-bold uppercase text-limon tracking-wider flex items-center gap-1.5">
+                      <Gift className="w-4 h-4" />
+                      <span>TU PRÓXIMA RECOMPENSA DE LEALTAD:</span>
+                    </span>
+                    <span className="font-serif italic text-xs text-arena/80">
+                      {perfil.pedidosFaltantesParaRecompensa > 0
+                        ? `¡Solo te faltan ${perfil.pedidosFaltantesParaRecompensa} pedido(s) más!`
+                        : '¡Felicidades! Alcanzaste el Nivel VIP Leyenda'}
+                    </span>
+                  </div>
 
-                <p className="font-sans text-sm font-bold text-blanco">
-                  {perfil.proximaRecompensa}
-                </p>
+                  <p className="font-sans text-sm font-bold text-blanco">
+                    {perfil.proximaRecompensa}
+                  </p>
 
-                {/* Barra Neón de Progreso */}
-                <div className="w-full h-3 bg-negro rounded-full overflow-hidden border border-arena/20 mt-1">
-                  <div
-                    className="h-full bg-gradient-to-r from-coral via-turquesa to-limon transition-all duration-700 shadow-[0_0_15px_rgba(222,253,111,0.5)]"
-                    style={{ width: `${Math.min(100, (perfil.totalPedidos / (perfil.lealtadConfig.meta3_pedidos || 10)) * 100)}%` }}
-                  />
-                </div>
+                  {/* Barra Neón de Progreso */}
+                  <div className="w-full h-3 bg-negro rounded-full overflow-hidden border border-arena/20 mt-1">
+                    <div
+                      className="h-full bg-gradient-to-r from-coral via-turquesa to-limon transition-all duration-700 shadow-[0_0_15px_rgba(222,253,111,0.5)]"
+                      style={{ width: `${Math.min(100, (perfil.totalPedidos / (perfil.lealtadConfig?.meta3_pedidos || 10)) * 100)}%` }}
+                    />
+                  </div>
 
-                <div className="flex justify-between items-center text-[11px] font-mono text-arena/60 pt-1">
-                  <span>{perfil.totalPedidos} Pedidos Realizados</span>
-                  <span>Meta: 5 Pedidos</span>
+                  <div className="flex justify-between items-center text-[11px] font-mono text-arena/60 pt-1">
+                    <span>{perfil.totalPedidos} Pedidos Realizados</span>
+                    <span>Meta: {perfil.lealtadConfig?.meta3_pedidos || 10} Pedidos</span>
+                  </div>
                 </div>
-              </div>
+              )}
             </div>
 
             {/* 2. HISTORIAL DE PEDIDOS REALIZADOS */}
