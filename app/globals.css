@@ -1,0 +1,156 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --negro: #080808;
+    --carbon: #111111;
+    --coral: #E8430A;
+    --turquesa: #2ABFBF;
+    --azul: #0D3B5E;
+    --arena: #D4C5A9;
+    --blanco: #F7F3EE;
+    --oro: #C9A84C;
+    --limon: #DEFD6F;
+  }
+
+  html {
+    font-size: 17px;
+    scroll-behavior: smooth;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  /* Evitar auto-zoom en iPhone / iOS Safari al hacer tap en inputs */
+  input, select, textarea {
+    font-size: 16px !important;
+  }
+
+  /* Styling de Selects/Dropdowns Customizados para sobrescribir estilo nativo de macOS / iOS */
+  select {
+    appearance: none !important;
+    -webkit-appearance: none !important;
+    -moz-appearance: none !important;
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%232ABFBF' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e") !important;
+    background-repeat: no-repeat !important;
+    background-position: right 1rem center !important;
+    background-size: 1.25rem 1.25rem !important;
+    padding-right: 2.75rem !important;
+    cursor: pointer !important;
+  }
+
+  html.dark select {
+    background-color: #111111 !important;
+    color: #F7F3EE !important;
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23C9A84C' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e") !important;
+  }
+
+  select option {
+    background-color: #F4F0E8 !important;
+    color: #080808 !important;
+    padding: 10px !important;
+  }
+
+  html.dark select option {
+    background-color: #111111 !important;
+    color: #F7F3EE !important;
+    padding: 10px !important;
+  }
+
+  /* Modo Claro (Marea Clara) por defecto */
+  body {
+    background-color: #F4F0E8;
+    color: #080808;
+    font-family: var(--font-sans), system-ui, sans-serif;
+    font-size: 1.05rem;
+    line-height: 1.6;
+    transition: background-color 0.3s ease, color 0.3s ease;
+  }
+
+  /* Modo Oscuro (Marea Oscura) cuando la clase .dark está presente */
+  html.dark body {
+    background-color: #080808;
+    color: #F7F3EE;
+  }
+
+  /* Protección anti-descarga, anti-arrastre y anti-clic derecho para todas las fotos */
+  img {
+    user-select: none !important;
+    -webkit-user-select: none !important;
+    -webkit-touch-callout: none !important;
+    -webkit-user-drag: none !important;
+    -khtml-user-drag: none !important;
+    -moz-user-drag: none !important;
+    -o-user-drag: none !important;
+    pointer-events: none !important;
+  }
+}
+
+/* Respetar Safe Area Top Inset en navegadores móviles (Safari iOS, Chrome Mobile) */
+.safe-top-inset {
+  padding-top: max(1rem, env(safe-area-inset-top, 0px));
+}
+
+.safe-top-sticky {
+  top: env(safe-area-inset-top, 0px);
+}
+
+/* Patrón Radial Abisal */
+.bg-ocean-blob {
+  background: radial-gradient(circle, rgba(13, 59, 94, 0.45) 0%, rgba(8, 8, 8, 0) 70%);
+}
+
+.bg-coral-blob {
+  background: radial-gradient(circle, rgba(232, 67, 10, 0.4) 0%, rgba(8, 8, 8, 0) 70%);
+}
+
+/* Textura Dots Luxury Card (Patrón 4) */
+.bg-dots-pattern {
+  background-image: radial-gradient(rgba(201, 168, 76, 0.12) 1.5px, transparent 1.5px);
+  background-size: 20px 20px;
+}
+
+/* Marco Luxury con Esquinas de Oro de 12px */
+.gold-border-corner {
+  position: relative;
+}
+.gold-border-corner::before {
+  content: '';
+  position: absolute;
+  top: -1px;
+  right: -1px;
+  width: 16px;
+  height: 16px;
+  border-top: 2.5px solid #C9A84C;
+  border-right: 2.5px solid #C9A84C;
+  border-top-right-radius: 12px;
+  pointer-events: none;
+}
+.gold-border-corner::after {
+  content: '';
+  position: absolute;
+  bottom: -1px;
+  left: -1px;
+  width: 16px;
+  height: 16px;
+  border-bottom: 2.5px solid #C9A84C;
+  border-left: 2.5px solid #C9A84C;
+  border-bottom-left-radius: 12px;
+  pointer-events: none;
+}
+
+/* Scrollbar personalizado */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: #111111;
+}
+::-webkit-scrollbar-thumb {
+  background: #E8430A;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #2ABFBF;
+}

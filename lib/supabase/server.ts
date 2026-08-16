@@ -1,0 +1,34 @@
+import { createServerClient as createServerClientSSR } from '@supabase/ssr'
+import { cookies } from 'next/headers'
+
+export function createServerClient() {
+  const cookieStore = cookies()
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co'
+  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder-anon-key'
+
+  return createServerClientSSR(
+    url,
+    key,
+    {
+      cookies: {
+        get(name: string) {
+          return cookieStore.get(name)?.value
+        },
+        set(name: string, value: string, options: any) {
+          try {
+            cookieStore.set({ name, value, ...options })
+          } catch (error) {
+            // Se maneja en middleware si ocurre en Server Components
+          }
+        },
+        remove(name: string, options: any) {
+          try {
+            cookieStore.set({ name, value: '', ...options })
+          } catch (error) {
+            // Se maneja en middleware si ocurre en Server Components
+          }
+        },
+      },
+    }
+  )
+}
