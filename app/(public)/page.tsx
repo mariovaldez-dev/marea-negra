@@ -3,9 +3,9 @@
 import React, { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
+import { motion } from 'framer-motion'
 import { createBrowserClient } from '@/lib/supabase/client'
 import { Platillo, Categoria } from '@/lib/types/database'
-import { ProductCard } from '@/components/ui/ProductCard'
 import dynamic from 'next/dynamic'
 import { ThemeToggle } from '@/components/ui/ThemeToggle'
 
@@ -18,11 +18,14 @@ const UserHeaderBadge = dynamic(
 )
 import { ClubBenefitsModal } from '@/components/menu/ClubBenefitsModal'
 import { BrandLogo } from '@/components/ui/BrandLogo'
+import { FloatingShrimp } from '@/components/ui/FloatingShrimp'
+import { AnimatedTagline } from '@/components/ui/AnimatedTagline'
+import { RippleButton } from '@/components/ui/RippleButton'
+import { DishCarouselSection } from '@/components/menu/DishCarouselSection'
 import { generateWhatsAppMessageUrl } from '@/lib/utils/whatsapp'
 import { TraditionalMenuBoard } from '@/components/menu/TraditionalMenuBoard'
 import { getEstadoRestaurante } from '@/lib/actions/negocioEstado'
 import {
-  Lock,
   ShoppingBag,
   ArrowRight,
   MessageCircle,
@@ -30,15 +33,12 @@ import {
   CheckCircle2,
   ChevronRight,
   Globe,
-  Flame,
   Menu as MenuIcon,
   X,
   Gift,
   User,
   Award,
-  RefreshCw,
   FileText,
-  LayoutGrid,
   Clock,
 } from 'lucide-react'
 
@@ -50,10 +50,20 @@ export default function PublicMenuPage() {
   const [mobileNavOpen, setMobileNavOpen] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
   const [viewMode, setViewMode] = useState<'interactive' | 'carta'>('interactive')
+  const [isScrolled, setIsScrolled] = useState(false)
+  const [waLoading, setWaLoading] = useState(false)
 
   const [restauranteAbierto, setRestauranteAbierto] = useState(true)
   const [horarios, setHorarios] = useState<any[]>([])
   const supabase = createBrowserClient()
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 20)
+    }
+    window.addEventListener('scroll', handleScroll, { passive: true })
+    return () => window.removeEventListener('scroll', handleScroll)
+  }, [])
 
   useEffect(() => {
     async function fetchData() {
@@ -89,6 +99,28 @@ export default function PublicMenuPage() {
     return generateWhatsAppMessageUrl('Hola, quisiera consultar el menú de Marea Negra para hoy.')
   }
 
+  const handleWhatsAppOrder = () => {
+    if (typeof window !== 'undefined' && 'vibrate' in navigator) {
+      try {
+        navigator.vibrate([25, 15, 50])
+      } catch (e) { }
+    }
+    setWaLoading(true)
+    setTimeout(() => {
+      window.open(generateWhatsAppUrl(), '_blank')
+      setWaLoading(false)
+    }, 800)
+  }
+
+  const handleOnlineOrder = () => {
+    if (typeof window !== 'undefined' && 'vibrate' in navigator) {
+      try {
+        navigator.vibrate(30)
+      } catch (e) { }
+    }
+    router.push('/pedir')
+  }
+
   const filteredPlatillos =
     activeCategory === 'all'
       ? platillos
@@ -121,14 +153,19 @@ export default function PublicMenuPage() {
 
   return (
     <div className="min-h-screen bg-[#F4F0E8] dark:bg-negro text-negro dark:text-blanco flex flex-col justify-between selection:bg-coral transition-colors duration-300">
-      {/* 1. HEADER CON BOTÓN HAMBURGUESA Y DESKTOP NAV */}
-      <header className="sticky top-0 z-40 bg-[#F4F0E8] dark:bg-negro border-b border-arena/30 dark:border-arena/10 px-6 py-4 pt-[calc(1rem+env(safe-area-inset-top,0px))] transition-colors">
+      {/* 1. HEADER CON BLUR AL SCROLL Y LOGO ADAPTABLE */}
+      <header
+        className={`sticky top-0 z-40 px-6 py-3.5 pt-[calc(0.85rem+env(safe-area-inset-top,0px))] transition-all duration-300 ${isScrolled
+          ? 'bg-[#F4F0E8]/90 dark:bg-negro/90 backdrop-blur-md border-b border-arena/30 dark:border-arena/10 shadow-lg shadow-black/10'
+          : 'bg-transparent border-b border-transparent'
+          }`}
+      >
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <BrandLogo size="md" />
+            <BrandLogo size={isScrolled ? 'sm' : 'md'} />
           </div>
 
-          {/* NAVEGACIÓN DESKTOP (PANTALLAS MEDIANAS Y GRANDES - ESTILO BADGES ALTO CONTRASTE) */}
+          {/* NAVEGACIÓN DESKTOP */}
           <nav className="hidden md:flex items-center gap-2.5 text-xs font-sans tracking-wider">
             <a
               href="#menu"
@@ -181,12 +218,11 @@ export default function PublicMenuPage() {
         </div>
       </header>
 
-      {/* DRAWER DESLIZANTE DE NAVEGACIÓN MÓVIL (ADAPTABLE A LIGHT MODE Y DARK MODE) */}
+      {/* DRAWER DESLIZANTE DE NAVEGACIÓN MÓVIL */}
       {mobileNavOpen && (
         <div className="fixed inset-0 z-50 bg-black/75 flex justify-end animate-in fade-in duration-200">
           <div className="bg-white text-negro dark:bg-[#050404] dark:text-blanco bg-dots-pattern border-l border-arena/30 dark:border-oro/30 w-4/5 max-w-sm h-full p-6 flex flex-col justify-between shadow-2xl animate-in slide-in-from-right duration-300 transition-colors">
             <div className="flex flex-col gap-6">
-              {/* CABECERA DEL DRAWER */}
               <div className="flex items-center justify-between border-b border-arena/30 dark:border-arena/15 pb-4">
                 <BrandLogo size="sm" />
                 <button
@@ -197,7 +233,6 @@ export default function PublicMenuPage() {
                 </button>
               </div>
 
-              {/* OPCIONES DEL MENÚ MÓVIL */}
               <nav className="flex flex-col gap-3 font-sans text-base">
                 <button
                   onClick={() => {
@@ -251,7 +286,6 @@ export default function PublicMenuPage() {
               </nav>
             </div>
 
-            {/* FOOTER DEL DRAWER */}
             <div className="pt-4 border-t border-arena/15 flex flex-col gap-3">
               <a
                 href={generateWhatsAppUrl()}
@@ -271,65 +305,91 @@ export default function PublicMenuPage() {
         </div>
       )}
 
-      {/* 2. HERO BANNER */}
-      <section className="relative bg-[#EBE5D8] dark:bg-negro overflow-hidden px-6 pt-16 pb-20 border-b border-arena/30 dark:border-arena/10 transition-colors">
+      {/* 2. HERO BANNER CON CAMARÓN FLOTANTE Y ENTRADA SECUENCIAL */}
+      <section className="relative bg-[#EBE5D8] dark:bg-negro overflow-hidden px-6 pt-14 pb-20 border-b border-arena/30 dark:border-arena/10 transition-colors">
+        {/* Blobs de Fondo Estáticos Ligeros */}
+        <div className="absolute -top-24 -left-24 w-96 h-96 bg-coral/10 dark:bg-coral/15 rounded-full filter blur-3xl pointer-events-none" />
+        <div className="absolute top-1/2 -right-24 w-96 h-96 bg-turquesa/10 dark:bg-turquesa/15 rounded-full filter blur-3xl pointer-events-none" />
+
+        {/* CAMARÓN FLOTANTE INTERACTIVO EN MÓVIL */}
+        <FloatingShrimp />
 
         <div className="max-w-7xl mx-auto relative z-10 flex flex-col items-start gap-6">
-          <span className="text-xs font-sans font-semibold text-black uppercase bg-limon px-3 py-1 rounded-full">
+          {/* Badge Superior Animado */}
+          <motion.span
+            initial={{ opacity: 0, y: -25 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, ease: 'easeOut' }}
+            className="text-xs font-sans font-semibold text-black uppercase bg-limon px-3.5 py-1 rounded-full shadow-sm"
+          >
             SINALOA AUTÉNTICO · MARISCOS DEL DÍA
-          </span>
+          </motion.span>
 
+          {/* Logo y Tagline con Entrada Stagger */}
           <div className="py-2 flex flex-col md:flex-row md:items-center gap-4 md:gap-10 w-full">
-            <BrandLogo size="hero" stacked withSubtext />
-
-            <div className="flex flex-col justify-center items-center md:items-start text-center md:text-left border-t-2 md:border-t-0 md:border-l-4 border-coral/40 md:border-coral/80 pt-4 md:pt-2 md:pl-6 mt-2 md:mt-0 animate-in fade-in slide-in-from-left-4 duration-700 delay-300 fill-mode-both w-full md:w-auto">
-              <span className="font-display text-5xl lg:text-7xl text-negro dark:text-blanco uppercase tracking-widest leading-none">
-                ¡Al vrgazo!,
-              </span>
-              <span className="font-serif italic text-3xl lg:text-4xl text-negro/60 dark:text-arena/70 mt-1">
-                como nos gusta.
-              </span>
-            </div>
+            <BrandLogo size="hero" stacked withSubtext animated />
+            <AnimatedTagline />
           </div>
 
-          <p className="font-sans text-sm md:text-base text-negro/70 dark:text-arena/70 max-w-xl leading-relaxed">
+          {/* Descripción de Texto */}
+          <motion.p
+            initial={{ opacity: 0, y: 15 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 1.0, duration: 0.5, ease: 'easeOut' }}
+            className="font-sans text-sm md:text-base text-negro/70 dark:text-arena/70 max-w-xl leading-relaxed"
+          >
             Personaliza el nivel de picor y notas para la cocina con nuestro nuevo sistema de pedido directo en 4 pasos.
-          </p>
+          </motion.p>
 
-          <div className="flex flex-wrap items-center gap-4 pt-2">
-            <Link
-              href="/pedir"
-              className="bg-turquesa text-negro hover:bg-blanco font-sans font-bold text-sm tracking-wider px-8 py-4 rounded-full shadow-[0_0_25px_rgba(42,191,191,0.3)] transition-all flex items-center gap-2 group"
+          {/* Botones de Acción con Ripple y Feedback Táctil */}
+          <motion.div
+            initial={{ opacity: 0, y: 25 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 1.2, duration: 0.55, ease: 'easeOut' }}
+            className="flex flex-wrap items-center gap-4 pt-2"
+          >
+            <RippleButton
+              onClick={handleOnlineOrder}
+              haptic
+              className="bg-turquesa text-negro hover:bg-blanco font-sans font-bold text-sm tracking-wider px-8 py-4 rounded-full shadow-[0_0_25px_rgba(42,191,191,0.3)] transition-colors flex items-center gap-2 group"
             >
               <Globe className="w-5 h-5" />
               <span>HACER PEDIDO EN LÍNEA</span>
               <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
-            </Link>
+            </RippleButton>
 
-            <button
+            <RippleButton
               onClick={() => setViewMode('carta')}
-              className="bg-oro text-negro hover:bg-oro/90 dark:hover:bg-oro/80 font-sans font-bold text-sm tracking-wider px-6 py-4 rounded-full border border-oro/30 transition-all flex items-center gap-2 shadow-lg"
+              className="bg-oro text-negro hover:bg-oro/90 dark:hover:bg-oro/80 font-sans font-bold text-sm tracking-wider px-6 py-4 rounded-full border border-oro/30 transition-colors flex items-center gap-2 shadow-lg"
             >
               <FileText className="w-4 h-4 text-negro" />
               <span>CARTA TRADICIONAL</span>
-            </button>
+            </RippleButton>
 
-            <a
-              href={generateWhatsAppUrl()}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="bg-limon text-black hover:bg-negro hover:text-white dark:hover:bg-negro dark:hover:text-blanco uppercase font-sans font-bold text-sm tracking-wider px-6 py-4 rounded-full border border-arena/20 transition-all flex items-center gap-2"
+            <RippleButton
+              onClick={handleWhatsAppOrder}
+              haptic
+              className="bg-limon text-black hover:bg-negro hover:text-white dark:hover:bg-negro dark:hover:text-blanco uppercase font-sans font-bold text-sm tracking-wider px-6 py-4 rounded-full border border-arena/20 transition-colors flex items-center gap-2"
             >
-              <MessageCircle className="w-4 h-4 fill-blanco" />
-              <span>POR WHATSAPP</span>
-            </a>
-          </div>
+              {waLoading ? (
+                <>
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600 animate-bounce" />
+                  <span>¡ABRIENDO WHATSAPP...</span>
+                </>
+              ) : (
+                <>
+                  <MessageCircle className="w-4 h-4 fill-blanco" />
+                  <span>POR WHATSAPP</span>
+                </>
+              )}
+            </RippleButton>
+          </motion.div>
         </div>
       </section>
 
       {/* 3. NAVEGACIÓN POR CATEGORÍAS */}
       {categorias.length > 0 && (
-        <section id="menu" className="sticky top-[65px] z-30 bg-[#EFEAE1] dark:bg-carbon border-b border-arena/30 dark:border-arena/10 px-6 py-4 transition-colors">
+        <section id="menu" className="sticky top-[60px] z-30 bg-[#EFEAE1] dark:bg-carbon border-b border-arena/30 dark:border-arena/10 px-6 py-4 transition-colors">
           <div className="max-w-7xl mx-auto flex items-center gap-3 overflow-x-auto no-scrollbar">
             <button
               onClick={() => setActiveCategory('all')}
@@ -357,9 +417,9 @@ export default function PublicMenuPage() {
         </section>
       )}
 
-      {/* 4. GRID DE PLATILLOS / SKELETON / ESTADO VACÍO */}
+      {/* 4. GRID DE PLATILLOS CON CARRUSEL MÓVIL (SWIPE SNAP) & DESKTOP ANIMADO */}
       <main className="max-w-7xl mx-auto px-6 py-12 w-full flex-1" id="menu">
-        {/* ESTADO CARGANDO (SKELETON GRID - LIMPIO EN LIGHT MODE Y DARK MODE) */}
+        {/* ESTADO CARGANDO (SKELETON GRID) */}
         {isLoading && (
           <div className="flex flex-col gap-8">
             <div className="h-8 w-48 bg-[#EBE5D8] dark:bg-carbon rounded-lg animate-pulse" />
@@ -414,7 +474,7 @@ export default function PublicMenuPage() {
           </div>
         )}
 
-        {/* LISTADO REAL DE PLATILLOS POR CATEGORÍA */}
+        {/* LISTADO REAL DE PLATILLOS POR CATEGORÍA CON ANIMACIONES Y SWIPE SNAP */}
         {!isLoading &&
           platillos.length > 0 &&
           (categorias.length > 0 ? categorias : [{ id: 1, nombre: 'Menú General', orden: 1 }])
@@ -436,16 +496,11 @@ export default function PublicMenuPage() {
                     </h3>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                    {catPlatillos.map((platillo, pIdx) => (
-                      <ProductCard
-                        key={platillo.id}
-                        platillo={platillo}
-                        onSelect={() => router.push('/pedir')}
-                        priority={pIdx < 3}
-                      />
-                    ))}
-                  </div>
+                  <DishCarouselSection
+                    platillos={catPlatillos}
+                    onSelect={() => router.push('/pedir')}
+                    categoryIndex={idx}
+                  />
                 </section>
               )
             })}
@@ -513,11 +568,7 @@ export default function PublicMenuPage() {
             <div className="flex flex-col gap-2 font-sans text-sm text-negro/80 dark:text-arena/80">
               <a href={generateWhatsAppUrl()} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 hover:text-turquesa transition-colors">
                 <MessageCircle className="w-4 h-4" />
-                <span>+52 (667) XXX-XXXX</span>
-              </a>
-              <a href="mailto:hola@mareanegra.com" className="flex items-center gap-2 hover:text-turquesa transition-colors">
-                <FileText className="w-4 h-4" />
-                <span>hola@mareanegra.com</span>
+                <span>+{process.env.NEXT_PUBLIC_WHATSAPP_NUMBER}</span>
               </a>
             </div>
           </div>
@@ -528,12 +579,8 @@ export default function PublicMenuPage() {
               UBICACIÓN
             </h4>
             <p className="font-sans text-sm text-negro/80 dark:text-arena/80 leading-relaxed max-w-[200px]">
-              Calle Falsa 123,<br />
-              Colonia Centro, Culiacán, Sin.
+              Al momento de hacer el pedido se compartirá la ubicación por whatsapp <br />
             </p>
-            <a href="https://maps.google.com" target="_blank" rel="noopener noreferrer" className="text-xs font-bold font-sans text-coral hover:text-coral/80 underline underline-offset-4 mt-1 transition-colors">
-              Ver en Google Maps
-            </a>
           </div>
 
           {/* Columna 4: Redes y Decoración */}
@@ -542,7 +589,7 @@ export default function PublicMenuPage() {
               SÍGUENOS
             </h4>
             <div className="flex items-center gap-4">
-              <a href="https://instagram.com" target="_blank" rel="noopener noreferrer" className="w-10 h-10 rounded-full bg-negro/5 dark:bg-carbon border border-arena/20 flex items-center justify-center hover:bg-turquesa hover:text-negro transition-all">
+              <a href="https://www.instagram.com/mareanegra.aguachiles" target="_blank" rel="noopener noreferrer" className="w-10 h-10 rounded-full bg-negro/5 dark:bg-carbon border border-arena/20 flex items-center justify-center hover:bg-turquesa hover:text-negro transition-all">
                 IG
               </a>
               <a href="https://facebook.com" target="_blank" rel="noopener noreferrer" className="w-10 h-10 rounded-full bg-negro/5 dark:bg-carbon border border-arena/20 flex items-center justify-center hover:bg-turquesa hover:text-negro transition-all">

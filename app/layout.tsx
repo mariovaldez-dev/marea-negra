@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from 'next'
 import { Bebas_Neue, Cormorant_Garamond, Space_Grotesk } from 'next/font/google'
 import { ThemeProvider } from '@/components/ui/ThemeProvider'
+import { CustomCursor } from '@/components/ui/CustomCursor'
 import './globals.css'
 
 const bebasNeue = Bebas_Neue({
@@ -81,6 +82,7 @@ export default function RootLayout({
         />
       </head>
       <body className="bg-[#F4F0E8] text-negro dark:bg-negro dark:text-blanco min-h-screen antialiased selection:bg-coral selection:text-blanco transition-colors duration-300">
+        <CustomCursor />
         <ThemeProvider>{children}</ThemeProvider>
       </body>
     </html>

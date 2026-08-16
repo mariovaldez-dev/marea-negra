@@ -2,11 +2,13 @@
 
 import React from 'react'
 import Link from 'next/link'
+import { motion, Variants } from 'framer-motion'
 
 interface BrandLogoProps {
   size?: 'sm' | 'md' | 'lg' | 'hero'
   stacked?: boolean
   withSubtext?: boolean
+  animated?: boolean
   className?: string
   href?: string
 }
@@ -15,10 +17,10 @@ export function BrandLogo({
   size = 'md',
   stacked = false,
   withSubtext = false,
+  animated = false,
   className = '',
   href = '/',
 }: BrandLogoProps) {
-  // Configuración de tamaños para el logo 3D estrujado
   const sizeClasses = {
     sm: 'text-2xl md:text-3xl leading-[0.88]',
     md: 'text-3xl md:text-4xl leading-[0.88]',
@@ -26,7 +28,6 @@ export function BrandLogo({
     hero: 'text-7xl md:text-9xl leading-[0.84]',
   }
 
-  // Sombras 3D escalonadas en tono Coral Quemado Terracota (#D93806 / #942905)
   const shadowStyleSmall = {
     textShadow: `
       1.5px 1.5px 0px #C23A0A,
@@ -49,40 +50,81 @@ export function BrandLogo({
 
   const activeShadow = size === 'hero' || size === 'lg' ? shadowStyleLarge : shadowStyleSmall
 
+  const letterVariants: Variants = {
+    hidden: { opacity: 0, y: 35 },
+    visible: (i: number) => ({
+      opacity: 1,
+      y: 0,
+      transition: {
+        delay: 0.15 + i * 0.04,
+        type: 'spring',
+        stiffness: 350,
+        damping: 20,
+      },
+    }),
+  }
+
+  const renderText = (text: string, startIndex = 0) => {
+    if (!animated) {
+      return (
+        <span
+          style={activeShadow}
+          className={`text-blanco font-bold tracking-wider ${sizeClasses[size]}`}
+        >
+          {text}
+        </span>
+      )
+    }
+
+    return (
+      <span
+        style={activeShadow}
+        className={`text-blanco font-bold tracking-wider inline-flex ${sizeClasses[size]}`}
+      >
+        {text.split('').map((char, idx) => (
+          <motion.span
+            key={idx}
+            custom={startIndex + idx}
+            variants={letterVariants}
+            initial="hidden"
+            animate="visible"
+            className="inline-block"
+          >
+            {char === ' ' ? '\u00A0' : char}
+          </motion.span>
+        ))}
+      </span>
+    )
+  }
+
   const logoContent = (
     <div className={`flex flex-col select-none group ${className}`}>
       {stacked ? (
-        // LOGO APILADO EN DOS LÍNEAS (IGUAL A TU IMAGEN DE REFERENCIA)
         <div className="flex flex-col items-start font-display uppercase tracking-tight">
-          <span
-            style={activeShadow}
-            className={`text-blanco font-bold tracking-wider ${sizeClasses[size]}`}
-          >
-            MAREA
-          </span>
-          <span
-            style={activeShadow}
-            className={`text-blanco font-bold tracking-wider ${sizeClasses[size]}`}
-          >
-            NEGRA
-          </span>
+          {renderText('MAREA', 0)}
+          {renderText('NEGRA', 5)}
         </div>
       ) : (
-        // LOGO EN UNA SOLA LÍNEA (PARA NAV BARS)
         <div className="flex items-center gap-2 font-display uppercase tracking-tight">
-          <span
-            style={activeShadow}
-            className={`text-blanco font-bold tracking-wider ${sizeClasses[size]}`}
-          >
-            MAREA NEGRA
-          </span>
+          {renderText('MAREA NEGRA', 0)}
         </div>
       )}
 
       {withSubtext && (
-        <span className="font-display font-bold text-coral text-2xl md:text-3xl tracking-[0.25em] uppercase mt-2 pl-2">
-          AGUACHILES
-        </span>
+        animated ? (
+          <motion.span
+            initial={{ opacity: 0, letterSpacing: '0.05em' }}
+            animate={{ opacity: 1, letterSpacing: '0.25em' }}
+            transition={{ delay: 0.85, duration: 0.6, ease: 'easeOut' }}
+            className="font-display font-bold text-coral text-2xl md:text-3xl uppercase mt-2 pl-2"
+          >
+            AGUACHILES
+          </motion.span>
+        ) : (
+          <span className="font-display font-bold text-coral text-2xl md:text-3xl tracking-[0.25em] uppercase mt-2 pl-2">
+            AGUACHILES
+          </span>
+        )
       )}
     </div>
   )
@@ -97,3 +139,4 @@ export function BrandLogo({
 
   return logoContent
 }
+
