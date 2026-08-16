@@ -263,7 +263,7 @@ export default function PublicMenuPage() {
                 <span>PEDIR POR WHATSAPP</span>
               </a>
 
-              <span className="text-[10px] font-serif italic text-arena/50 text-center">
+              <span className="text-[10px] font-sans italic text-arena/50 text-center">
                 Marea Negra · Sinaloa, México
               </span>
             </div>
@@ -494,7 +494,7 @@ export default function PublicMenuPage() {
       {/* FOOTER */}
       <footer className="bg-[#EFEAE1] dark:bg-[#050404] border-t border-arena/30 dark:border-arena/10 px-6 py-12 lg:py-16 mt-auto transition-colors">
         <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 lg:gap-8">
-          
+
           {/* Columna 1: Marca */}
           <div className="flex flex-col items-center md:items-start text-center md:text-left gap-4">
             <h4 className="font-display text-2xl text-negro dark:text-blanco tracking-wider">MAREA NEGRA</h4>

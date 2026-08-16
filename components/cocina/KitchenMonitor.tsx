@@ -15,6 +15,7 @@ import {
   Bell,
   RefreshCw,
   Megaphone,
+  X,
 } from 'lucide-react'
 
 interface KitchenMonitorProps {
@@ -30,6 +31,8 @@ const PICOR_EMOJIS: Record<string, string> = {
 
 export function KitchenMonitor({ initialPedidos }: KitchenMonitorProps) {
   const [pedidos, setPedidos] = useState<Pedido[]>(initialPedidos)
+  const [currentTime, setCurrentTime] = useState(new Date())
+  const [pedidoToReject, setPedidoToReject] = useState<Pedido | null>(null)
   const [soundEnabled, setSoundEnabled] = useState(false)
   const [lastNotification, setLastNotification] = useState<string | null>(null)
   const [isRefreshing, setIsRefreshing] = useState(false)
@@ -337,11 +340,7 @@ export function KitchenMonitor({ initialPedidos }: KitchenMonitorProps) {
 
                 {/* Botón secundario para rechazar comanda */}
                 <button
-                  onClick={() => {
-                    if (confirm(`¿Estás seguro de que deseas RECHAZAR la comanda #${pedido.id}?`)) {
-                      handleReject(pedido.id)
-                    }
-                  }}
+                  onClick={() => setPedidoToReject(pedido)}
                   className="w-full bg-carbon border border-red-900/50 text-red-500/70 hover:bg-red-900/20 hover:text-red-400 font-sans font-bold text-[10px] tracking-wider py-2 rounded-xl transition-all"
                 >
                   RECHAZAR COMANDA 🚫
@@ -361,6 +360,43 @@ export function KitchenMonitor({ initialPedidos }: KitchenMonitorProps) {
           <p className="font-sans italic text-sm text-arena/60">
             La pantalla se actualizará automáticamente y emitirá una alerta sonora en cuanto ingrese una comanda con picor configurado.
           </p>
+        </div>
+      )}
+
+      {/* MODAL PARA RECHAZAR PEDIDO EN COCINA */}
+      {pedidoToReject && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/90 backdrop-blur-md">
+          <div className="bg-[#111111] border border-coral/30 rounded-3xl w-full max-w-md overflow-hidden shadow-[0_0_50px_rgba(232,67,10,0.15)]">
+            <div className="p-8">
+              <div className="w-16 h-16 rounded-full bg-coral/10 flex items-center justify-center mx-auto mb-6 border border-coral/20">
+                <X className="w-8 h-8 text-coral" />
+              </div>
+              <h3 className="font-display text-3xl text-white mb-2 text-center">
+                ¿Rechazar Comanda <span className="text-coral">#{pedidoToReject.id}</span>?
+              </h3>
+              <p className="text-arena/70 font-sans text-base mb-8 text-center leading-relaxed">
+                Vas a cancelar la orden de <strong>{pedidoToReject.cliente_nombre}</strong>. Esta acción se reflejará en todo el sistema.
+              </p>
+              
+              <div className="flex flex-col gap-3">
+                <button
+                  onClick={() => {
+                    handleReject(pedidoToReject.id)
+                    setPedidoToReject(null)
+                  }}
+                  className="w-full py-4 font-sans font-bold text-sm text-white bg-coral hover:bg-coral/80 rounded-xl transition-colors uppercase tracking-wider"
+                >
+                  Confirmar Rechazo
+                </button>
+                <button
+                  onClick={() => setPedidoToReject(null)}
+                  className="w-full py-4 font-sans font-bold text-sm text-blanco bg-white/5 hover:bg-white/10 rounded-xl transition-colors uppercase tracking-wider"
+                >
+                  Volver a Cocina
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
       )}
     </div>

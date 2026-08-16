@@ -64,6 +64,7 @@ export function KanbanBoard({
   const [previewPedido, setPreviewPedido] = useState<Pedido | null>(null)
   const [showPrintModal, setShowPrintModal] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [pedidoToReject, setPedidoToReject] = useState<Pedido | null>(null)
 
   // Filtros de fecha (por defecto HOY en horario Mazatlán)
   const todayStr = getMazatlanTodayDateString()
@@ -423,9 +424,7 @@ export function KanbanBoard({
                                           <button
                                             onClick={(e) => {
                                               e.stopPropagation()
-                                              if (confirm(`¿Seguro que deseas RECHAZAR/CANCELAR el pedido #${pedido.id}?`)) {
-                                                handleStatusChange(pedido.id, 'cancelado')
-                                              }
+                                              setPedidoToReject(pedido)
                                             }}
                                             className="text-[10px] font-sans font-bold text-red-500/50 hover:text-red-400 hover:bg-red-900/30 px-1.5 py-0.5 rounded transition-all"
                                             title="Rechazar Comanda"
@@ -928,6 +927,43 @@ export function KanbanBoard({
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL PARA RECHAZAR PEDIDO */}
+      {pedidoToReject && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+          <div className="bg-[#111111] border border-coral/30 rounded-2xl w-full max-w-md overflow-hidden shadow-2xl">
+            <div className="p-6">
+              <div className="w-12 h-12 rounded-full bg-coral/10 flex items-center justify-center mb-4 border border-coral/20">
+                <X className="w-6 h-6 text-coral" />
+              </div>
+              <h3 className="font-display text-2xl text-white mb-2">
+                ¿Rechazar Comanda <span className="text-coral">#{pedidoToReject.id}</span>?
+              </h3>
+              <p className="text-arena/70 font-sans text-sm mb-6">
+                Estás a punto de cancelar la orden de <strong>{pedidoToReject.cliente_nombre}</strong>. Esta acción no se puede deshacer y el cliente no recibirá su pedido.
+              </p>
+              
+              <div className="flex justify-end gap-3">
+                <button
+                  onClick={() => setPedidoToReject(null)}
+                  className="px-4 py-2 font-sans font-bold text-sm text-blanco bg-white/5 hover:bg-white/10 rounded-lg transition-colors border border-white/10"
+                >
+                  Mantener Pedido
+                </button>
+                <button
+                  onClick={() => {
+                    handleStatusChange(pedidoToReject.id, 'cancelado')
+                    setPedidoToReject(null)
+                  }}
+                  className="px-4 py-2 font-sans font-bold text-sm text-white bg-coral hover:bg-coral/80 rounded-lg transition-colors shadow-[0_0_15px_rgba(232,67,10,0.3)]"
+                >
+                  Sí, Rechazar
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}
