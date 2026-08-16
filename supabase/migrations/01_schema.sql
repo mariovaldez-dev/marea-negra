@@ -41,6 +41,7 @@ create table if not exists pedidos (
   metodo_pago text check (metodo_pago in (
     'efectivo','transferencia','oxxo'
   )),
+  tipo_entrega text check (tipo_entrega in ('local', 'didi')) default 'local',
   hora_recogida time,
   total numeric(10,2),
   notas text,

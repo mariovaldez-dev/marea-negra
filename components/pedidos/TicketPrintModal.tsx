@@ -79,6 +79,9 @@ export function TicketPrintModal({ pedido, onClose }: TicketPrintModalProps) {
             {pedido.cliente_telefono && <div>TELÉFONO: {pedido.cliente_telefono}</div>}
             {pedido.hora_recogida && <div>RECOGIDA: {pedido.hora_recogida.slice(0, 5)} HRS</div>}
             <div>PAGO: {(pedido.metodo_pago || 'EFECTIVO').toUpperCase()}</div>
+            <div className="font-bold text-[11px] mt-1 pt-1 border-t border-black/10 border-dashed">
+              ENTREGA: {pedido.tipo_entrega === 'didi' ? 'MANDAR X DIDI/UBER' : 'RECOGER EN LOCAL'}
+            </div>
           </div>
 
           {/* TABLA ITEMS TICKET */}

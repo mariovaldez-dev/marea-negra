@@ -9,6 +9,7 @@ export async function createPublicPedido(formData: {
   cliente_nombre: string
   cliente_telefono: string
   metodo_pago: MetodoPago
+  tipo_entrega?: 'local' | 'didi'
   hora_recogida?: string
   notas?: string
   subtotal?: number
@@ -45,6 +46,7 @@ export async function createPublicPedido(formData: {
       cliente_telefono: formData.cliente_telefono,
       estado: 'nuevo',
       metodo_pago: formData.metodo_pago,
+      tipo_entrega: formData.tipo_entrega || 'local',
       hora_recogida: formData.hora_recogida || null,
       subtotal: rawSubtotal,
       descuento: discountAmount,
@@ -85,17 +87,22 @@ export async function createPublicPedido(formData: {
     throw new Error(`Error al registrar items del pedido: ${itemsErr.message}`)
   }
 
-  // 5. Disparar notificación a Telegram al celular del dueño
-  await sendTelegramOrderNotification({
-    id: pedido.id,
-    cliente_nombre: formData.cliente_nombre,
-    cliente_telefono: formData.cliente_telefono,
-    metodo_pago: formData.metodo_pago,
-    hora_recogida: formData.hora_recogida,
-    total: finalTotal,
-    notas: formData.notas,
-    items: formData.items,
-  })
+  // 5. Disparar notificación push FCM a administradores y empleados
+  const { data: tokens } = await supabase.from('fcm_tokens').select('token')
+  if (tokens && tokens.length > 0) {
+    const { enviarATodos } = await import('@/lib/firebase/admin')
+    await enviarATodos(
+      tokens.map((t) => t.token),
+      {
+        id: pedido.id,
+        cliente: formData.cliente_nombre,
+        total: finalTotal,
+        horaRecogida: formData.hora_recogida || null,
+        metodoPago: formData.metodo_pago,
+        items: formData.items.map((i) => i.nombre_platillo),
+      }
+    )
+  }
 
   revalidatePath('/admin/pedidos')
   revalidatePath('/admin/dashboard')

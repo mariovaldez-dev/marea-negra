@@ -8,6 +8,7 @@ import { UserRole } from '@/lib/types/database'
 import { ThemeToggle } from '@/components/ui/ThemeToggle'
 import { BrandLogo } from '@/components/ui/BrandLogo'
 import { RestauranteStateToggle } from '@/components/admin/RestauranteStateToggle'
+import { NotificationButton } from '@/components/ui/NotificationButton'
 import {
   LayoutDashboard,
   ShoppingBag,
@@ -191,23 +192,25 @@ export default function AdminLayout({
         {/* Footer Sidebar: Perfil y Logout */}
         <div className="pt-6 border-t border-arena/30 dark:border-arena/10 flex flex-col gap-3">
           <div className="flex items-center gap-3 px-2">
-            <div className="w-10 h-10 rounded-full bg-turquesa/10 border border-turquesa/30 text-turquesa flex items-center justify-center font-bold text-sm">
-              <UserCheck className="w-5 h-5" />
-            </div>
-            <div className="flex flex-col min-w-0">
-              <span className="font-sans font-bold text-sm text-negro dark:text-blanco truncate">
-                {userName}
-              </span>
-              <span className="text-xs font-sans text-turquesa font-semibold uppercase tracking-wider">
-                Rol: {role}
-              </span>
-            </div>
+          <div className="w-10 h-10 rounded-full bg-turquesa/10 border border-turquesa/30 text-turquesa flex items-center justify-center font-bold text-sm">
+            <UserCheck className="w-5 h-5" />
           </div>
+          <div className="flex flex-col min-w-0">
+            <span className="font-sans font-bold text-sm text-negro dark:text-blanco truncate">
+              {userName}
+            </span>
+            <span className="text-xs font-sans text-turquesa font-semibold uppercase tracking-wider">
+              Rol: {role}
+            </span>
+          </div>
+        </div>
 
-          <button
-            onClick={handleLogout}
-            className="flex items-center gap-2 px-3 py-2.5 text-sm font-sans font-semibold text-coral hover:bg-coral/10 rounded-xl transition-colors w-full mt-1"
-          >
+        <NotificationButton />
+
+        <button
+          onClick={handleLogout}
+          className="flex items-center gap-2 px-3 py-2.5 text-sm font-sans font-semibold text-coral hover:bg-coral/10 rounded-xl transition-colors w-full mt-1"
+        >
             <LogOut className="w-4 h-4" />
             <span>Cerrar Sesión</span>
           </button>

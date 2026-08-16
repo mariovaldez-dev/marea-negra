@@ -492,28 +492,79 @@ export default function PublicMenuPage() {
       )}
 
       {/* FOOTER */}
-      <footer className="bg-[#EBE5D8] dark:bg-[#050404] border-t border-arena/30 dark:border-arena/10 px-6 py-12 mt-auto transition-colors">
-        <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-8">
-          <div className="flex flex-col items-center md:items-start text-center md:text-left gap-2">
-            <h4 className="font-display text-3xl text-negro dark:text-blanco tracking-wider">
-              MAREA NEGRA
-            </h4>
-            <span className="font-serif italic text-sm text-coral">
-              — aguachiles & cocteles —
-            </span>
-            <p className="font-sans text-xs text-negro/60 dark:text-arena/50 mt-1">
-              Sinaloa, México · Pedidos en Línea con Nivel de Picor Personalizado
+      <footer className="bg-[#EFEAE1] dark:bg-[#050404] border-t border-arena/30 dark:border-arena/10 px-6 py-12 lg:py-16 mt-auto transition-colors">
+        <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 lg:gap-8">
+          
+          {/* Columna 1: Marca */}
+          <div className="flex flex-col items-center md:items-start text-center md:text-left gap-4">
+            <h4 className="font-display text-2xl text-negro dark:text-blanco tracking-wider">MAREA NEGRA</h4>
+            <p className="font-sans text-xs sm:text-sm text-negro/70 dark:text-arena/70 leading-relaxed max-w-xs">
+              Sinaloa, México.<br />
+              ¡Al vrgazo!, como nos gusta.<br />
+              Mariscos frescos y picor a tu medida.
             </p>
           </div>
 
-          <div className="flex items-center gap-3">
-            <span className="w-4 h-4 rounded-full bg-negro border border-arena/20" />
-            <span className="w-4 h-4 rounded-full bg-carbon border border-arena/20" />
-            <span className="w-4 h-4 rounded-full bg-coral" />
-            <span className="w-4 h-4 rounded-full bg-turquesa" />
-            <span className="w-4 h-4 rounded-full bg-arena" />
-            <span className="w-4 h-4 rounded-full bg-oro" />
+          {/* Columna 2: Contacto Rápido */}
+          <div className="flex flex-col items-center md:items-start text-center md:text-left gap-4">
+            <h4 className="font-display text-xl text-negro dark:text-blanco tracking-widest uppercase">
+              CONTACTO
+            </h4>
+            <div className="flex flex-col gap-2 font-sans text-sm text-negro/80 dark:text-arena/80">
+              <a href={generateWhatsAppUrl()} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 hover:text-turquesa transition-colors">
+                <MessageCircle className="w-4 h-4" />
+                <span>+52 (667) XXX-XXXX</span>
+              </a>
+              <a href="mailto:hola@mareanegra.com" className="flex items-center gap-2 hover:text-turquesa transition-colors">
+                <FileText className="w-4 h-4" />
+                <span>hola@mareanegra.com</span>
+              </a>
+            </div>
           </div>
+
+          {/* Columna 3: Ubicación */}
+          <div className="flex flex-col items-center md:items-start text-center md:text-left gap-4">
+            <h4 className="font-display text-xl text-negro dark:text-blanco tracking-widest uppercase">
+              UBICACIÓN
+            </h4>
+            <p className="font-sans text-sm text-negro/80 dark:text-arena/80 leading-relaxed max-w-[200px]">
+              Calle Falsa 123,<br />
+              Colonia Centro, Culiacán, Sin.
+            </p>
+            <a href="https://maps.google.com" target="_blank" rel="noopener noreferrer" className="text-xs font-bold font-sans text-coral hover:text-coral/80 underline underline-offset-4 mt-1 transition-colors">
+              Ver en Google Maps
+            </a>
+          </div>
+
+          {/* Columna 4: Redes y Decoración */}
+          <div className="flex flex-col items-center md:items-start text-center md:text-left gap-6">
+            <h4 className="font-display text-xl text-negro dark:text-blanco tracking-widest uppercase">
+              SÍGUENOS
+            </h4>
+            <div className="flex items-center gap-4">
+              <a href="https://instagram.com" target="_blank" rel="noopener noreferrer" className="w-10 h-10 rounded-full bg-negro/5 dark:bg-carbon border border-arena/20 flex items-center justify-center hover:bg-turquesa hover:text-negro transition-all">
+                IG
+              </a>
+              <a href="https://facebook.com" target="_blank" rel="noopener noreferrer" className="w-10 h-10 rounded-full bg-negro/5 dark:bg-carbon border border-arena/20 flex items-center justify-center hover:bg-turquesa hover:text-negro transition-all">
+                FB
+              </a>
+            </div>
+
+            <div className="flex items-center gap-2 mt-2">
+              <span className="w-3 h-3 rounded-full bg-negro border border-arena/20" />
+              <span className="w-3 h-3 rounded-full bg-carbon border border-arena/20" />
+              <span className="w-3 h-3 rounded-full bg-coral" />
+              <span className="w-3 h-3 rounded-full bg-turquesa" />
+              <span className="w-3 h-3 rounded-full bg-arena" />
+              <span className="w-3 h-3 rounded-full bg-oro" />
+            </div>
+          </div>
+
+        </div>
+
+        <div className="max-w-7xl mx-auto border-t border-arena/30 dark:border-arena/10 mt-10 pt-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs font-sans text-negro/50 dark:text-arena/40">
+          <span>&copy; {new Date().getFullYear()} Marea Negra. Todos los derechos reservados.</span>
+          <span>Sinaloa, México.</span>
         </div>
       </footer>
 

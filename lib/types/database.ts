@@ -4,6 +4,8 @@ export type EstadoPedido = 'nuevo' | 'preparando' | 'listo' | 'entregado' | 'can
 
 export type MetodoPago = 'efectivo' | 'transferencia' | 'oxxo'
 
+export type TipoEntrega = 'local' | 'didi'
+
 export type TipoMovimiento = 'entrada' | 'salida'
 
 export type NivelPicor = 'suave' | 'medio' | 'bravo' | 'sin_chile'
@@ -50,6 +52,7 @@ export interface Pedido {
   cliente_telefono: string | null
   estado: EstadoPedido
   metodo_pago: MetodoPago | null
+  tipo_entrega?: TipoEntrega
   hora_recogida: string | null
   subtotal?: number | null
   descuento?: number | null

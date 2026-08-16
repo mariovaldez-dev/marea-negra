@@ -427,6 +427,13 @@ export function KanbanBoard({
                                   </span>
                                 </div>
 
+                                {/* Badge de Envío */}
+                                {pedido.tipo_entrega === 'didi' && (
+                                  <div className="bg-oro/20 border border-oro text-oro font-sans font-bold text-[10px] px-2 py-1 rounded-md uppercase tracking-wider flex items-center justify-center gap-1.5 shadow-sm -mt-1 mb-1">
+                                    <span>🛵 ENVÍO POR DIDI (COBRAR ENVÍO)</span>
+                                  </div>
+                                )}
+
                                 {/* Items de la comanda */}
                                 {pedido.pedido_items && pedido.pedido_items.length > 0 && (
                                   <div className="flex flex-col gap-1 py-2 border-y border-arena/10 my-0.5">
@@ -581,6 +588,13 @@ export function KanbanBoard({
                 <span className="font-bold text-sm text-oro uppercase flex items-center gap-1.5">
                   <DollarSign className="w-3.5 h-3.5" />
                   {previewPedido.metodo_pago || 'Efectivo'}
+                </span>
+              </div>
+
+              <div className="flex flex-col gap-1">
+                <span className="text-arena/50 uppercase font-bold">Tipo Entrega:</span>
+                <span className={`font-bold text-sm uppercase flex items-center gap-1.5 ${previewPedido.tipo_entrega === 'didi' ? 'text-oro' : 'text-blanco'}`}>
+                  {previewPedido.tipo_entrega === 'didi' ? '🛵 ENVÍO POR DIDI' : '🚗 RECOGER EN LOCAL'}
                 </span>
               </div>
 

@@ -151,6 +151,23 @@ export async function createNuevoPedido(formData: {
     throw new Error(`Error al insertar detalles del pedido: ${itemsErr.message}`)
   }
 
+  // 3. Disparar notificación push FCM a administradores y empleados
+  const { data: tokens } = await supabase.from('fcm_tokens').select('token')
+  if (tokens && tokens.length > 0) {
+    const { enviarATodos } = await import('@/lib/firebase/admin')
+    await enviarATodos(
+      tokens.map((t) => t.token),
+      {
+        id: pedido.id,
+        cliente: formData.cliente_nombre,
+        total,
+        horaRecogida: formData.hora_recogida || null,
+        metodoPago: formData.metodo_pago,
+        items: formData.items.map((i) => i.nombre_platillo),
+      }
+    )
+  }
+
   revalidatePath('/admin/pedidos')
   revalidatePath('/admin/dashboard')
   revalidatePath('/admin/inventario')

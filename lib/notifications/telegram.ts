@@ -3,6 +3,7 @@ export async function sendTelegramOrderNotification(pedido: {
   cliente_nombre: string
   cliente_telefono?: string | null
   metodo_pago?: string | null
+  tipo_entrega?: string | null
   hora_recogida?: string | null
   total: number
   notas?: string | null
@@ -41,7 +42,8 @@ export async function sendTelegramOrderNotification(pedido: {
   
 👤 *Cliente:* ${pedido.cliente_nombre}
 📞 *Teléfono:* ${pedido.cliente_telefono || 'No especificado'}
-⏰ *Hora Recogida:* ${pedido.hora_recogida ? `${pedido.hora_recogida.slice(0, 5)} hrs` : 'Lo antes posible'}
+🚚 *Tipo de Entrega:* ${pedido.tipo_entrega === 'didi' ? 'Mandar por DiDi/Uber' : 'Recoger en Local'}
+⏰ *Hora:* ${pedido.hora_recogida ? `${pedido.hora_recogida.slice(0, 5)} hrs` : 'Lo antes posible'}
 💳 *Método de Pago:* ${pedido.metodo_pago ? pedido.metodo_pago.toUpperCase() : 'Efectivo'}
 
 📋 *DETALLE DE COMANDA:*

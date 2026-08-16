@@ -165,6 +165,7 @@ export function OrderStepper({
 
   const [clienteNombre, setClienteNombre] = useState('')
   const [clienteTelefono, setClienteTelefono] = useState('')
+  const [tipoEntrega, setTipoEntrega] = useState<'local' | 'didi'>('local')
   const [metodoPago, setMetodoPago] = useState<MetodoPago>('efectivo')
   const [horaRecogida, setHoraRecogida] = useState('')
   const [notasGenerales, setNotasGenerales] = useState('')
@@ -410,6 +411,7 @@ export function OrderStepper({
       const res = await createPublicPedido({
         cliente_nombre: clienteNombre,
         cliente_telefono: clienteTelefono,
+        tipo_entrega: tipoEntrega,
         metodo_pago: metodoPago,
         hora_recogida: horaRecogida,
         notas: `${notasGenerales ? `${notasGenerales} ` : ''}${appliedCoupon ? `[Cupón: ${appliedCoupon} -${discountPercent}%]` : ''}`.trim(),
@@ -420,18 +422,20 @@ export function OrderStepper({
         items: orderItems,
       })
 
-      if (res.data) {
+      console.log('Respuesta del servidor:', res)
+
+      if (res && res.success) {
         if (typeof window !== 'undefined') {
           localStorage.removeItem('marea_cart_items')
         }
-        setCompletedOrderNum(res.data.id)
+        setCompletedOrderNum(res.pedidoId)
         setCurrentStep(4)
       } else {
-        alert('Ocurrió un error al guardar el pedido.')
+        alert('Ocurrió un error al guardar el pedido. ' + JSON.stringify(res))
       }
-    } catch (err) {
-      console.error(err)
-      alert('Error de conexión al procesar el pedido.')
+    } catch (err: any) {
+      console.error('Error completo:', err)
+      alert('Error de conexión al procesar el pedido: ' + (err?.message || 'Error desconocido'))
     } finally {
       setIsSubmitting(false)
     }
@@ -451,7 +455,7 @@ export function OrderStepper({
       )
       .join('\n')
 
-    const message = `Hola Marea Negra! Acabo de hacer el Pedido #${completedOrderNum} en línea:\n\n${itemText}\n\nTotal: $${totalOrderPrice.toFixed(0)} MXN\nCliente: ${clienteNombre}\nTeléfono: ${clienteTelefono}\nMétodo de Pago: ${metodoPago.toUpperCase()}\nHora Recogida: ${horaRecogida || 'Lo antes posible'}`
+    const message = `Hola Marea Negra! Acabo de hacer el Pedido #${completedOrderNum} en línea:\n\n${itemText}\n\nTotal: $${totalOrderPrice.toFixed(0)} MXN\nCliente: ${clienteNombre}\nTeléfono: ${clienteTelefono}\nMétodo de Pago: ${metodoPago.toUpperCase()}\nEntrega: ${tipoEntrega === 'didi' ? 'Envío por DiDi/Uber' : 'Recoger en Local'}\nHora: ${horaRecogida || 'Lo antes posible'}`
 
     return generateWhatsAppMessageUrl(message)
   }
@@ -827,7 +831,58 @@ export function OrderStepper({
                 )}
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {/* SELECTOR DE TIPO DE ENTREGA */}
+              <div className="flex flex-col gap-2 mt-2">
+                <label className="text-xs font-sans uppercase font-bold text-negro/80 dark:text-arena/90 flex items-center gap-1.5">
+                  <ShoppingBag className="w-4 h-4 text-turquesa" />
+                  <span>Método de Entrega</span>
+                </label>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div
+                    onClick={() => setTipoEntrega('local')}
+                    className={`flex flex-col items-center justify-center p-4 rounded-2xl border-2 transition-all cursor-pointer ${
+                      tipoEntrega === 'local'
+                        ? 'border-turquesa bg-turquesa/10 dark:bg-turquesa/5'
+                        : 'border-arena/30 dark:border-arena/20 bg-[#F4F0E8] dark:bg-carbon hover:border-turquesa/50'
+                    }`}
+                  >
+                    <span className="text-3xl mb-1">🚗</span>
+                    <span className={`font-sans font-bold text-sm tracking-wide ${tipoEntrega === 'local' ? 'text-turquesa' : 'text-negro dark:text-blanco'}`}>
+                      RECOGER EN LOCAL
+                    </span>
+                    <span className="text-[10px] font-sans text-center text-negro/60 dark:text-arena/60 mt-1">
+                      Paso por el pedido a la hora acordada
+                    </span>
+                  </div>
+
+                  <div
+                    onClick={() => setTipoEntrega('didi')}
+                    className={`flex flex-col items-center justify-center p-4 rounded-2xl border-2 transition-all cursor-pointer ${
+                      tipoEntrega === 'didi'
+                        ? 'border-oro bg-oro/10 dark:bg-oro/5'
+                        : 'border-arena/30 dark:border-arena/20 bg-[#F4F0E8] dark:bg-carbon hover:border-oro/50'
+                    }`}
+                  >
+                    <span className="text-3xl mb-1">🛵</span>
+                    <span className={`font-sans font-bold text-sm tracking-wide ${tipoEntrega === 'didi' ? 'text-oro' : 'text-negro dark:text-blanco'}`}>
+                      ENVÍO POR DIDI/UBER
+                    </span>
+                    <span className="text-[10px] font-sans text-center text-negro/60 dark:text-arena/60 mt-1">
+                      Mandamos tu pedido (Tú le pagas el viaje al repartidor)
+                    </span>
+                  </div>
+                </div>
+                {tipoEntrega === 'didi' && (
+                  <div className="bg-oro/10 border border-oro/30 rounded-xl p-3 flex items-start gap-2 mt-1">
+                    <AlertCircle className="w-4 h-4 text-oro shrink-0 mt-0.5" />
+                    <span className="text-[11px] font-sans text-negro dark:text-arena/90 leading-relaxed">
+                      <strong>Nota importante:</strong> Por favor especifica tu dirección exacta en las <b>Notas Generales</b> abajo para poder enviarte el repartidor. El costo del viaje no está incluido y deberás pagarlo en efectivo al conductor.
+                    </span>
+                  </div>
+                )}
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-2">
                 <div className="flex flex-col gap-1.5">
                   <label className="text-xs font-sans uppercase font-bold text-negro/80 dark:text-arena/90 flex items-center gap-1.5">
                     <CreditCard className="w-4 h-4 text-turquesa" />
@@ -847,7 +902,7 @@ export function OrderStepper({
                 <div className="flex flex-col gap-1.5">
                   <label className="text-xs font-sans uppercase font-bold text-negro/80 dark:text-arena/90 flex items-center gap-1.5">
                     <Clock className="w-4 h-4 text-turquesa" />
-                    <span>Hora Estimada Recogida</span>
+                    <span>{tipoEntrega === 'local' ? 'Hora Estimada Recogida' : 'Hora de Preparación/Envío'}</span>
                   </label>
                   <input
                     type="time"

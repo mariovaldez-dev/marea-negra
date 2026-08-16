@@ -15,6 +15,7 @@ import {
 } from 'lucide-react'
 import { Pedido, Insumo } from '@/lib/types/database'
 import { NotificationPermissionBanner } from '@/components/admin/NotificationPermissionBanner'
+import { PwaOnboardingCard } from '@/components/admin/PwaOnboardingCard'
 
 export const revalidate = 0 // Server component siempre fresco
 
@@ -89,6 +90,8 @@ export default async function DashboardPage() {
           </Link>
         </div>
       </div>
+
+      <PwaOnboardingCard />
 
       {/* BANNER NOTIFICACIONES NATIVAS DE NAVEGADOR (SAFARI, CHROME, BRAVE) */}
       <NotificationPermissionBanner />
