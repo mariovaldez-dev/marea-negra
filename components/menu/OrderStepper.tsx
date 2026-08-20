@@ -279,18 +279,10 @@ export function OrderStepper({
   useEffect(() => {
     if (typeof window === 'undefined') return
     try {
-      const savedUserCoupons = localStorage.getItem('marea_user_coupons')
-      const parsedUser = savedUserCoupons ? JSON.parse(savedUserCoupons) : []
       const activePhone = clienteTelefono || localStorage.getItem('marea_cliente_telefono') || ''
 
       getAvailableCuponesPublic(activePhone).then((sysCoupons) => {
-        const combined = [...parsedUser]
-        sysCoupons.forEach((sys) => {
-          if (!combined.some((c) => c.codigo === sys.codigo)) {
-            combined.push(sys)
-          }
-        })
-        setUserAvailableCoupons(combined)
+        setUserAvailableCoupons(sysCoupons || [])
       })
     } catch (e) {
       console.warn('Error cargando cupones disponibles:', e)

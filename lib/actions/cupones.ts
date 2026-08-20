@@ -18,7 +18,7 @@ export interface AvailableCouponPublic {
   codigo: string
   descuento: number
   titulo: string
-  tipo: 'promocional' | 'lealtad'
+  tipo: 'promocional' | 'lealtad' | 'bienvenida'
 }
 
 /**
@@ -245,17 +245,23 @@ export async function getAvailableCuponesPublic(clienteTelefono?: string): Promi
   const supabase = createServerClient()
   const availableList: AvailableCouponPublic[] = []
   const now = new Date()
+  const cleanPhone = (clienteTelefono || '').replace(/\D/g, '')
 
-  // 1. Obtener cupones promocionales activos del catálogo en BDD
+  // 1. Obtener cupones promocionales GLOBALES / PÚBLICOS (creados para toda la clientela)
+  // Excluimos cupones personales que empiezan con 'BIENVENIDO-', 'MAREA-', 'LEALTAD-', 'RECOMPENSA-'
   const { data: dbCupones } = await supabase
     .from('cupones')
     .select('id, codigo, descuento_porcentaje, usos_maximos, usos_actuales, fecha_expiracion')
     .eq('activo', true)
+    .not('codigo', 'ilike', 'BIENVENIDO-%')
+    .not('codigo', 'ilike', 'MAREA-%')
+    .not('codigo', 'ilike', 'LEALTAD-%')
+    .not('codigo', 'ilike', 'RECOMPENSA-%')
+    .neq('codigo', 'CONFIG_LEALTAD_SINALOA')
     .order('descuento_porcentaje', { ascending: false })
 
   if (dbCupones) {
     dbCupones
-      .filter((c) => !c.codigo.startsWith('LEALTAD-') && !c.codigo.startsWith('RECOMPENSA-') && c.codigo !== 'CONFIG_LEALTAD_SINALOA')
       .filter((c) => c.usos_maximos === null || (c.usos_actuales || 0) < c.usos_maximos)
       .filter((c) => !c.fecha_expiracion || new Date(c.fecha_expiracion) > now)
       .forEach((c) => {
@@ -268,17 +274,48 @@ export async function getAvailableCuponesPublic(clienteTelefono?: string): Promi
       })
   }
 
-  // 2. Solo si el cliente está registrado en el Club Marea Negra, consultar recompensas alcanzadas por sus compras reales en BDD
-  const cleanPhone = (clienteTelefono || '').replace(/\D/g, '')
-  if (cleanPhone) {
+  // 2. Si el cliente tiene teléfono registrado, consultar EXCLUSIVAMENTE sus cupones asignados personales
+  if (cleanPhone && cleanPhone.length >= 7) {
     const { data: clienteReg } = await supabase
       .from('clientes_club')
-      .select('id')
+      .select('id, nombre, codigo_referido')
       .eq('telefono', cleanPhone)
       .single()
 
-    // Únicamente los usuarios registrados en el Club pueden recibir cupones de lealtad al llegar al límite de sus compras
     if (clienteReg) {
+      const cleanName = clienteReg.nombre?.trim().replace(/\s+/g, '').slice(0, 4).toUpperCase() || ''
+
+      // A) Buscar el cupón de bienvenida exclusivo de este cliente (BIENVENIDO-{cleanName}-%)
+      let welcomeQuery = supabase
+        .from('cupones')
+        .select('id, codigo, descuento_porcentaje, usos_maximos, usos_actuales, fecha_expiracion')
+        .eq('activo', true)
+
+      if (cleanName) {
+        welcomeQuery = welcomeQuery.ilike('codigo', `BIENVENIDO-${cleanName}-%`)
+      } else {
+        welcomeQuery = welcomeQuery.ilike('codigo', 'BIENVENIDO-%')
+      }
+
+      const { data: personalWelcome } = await welcomeQuery
+
+      if (personalWelcome) {
+        personalWelcome
+          .filter((c) => c.usos_maximos === null || (c.usos_actuales || 0) < c.usos_maximos)
+          .filter((c) => !c.fecha_expiracion || new Date(c.fecha_expiracion) > now)
+          .forEach((c) => {
+            if (!availableList.some((item) => item.codigo === c.codigo)) {
+              availableList.unshift({
+                codigo: c.codigo,
+                descuento: Number(c.descuento_porcentaje) || 10,
+                titulo: '🎁 Tu Cupón Personal de Bienvenida (10% OFF)',
+                tipo: 'bienvenida',
+              })
+            }
+          })
+      }
+
+      // B) Recompensas por compras de Lealtad alcanzadas por este cliente en BDD
       const recompensasLealtad = await getRecompensasLealtadList()
       if (recompensasLealtad.length > 0) {
         const { data: pedidosCliente } = await supabase
@@ -288,7 +325,6 @@ export async function getAvailableCuponesPublic(clienteTelefono?: string): Promi
 
         const totalOrders = pedidosCliente?.length || 0
 
-        // Desbloquear únicamente las recompensas alcanzadas al cumplir la meta de pedidos
         recompensasLealtad.forEach((reward) => {
           if (reward.activo !== false && totalOrders >= reward.pedidos_requeridos) {
             availableList.unshift({
