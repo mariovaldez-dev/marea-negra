@@ -18,7 +18,7 @@ export default async function PedirOnlinePage() {
   try {
     const [catRes, platRes, estadoRes] = await Promise.all([
       supabase.from('categorias').select('*').order('orden', { ascending: true }),
-      supabase.from('platillos').select('*').eq('disponible', true).order('id', { ascending: true }),
+      supabase.from('platillos').select('*').order('id', { ascending: true }),
       getEstadoRestaurante(),
     ])
 

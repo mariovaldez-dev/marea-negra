@@ -28,6 +28,41 @@ export function formatPrice(val: number | string | null | undefined): string {
 }
 
 /**
+ * Normaliza y convierte de forma segura cualquier formato de array de días (Postgres text[], JSON string, CSV o Array).
+ */
+export function parseDiasPromo(dias: any): string[] {
+  if (!dias) return []
+  if (Array.isArray(dias)) {
+    return dias
+      .map((d) =>
+        String(d)
+          .toLowerCase()
+          .trim()
+          .normalize('NFD')
+          .replace(/[\u0300-\u036f]/g, '')
+      )
+      .filter(Boolean)
+  }
+  if (typeof dias === 'string') {
+    // Manejar formato Postgres "{lunes,viernes}" o JSON '["lunes"]' o separado por comas
+    const cleaned = dias.replace(/^\{|\}$|^\[|\]$/g, '')
+    if (!cleaned.trim()) return []
+    return cleaned
+      .split(',')
+      .map((d) =>
+        d
+          .replace(/["']/g, '')
+          .toLowerCase()
+          .trim()
+          .normalize('NFD')
+          .replace(/[\u0300-\u036f]/g, '')
+      )
+      .filter(Boolean)
+  }
+  return []
+}
+
+/**
  * Obtiene el identificador del día de la semana actual en la zona horaria de Sinaloa (America/Mazatlan).
  */
 export function getCurrentDayId(): string {
@@ -64,7 +99,12 @@ export function isPromoItem(platillo: Partial<Platillo>): boolean {
   if (!platillo) return false
   const pAnterior = parsePrice(platillo.precio_anterior)
   const pActual = parsePrice(platillo.precio)
-  const esPromoFlag = platillo.es_promocion === true || String(platillo.es_promocion) === 'true'
+  const esPromoRaw = platillo.es_promocion
+  const esPromoFlag =
+    esPromoRaw === true ||
+    String(esPromoRaw).toLowerCase() === 'true' ||
+    String(esPromoRaw) === 't' ||
+    String(esPromoRaw) === '1'
 
   return Boolean(
     esPromoFlag ||
@@ -79,19 +119,13 @@ export function isPromoItem(platillo: Partial<Platillo>): boolean {
 export function isPromoActiveToday(platillo: Partial<Platillo>): boolean {
   if (!isPromoItem(platillo)) return false
 
-  // Si no se especificó un arreglo de días, o está vacío, aplica todos los días por defecto
-  if (!platillo.dias_promo || platillo.dias_promo.length === 0) return true
+  const dias = parseDiasPromo(platillo.dias_promo)
+  // Si no se configuraron días específicos o está vacío, aplica todos los días por defecto
+  if (dias.length === 0) return true
 
   const today = getCurrentDayId().toLowerCase().trim()
-  const normalizedDays = platillo.dias_promo.map((d) =>
-    String(d)
-      .toLowerCase()
-      .trim()
-      .normalize('NFD')
-      .replace(/[\u0300-\u036f]/g, '')
-  )
 
-  return normalizedDays.some(
+  return dias.some(
     (d) => d === today || d === today.substring(0, 3) || today.startsWith(d)
   )
 }
@@ -103,7 +137,7 @@ export function isPromoActiveToday(platillo: Partial<Platillo>): boolean {
 export function getPromoBannerText(platillo: Partial<Platillo>): string {
   if (!isPromoItem(platillo)) return ''
 
-  const dias = platillo.dias_promo || []
+  const dias = parseDiasPromo(platillo.dias_promo)
   let textoDias = ''
 
   if (dias.length === 0 || dias.length === 7) {
