@@ -32,7 +32,26 @@ export function ProductCard({
   const [imageLoaded, setImageLoaded] = useState(isCached)
   const [zoomImageLoaded, setZoomImageLoaded] = useState(isCached)
 
-  const handleOpenZoom = () => {
+  const lastCloseRef = React.useRef<number>(0)
+
+  const handleCloseZoom = (e?: React.MouseEvent) => {
+    if (e) {
+      e.preventDefault()
+      e.stopPropagation()
+    }
+    lastCloseRef.current = Date.now()
+    setIsZoomOpen(false)
+  }
+
+  const handleOpenZoom = (e?: React.MouseEvent) => {
+    if (e) {
+      e.stopPropagation()
+    }
+    // Evitar que el clic de cerrar el modal re-abra la tarjeta que está debajo (ghost click)
+    if (Date.now() - lastCloseRef.current < 400) {
+      return
+    }
+
     if (imageLoaded || (platillo.imagen_url && globalLoadedImages.has(platillo.imagen_url))) {
       setZoomImageLoaded(true)
     } else {
@@ -215,10 +234,21 @@ export function ProductCard({
 
       {/* MODAL LIGHTBOX FOTO HD CON VISTA RESPONSIVA DE 2 COLUMNAS EN DESKTOP */}
       {isZoomOpen && (
-        <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4 select-none animate-in fade-in duration-200">
-          <div className="bg-white text-negro dark:bg-[#050404] dark:text-blanco border border-arena/30 dark:border-oro/40 rounded-2xl w-full max-w-xl md:max-w-3xl lg:max-w-4xl p-6 gold-border-corner shadow-2xl relative flex flex-col md:grid md:grid-cols-2 gap-6 max-h-[92vh] overflow-y-auto transition-colors">
+        <div
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              handleCloseZoom(e)
+            }
+          }}
+          className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4 select-none animate-in fade-in duration-200"
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="bg-white text-negro dark:bg-[#050404] dark:text-blanco border border-arena/30 dark:border-oro/40 rounded-2xl w-full max-w-xl md:max-w-3xl lg:max-w-4xl p-6 gold-border-corner shadow-2xl relative flex flex-col md:grid md:grid-cols-2 gap-6 max-h-[92vh] overflow-y-auto transition-colors"
+          >
             <button
-              onClick={() => setIsZoomOpen(false)}
+              type="button"
+              onClick={(e) => handleCloseZoom(e)}
               className="absolute top-4 right-4 z-30 p-2 text-negro/60 dark:text-arena/60 hover:text-coral dark:hover:text-blanco rounded-full hover:bg-arena/20 dark:hover:bg-carbon transition-colors"
             >
               <X className="w-6 h-6" />
@@ -319,9 +349,9 @@ export function ProductCard({
                 {onSelect && isAvailable && (
                   <button
                     type="button"
-                    onClick={() => {
+                    onClick={(e) => {
+                      handleCloseZoom(e)
                       onSelect(platillo)
-                      setIsZoomOpen(false)
                     }}
                     className="flex-1 bg-turquesa text-negro font-sans font-bold text-xs md:text-sm py-4 px-6 rounded-xl hover:bg-negro hover:text-blanco dark:hover:bg-blanco dark:hover:text-negro transition-all flex items-center justify-center gap-2 shadow-lg"
                   >
@@ -332,7 +362,7 @@ export function ProductCard({
 
                 <button
                   type="button"
-                  onClick={() => setIsZoomOpen(false)}
+                  onClick={(e) => handleCloseZoom(e)}
                   className="bg-[#F4F0E8] dark:bg-carbon text-negro dark:text-blanco font-sans font-bold text-xs py-4 px-6 rounded-xl border border-arena/30 dark:border-arena/20 hover:bg-arena/20"
                 >
                   CERRAR
