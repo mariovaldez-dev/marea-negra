@@ -102,7 +102,7 @@ export default function LoginClientePage() {
   return (
     <div className="min-h-screen bg-[#F4F0E8] dark:bg-negro text-negro dark:text-blanco flex flex-col justify-between selection:bg-coral transition-colors duration-300">
       {/* HEADER */}
-      <header className="sticky top-0 z-40 bg-[#F4F0E8] dark:bg-negro border-b border-arena/30 dark:border-arena/10 px-6 py-4 pt-[calc(1rem+env(safe-area-inset-top,0px))]">
+      <header className="sticky top-0 z-40 bg-[#F4F0E8] dark:bg-negro border-b border-arena/30 dark:border-arena/10 px-6 py-3 safe-header transition-colors">
         <div className="max-w-4xl mx-auto flex items-center justify-between">
           <button
             onClick={handleBack}

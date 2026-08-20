@@ -34,7 +34,7 @@ export function TraditionalMenuBoard({
   return (
     <div className="min-h-screen bg-[#F4F0E8] text-negro dark:bg-[#080808] dark:text-blanco p-4 sm:p-8 flex flex-col items-center selection:bg-coral transition-colors">
       {/* BARRA DE HERRAMIENTAS SUPERIOR */}
-      <div className="w-full max-w-4xl flex items-center justify-between gap-4 mb-8">
+      <div className="w-full max-w-4xl flex items-center justify-between gap-4 mb-8 safe-header">
         {onBackToInteractive ? (
           <button
             onClick={onBackToInteractive}

@@ -165,10 +165,11 @@ export default function PublicMenuPage() {
     <div className="min-h-screen bg-[#F4F0E8] dark:bg-negro text-negro dark:text-blanco flex flex-col justify-between selection:bg-coral transition-colors duration-300">
       {/* 1. HEADER CON BLUR AL SCROLL Y LOGO ADAPTABLE */}
       <header
-        className={`sticky top-0 z-40 px-6 py-3.5 pt-[calc(0.85rem+env(safe-area-inset-top,0px))] transition-all duration-300 ${isScrolled
-          ? 'bg-[#F4F0E8]/90 dark:bg-negro/90 backdrop-blur-md border-b border-arena/30 dark:border-arena/10 shadow-lg shadow-black/10'
-          : 'bg-transparent border-b border-transparent'
-          }`}
+        className={`sticky top-0 z-40 px-6 py-3 safe-header transition-all duration-300 ${
+          isScrolled
+            ? 'bg-[#F4F0E8]/95 dark:bg-negro/95 backdrop-blur-md border-b border-arena/30 dark:border-arena/10 shadow-lg shadow-black/10'
+            : 'bg-[#F4F0E8]/80 dark:bg-negro/80 backdrop-blur-sm border-b border-arena/20 dark:border-arena/10 md:bg-transparent md:border-transparent'
+        }`}
       >
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3">

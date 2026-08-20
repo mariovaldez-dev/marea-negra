@@ -549,7 +549,7 @@ export function OrderStepper({
   return (
     <div className="min-h-screen bg-[#F4F0E8] text-negro dark:bg-negro dark:text-blanco flex flex-col selection:bg-coral transition-colors">
       {/* HEADER DE STEPPER */}
-      <header className="sticky top-0 z-40 bg-[#F4F0E8] dark:bg-negro border-b border-arena/30 dark:border-arena/10 px-6 py-4 pt-[calc(1rem+env(safe-area-inset-top,0px))] transition-colors">
+      <header className="sticky top-0 z-40 bg-[#F4F0E8] dark:bg-negro border-b border-arena/30 dark:border-arena/10 px-6 py-3 safe-header transition-colors">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3">
             <button

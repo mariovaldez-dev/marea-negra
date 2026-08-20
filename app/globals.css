@@ -86,9 +86,19 @@
   }
 }
 
-/* Respetar Safe Area Top Inset en navegadores móviles (Safari iOS, Chrome Mobile) */
+/* Respetar Safe Area Top Inset en navegadores móviles y PWA instalada (iOS, Android, Dynamic Island) */
 .safe-top-inset {
   padding-top: max(1rem, env(safe-area-inset-top, 0px));
+}
+
+.safe-header {
+  padding-top: max(0.85rem, calc(env(safe-area-inset-top, 0px) + 0.65rem));
+}
+
+@media all and (display-mode: standalone) {
+  .safe-header {
+    padding-top: max(1.5rem, calc(env(safe-area-inset-top, 0px) + 0.95rem)) !important;
+  }
 }
 
 .safe-top-sticky {

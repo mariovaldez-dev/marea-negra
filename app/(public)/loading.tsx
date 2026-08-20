@@ -6,7 +6,7 @@ export default function PublicMenuLoading() {
   return (
     <div className="min-h-screen bg-[#F4F0E8] text-negro dark:bg-negro dark:text-blanco flex flex-col justify-between selection:bg-coral transition-colors duration-300">
       {/* HEADER SKELETON */}
-      <header className="sticky top-0 z-40 bg-[#F4F0E8] dark:bg-negro border-b border-arena/30 dark:border-arena/10 px-6 py-4">
+      <header className="sticky top-0 z-40 bg-[#F4F0E8] dark:bg-negro border-b border-arena/30 dark:border-arena/10 px-6 py-3 safe-header">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <div className="h-8 bg-arena/30 dark:bg-carbon/80 rounded-md w-36 animate-pulse" />
           <div className="flex items-center gap-3">
