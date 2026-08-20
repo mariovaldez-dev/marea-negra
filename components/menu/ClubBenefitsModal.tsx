@@ -106,7 +106,7 @@ export function ClubBenefitsModal({
             <CheckCircle2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-turquesa dark:text-limon shrink-0" />
             <div className="flex flex-col">
               <span className="font-sans font-bold text-negro dark:text-blanco leading-none">Cupón Personal Único del 10% OFF</span>
-              <span className="text-negro/70 dark:text-arena/70 font-sans italic text-[9px] sm:text-[11px]">Válido en tu próximo pedido de aguachiles o cocteles.</span>
+              <span className="text-negro/70 dark:text-arena/70 font-sans italic text-[9px] sm:text-[11px]">Válido en platillos a precio regular en tu próximo pedido.</span>
             </div>
           </div>
 

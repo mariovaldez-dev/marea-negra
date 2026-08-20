@@ -321,10 +321,20 @@ export function OrderStepper({
     0
   )
 
+  // Subtotal de platillos regulares (excluye combos y promociones activas)
+  const regularSubtotal = cart.reduce((sum, item) => {
+    const isPromo = isPromoActiveToday(item.platillo)
+    return isPromo ? sum : sum + item.platillo.precio * item.cantidad
+  }, 0)
+
+  const promoSubtotal = rawSubtotal - regularSubtotal
+  const hasPromoInCart = promoSubtotal > 0
+
   const [fixedDiscount, setFixedDiscount] = useState<number>(0)
   const [appliedGiftProduct, setAppliedGiftProduct] = useState<string | null>(null)
 
-  const percentDiscountAmount = (rawSubtotal * discountPercent) / 100
+  // El descuento porcentual (ej. 10% de bienvenida) aplica exclusivamente a platillos regulares a precio de lista
+  const percentDiscountAmount = (regularSubtotal * discountPercent) / 100
   const discountAmount = Math.min(rawSubtotal, percentDiscountAmount + fixedDiscount)
   const totalOrderPrice = Math.max(0, rawSubtotal - discountAmount)
   const totalItemCount = cart.reduce((sum, item) => sum + item.cantidad, 0)
@@ -456,7 +466,11 @@ export function OrderStepper({
       )
       .join('\n')
 
-    const message = `Hola Marea Negra! Acabo de hacer el Pedido #${completedOrderNum} en línea:\n\n${itemText}\n\nTotal: $${totalOrderPrice.toFixed(0)} MXN\nCliente: ${clienteNombre}\nTeléfono: ${clienteTelefono}\nMétodo de Pago: ${metodoPago.toUpperCase()}\nEntrega: ${tipoEntrega === 'didi' ? 'Envío por DiDi/Uber' : 'Recoger en Local'}\nHora: ${horaRecogida || 'Lo antes posible'}`
+    const message = `Hola Marea Negra! Acabo de hacer el Pedido #${completedOrderNum} en línea:\n\n${itemText}\n\n${
+      discountAmount > 0
+        ? `Subtotal: $${rawSubtotal.toFixed(0)} MXN\nDescuento (${appliedCoupon || 'Cupón'}): -$${discountAmount.toFixed(0)} MXN\n`
+        : ''
+    }Total: $${totalOrderPrice.toFixed(0)} MXN\nCliente: ${clienteNombre}\nTeléfono: ${clienteTelefono}\nMétodo de Pago: ${metodoPago.toUpperCase()}\nEntrega: ${tipoEntrega === 'didi' ? 'Envío por DiDi/Uber' : 'Recoger en Local'}\nHora: ${horaRecogida || 'Lo antes posible'}`
 
     return generateWhatsAppMessageUrl(message)
   }
@@ -742,9 +756,19 @@ export function OrderStepper({
                   )
                 })}
 
-                <div className="bg-white dark:bg-carbon border border-oro/40 dark:border-oro/30 rounded-2xl p-5 flex justify-between items-center shadow-xl mt-2">
-                  <span className="font-sans font-bold text-lg text-negro dark:text-blanco">TOTAL A PAGAR:</span>
-                  <span className="font-display text-4xl text-oro">${totalOrderPrice.toFixed(0)} MXN</span>
+                <div className="bg-white dark:bg-carbon border border-oro/40 dark:border-oro/30 rounded-2xl p-5 flex flex-col gap-2.5 shadow-xl mt-2">
+                  <div className="flex justify-between items-center">
+                    <span className="font-sans font-bold text-lg text-negro dark:text-blanco">TOTAL A PAGAR:</span>
+                    <span className="font-display text-4xl text-oro">${totalOrderPrice.toFixed(0)} MXN</span>
+                  </div>
+                  {discountAmount > 0 && (
+                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center text-xs font-sans pt-2 border-t border-arena/20 dark:border-arena/10 gap-1">
+                      <span className="text-negro/70 dark:text-arena/70">Subtotal comanda: ${rawSubtotal.toFixed(0)} MXN</span>
+                      <span className="text-coral font-bold bg-coral/10 px-2.5 py-0.5 rounded-full border border-coral/20">
+                        Descuento aplicado: -${discountAmount.toFixed(0)} MXN
+                      </span>
+                    </div>
+                  )}
                 </div>
 
                 <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mt-4">
@@ -1117,24 +1141,70 @@ export function OrderStepper({
                 />
               </div>
 
-              {/* RESUMEN DE TOTAL FINAL CON AHORRO DESTACADO Y PRECIO TACHADO */}
-              <div className="bg-[#F4F0E8] dark:bg-carbon p-4 rounded-xl flex justify-between items-center border border-arena/30 dark:border-arena/20 mt-2 shadow-lg">
-                <div className="flex flex-col">
-                  <span className="font-sans font-bold text-xs uppercase tracking-wider text-negro/60 dark:text-arena/60">Total del Pedido:</span>
-                  {discountPercent > 0 ? (
-                    <div className="flex items-center gap-2 mt-0.5">
-                      <span className="line-through text-sm font-sans text-negro/50 dark:text-arena/50">${rawSubtotal.toFixed(0)}</span>
-                      <span className="text-xs font-sans font-bold text-coral bg-coral/10 px-2 py-0.5 rounded-full border border-coral/20">
-                        ¡Ahorras ${discountAmount.toFixed(0)} MXN! 🔥
-                      </span>
-                    </div>
-                  ) : (
-                    <span className="text-[11px] font-sans italic text-negro/60 dark:text-arena/60">Mariscos frescos de Sinaloa</span>
-                  )}
+              {/* RESUMEN DE TOTAL FINAL CON DESGLOSE CLARO Y TRANSPARENTE */}
+              <div className="bg-[#F4F0E8] dark:bg-carbon p-4 rounded-xl flex flex-col gap-2.5 border border-arena/30 dark:border-arena/20 mt-2 shadow-lg">
+                <div className="flex justify-between items-center text-xs font-sans">
+                  <span className="text-negro/70 dark:text-arena/70">Subtotal de la Comanda:</span>
+                  <span className="font-bold text-negro dark:text-blanco">${rawSubtotal.toFixed(0)} MXN</span>
                 </div>
 
-                <div className="flex flex-col items-end">
-                  <span className="font-display text-4xl text-oro">${totalOrderPrice.toFixed(0)} <span className="text-xs font-sans text-negro/60 dark:text-arena">MXN</span></span>
+                {hasPromoInCart && (
+                  <div className="flex justify-between items-center text-[11px] font-sans text-coral bg-coral/10 px-2.5 py-1 rounded-lg border border-coral/20">
+                    <span>🔥 Combos & Promociones del día:</span>
+                    <span className="font-bold">${promoSubtotal.toFixed(0)} MXN (precio especial)</span>
+                  </div>
+                )}
+
+                {discountPercent > 0 && (
+                  <div className="flex flex-col gap-1 pt-1.5 border-t border-arena/20 dark:border-arena/10">
+                    <div className="flex justify-between items-center text-xs font-sans">
+                      <span className="text-turquesa font-bold flex items-center gap-1">
+                        <Ticket className="w-3.5 h-3.5" />
+                        <span>Cupón {appliedCoupon ? `(${appliedCoupon})` : ''} -{discountPercent}%:</span>
+                      </span>
+                      <span className="font-bold text-coral">
+                        {regularSubtotal > 0
+                          ? `-$${percentDiscountAmount.toFixed(0)} MXN`
+                          : '$0 MXN'}
+                      </span>
+                    </div>
+
+                    {regularSubtotal > 0 && hasPromoInCart && (
+                      <span className="text-[10px] font-sans italic text-negro/60 dark:text-arena/60">
+                        * Aplicado sobre ${regularSubtotal.toFixed(0)} MXN de platillos regulares (los combos ya cuentan con precio especial).
+                      </span>
+                    )}
+
+                    {regularSubtotal === 0 && hasPromoInCart && (
+                      <span className="text-[10px] font-sans italic text-coral bg-coral/5 p-2 rounded-lg border border-coral/20 leading-relaxed">
+                        ℹ️ Tu pedido contiene únicamente combos o promociones. Tu cupón del {discountPercent}% se activará en cuanto agregues platillos a precio regular.
+                      </span>
+                    )}
+                  </div>
+                )}
+
+                {fixedDiscount > 0 && (
+                  <div className="flex justify-between items-center text-xs font-sans text-turquesa pt-1 border-t border-arena/20 dark:border-arena/10">
+                    <span className="font-bold">Descuento Promocional Fijo:</span>
+                    <span className="font-bold text-coral">-${fixedDiscount.toFixed(0)} MXN</span>
+                  </div>
+                )}
+
+                <div className="flex justify-between items-center pt-2 border-t border-arena/30 dark:border-arena/15 mt-0.5">
+                  <div className="flex flex-col">
+                    <span className="font-sans font-bold text-xs uppercase tracking-wider text-negro/60 dark:text-arena/60">Total a Pagar:</span>
+                    {discountAmount > 0 ? (
+                      <span className="text-xs font-sans font-bold text-coral">
+                        ¡Ahorras ${discountAmount.toFixed(0)} MXN con cupón! 🔥
+                      </span>
+                    ) : (
+                      <span className="text-[11px] font-sans italic text-negro/60 dark:text-arena/60">Mariscos frescos de Sinaloa</span>
+                    )}
+                  </div>
+
+                  <div className="flex flex-col items-end">
+                    <span className="font-display text-4xl text-oro">${totalOrderPrice.toFixed(0)} <span className="text-xs font-sans text-negro/60 dark:text-arena">MXN</span></span>
+                  </div>
                 </div>
               </div>
 
