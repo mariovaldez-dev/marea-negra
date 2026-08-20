@@ -8,7 +8,8 @@ import { ImageUploader } from '@/components/menu/ImageUploader'
 import { togglePlatilloDisponible, savePlatillo, deletePlatillo } from '@/lib/actions/menu'
 import { DIAS_SEMANA_PROMO, getPromoBannerText } from '@/lib/utils/promo'
 import { InstagramStoryModal } from '@/components/menu/InstagramStoryModal'
-import { Plus, Edit2, Trash2, Eye, X, Check, Loader2, Power, PowerOff, Calendar, Flame, Instagram } from 'lucide-react'
+import { ComboImageGenerator } from '@/components/menu/ComboImageGenerator'
+import { Plus, Edit2, Trash2, Eye, X, Check, Loader2, Power, PowerOff, Calendar, Flame, Instagram, Sparkles } from 'lucide-react'
 
 interface MenuManagerProps {
   initialPlatillos: Platillo[]
@@ -25,6 +26,7 @@ export function MenuManager({
   const [editingPlatillo, setEditingPlatillo] = useState<Partial<Platillo> | null>(null)
   const [isSaving, setIsSaving] = useState(false)
   const [storyPlatillo, setStoryPlatillo] = useState<Platillo | null>(null)
+  const [showComboGenerator, setShowComboGenerator] = useState(false)
 
   // Optimistic UI for Availability Toggle
   const [optimisticPlatillos, setOptimisticPlatillos] = useOptimistic(
@@ -513,14 +515,29 @@ export function MenuManager({
                   />
                 </div>
 
-                {/* Subida de Imagen con ImageUploader */}
-                <ImageUploader
-                  currentUrl={editingPlatillo.imagen_url}
-                  dishId={editingPlatillo.id || 'new'}
-                  onImageChange={(url) =>
-                    setEditingPlatillo({ ...editingPlatillo, imagen_url: url })
-                  }
-                />
+                {/* Subida de Imagen con ImageUploader y Generador de Collage */}
+                <div className="flex flex-col gap-2">
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-sans text-negro/80 dark:text-arena uppercase font-semibold">
+                      Imagen del Platillo
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => setShowComboGenerator(true)}
+                      className="text-[11px] font-sans font-bold text-turquesa hover:text-coral flex items-center gap-1.5 transition-colors bg-turquesa/10 hover:bg-coral/10 px-2.5 py-1 rounded-lg border border-turquesa/30 hover:border-coral/30"
+                    >
+                      <Sparkles className="w-3.5 h-3.5" />
+                      <span>✨ Generar Collage de Combo</span>
+                    </button>
+                  </div>
+                  <ImageUploader
+                    currentUrl={editingPlatillo.imagen_url}
+                    dishId={editingPlatillo.id || 'new'}
+                    onImageChange={(url) =>
+                      setEditingPlatillo({ ...editingPlatillo, imagen_url: url })
+                    }
+                  />
+                </div>
 
                 <button
                   type="submit"
@@ -579,6 +596,19 @@ export function MenuManager({
         <InstagramStoryModal
           platillo={storyPlatillo}
           onClose={() => setStoryPlatillo(null)}
+        />
+      )}
+
+      {/* MODAL GENERADOR DE COLLAGE DE COMBO */}
+      {showComboGenerator && editingPlatillo && (
+        <ComboImageGenerator
+          allPlatillos={platillos}
+          comboPlatilloId={editingPlatillo.id}
+          comboNombre={editingPlatillo.nombre || 'Nuevo Combo'}
+          onImageSaved={(url) => {
+            setEditingPlatillo({ ...editingPlatillo, imagen_url: url })
+          }}
+          onClose={() => setShowComboGenerator(false)}
         />
       )}
     </div>
