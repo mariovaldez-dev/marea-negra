@@ -130,7 +130,7 @@ export default function LoginClientePage() {
           <h2 className="font-display text-4xl md:text-5xl text-negro dark:text-blanco tracking-wide">
             INICIAR SESIÓN
           </h2>
-          <p className="font-serif italic text-base text-negro/70 dark:text-arena/80">
+          <p className="font-sans italic text-base text-negro/70 dark:text-arena/80">
             Ingresa tu número celular y contraseña para acceder a tus beneficios.
           </p>
         </div>
@@ -158,9 +158,8 @@ export default function LoginClientePage() {
                   setTelefono(e.target.value)
                   if (fieldErrors.telefono) setFieldErrors({ ...fieldErrors, telefono: '' })
                 }}
-                className={`w-full bg-[#F4F0E8] dark:bg-carbon border rounded-xl pl-12 pr-4 py-3.5 text-base text-negro dark:text-blanco font-sans font-bold focus:outline-none ${
-                  fieldErrors.telefono ? 'border-coral ring-2 ring-coral/20' : 'border-arena/30 dark:border-arena/20 focus:border-turquesa'
-                }`}
+                className={`w-full bg-[#F4F0E8] dark:bg-carbon border rounded-xl pl-12 pr-4 py-3.5 text-base text-negro dark:text-blanco font-sans font-bold focus:outline-none ${fieldErrors.telefono ? 'border-coral ring-2 ring-coral/20' : 'border-arena/30 dark:border-arena/20 focus:border-turquesa'
+                  }`}
               />
             </div>
             {fieldErrors.telefono && (
@@ -199,9 +198,8 @@ export default function LoginClientePage() {
                   setPassword(e.target.value)
                   if (fieldErrors.password) setFieldErrors({ ...fieldErrors, password: '' })
                 }}
-                className={`w-full bg-[#F4F0E8] dark:bg-carbon border rounded-xl pl-12 pr-4 py-3.5 text-base text-negro dark:text-blanco font-sans font-bold focus:outline-none ${
-                  fieldErrors.password ? 'border-coral ring-2 ring-coral/20' : 'border-arena/30 dark:border-arena/20 focus:border-turquesa'
-                }`}
+                className={`w-full bg-[#F4F0E8] dark:bg-carbon border rounded-xl pl-12 pr-4 py-3.5 text-base text-negro dark:text-blanco font-sans font-bold focus:outline-none ${fieldErrors.password ? 'border-coral ring-2 ring-coral/20' : 'border-arena/30 dark:border-arena/20 focus:border-turquesa'
+                  }`}
               />
             </div>
             {fieldErrors.password && (
@@ -236,7 +234,7 @@ export default function LoginClientePage() {
           </button>
 
           <div className="border-t border-arena/15 pt-4 flex flex-col items-center text-center gap-2">
-            <span className="text-xs font-serif italic text-negro/60 dark:text-arena/60">
+            <span className="text-xs font-sans italic text-negro/60 dark:text-arena/60">
               ¿Aún no tienes cuenta registrada?
             </span>
             <Link

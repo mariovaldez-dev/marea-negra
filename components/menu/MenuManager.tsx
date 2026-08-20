@@ -6,7 +6,8 @@ import { ListRow } from '@/components/ui/ListRow'
 import { ProductCard } from '@/components/ui/ProductCard'
 import { ImageUploader } from '@/components/menu/ImageUploader'
 import { togglePlatilloDisponible, savePlatillo, deletePlatillo } from '@/lib/actions/menu'
-import { Plus, Edit2, Trash2, Eye, X, Check, Loader2, Power, PowerOff } from 'lucide-react'
+import { DIAS_SEMANA_PROMO, getPromoBannerText } from '@/lib/utils/promo'
+import { Plus, Edit2, Trash2, Eye, X, Check, Loader2, Power, PowerOff, Calendar, Flame } from 'lucide-react'
 
 interface MenuManagerProps {
   initialPlatillos: Platillo[]
@@ -55,12 +56,24 @@ export function MenuManager({
       categoria_id: categorias[0]?.id || 1,
       disponible: true,
       imagen_url: null,
+      es_promocion: false,
+      etiqueta_promo: '',
+      precio_anterior: null,
+      dias_promo: DIAS_SEMANA_PROMO.map((d) => d.id),
     })
     setShowModal(true)
   }
 
   const handleOpenEditModal = (platillo: Platillo) => {
-    setEditingPlatillo(platillo)
+    const isPromo = Boolean(platillo.es_promocion || platillo.etiqueta_promo || platillo.precio_anterior)
+    setEditingPlatillo({
+      ...platillo,
+      es_promocion: isPromo,
+      dias_promo:
+        platillo.dias_promo && platillo.dias_promo.length > 0
+          ? platillo.dias_promo
+          : DIAS_SEMANA_PROMO.map((d) => d.id),
+    })
     setShowModal(true)
   }
 
@@ -147,9 +160,39 @@ export function MenuManager({
                     key={platillo.id}
                     title={`${platillo.nombre}`}
                     subtitle={platillo.descripcion || 'Sin descripción'}
-                    value={`$${platillo.precio.toFixed(0)}`}
-                    badgeText={platillo.disponible ? 'DISPONIBLE' : 'AGOTADO'}
-                    badgeVariant={platillo.disponible ? 'disponible' : 'agotado'}
+                    value={
+                      platillo.precio_anterior && platillo.precio_anterior > platillo.precio
+                        ? `$${platillo.precio.toFixed(0)}`
+                        : `$${platillo.precio.toFixed(0)}`
+                    }
+                    badgeText={
+                      platillo.es_promocion
+                        ? `🔥 ${getPromoBannerText(platillo)}`
+                        : platillo.disponible
+                        ? 'DISPONIBLE'
+                        : 'AGOTADO'
+                    }
+                    badgeVariant={
+                      platillo.es_promocion
+                        ? 'nuevo'
+                        : platillo.disponible
+                        ? 'disponible'
+                        : 'agotado'
+                    }
+                    footer={
+                      platillo.es_promocion ? (
+                        <div className="flex items-center justify-between text-[11px] font-sans text-coral font-bold pt-1">
+                          <span>
+                            🔥 Promoción Activada ({getPromoBannerText(platillo)})
+                          </span>
+                          {platillo.precio_anterior && platillo.precio_anterior > platillo.precio && (
+                            <span className="text-arena/60">
+                              Precio Normal: <span className="line-through">${platillo.precio_anterior.toFixed(0)}</span> → Oferta: <span className="text-coral">${platillo.precio.toFixed(0)}</span>
+                            </span>
+                          )}
+                        </div>
+                      ) : null
+                    }
                     actions={
                       <div className="flex items-center gap-2">
                         {/* Toggle Optimista Disponibilidad */}
@@ -230,7 +273,7 @@ export function MenuManager({
                 <div className="grid grid-cols-2 gap-3">
                   <div className="flex flex-col gap-1">
                     <label className="text-xs font-sans text-negro/80 dark:text-arena uppercase font-semibold">
-                      Precio ($ MXN) *
+                      Precio de Venta ($ MXN) *
                     </label>
                     <input
                       type="number"
@@ -262,6 +305,162 @@ export function MenuManager({
                       className="bg-[#F4F0E8] dark:bg-carbon border border-arena/30 dark:border-arena/20 rounded-lg px-3 py-2 text-xs text-negro dark:text-blanco focus:border-turquesa focus:outline-none"
                     />
                   </div>
+                </div>
+
+                {/* BLOQUE DE CONFIGURACIÓN DE PROMOCIÓN CON INTERRUPTOR MAESTRO */}
+                <div className={`p-4 rounded-xl border transition-all flex flex-col gap-3.5 ${
+                  editingPlatillo.es_promocion
+                    ? 'bg-coral/10 border-coral/30 shadow-[0_0_20px_rgba(232,67,10,0.15)]'
+                    : 'bg-[#F4F0E8] dark:bg-carbon/50 border-arena/30 dark:border-arena/10'
+                }`}>
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-sans font-bold uppercase tracking-wider flex items-center gap-2 cursor-pointer select-none">
+                      <input
+                        type="checkbox"
+                        checked={editingPlatillo.es_promocion ?? false}
+                        onChange={(e) => {
+                          const isChecked = e.target.checked
+                          setEditingPlatillo({
+                            ...editingPlatillo,
+                            es_promocion: isChecked,
+                            dias_promo: isChecked && (!editingPlatillo.dias_promo || editingPlatillo.dias_promo.length === 0)
+                              ? DIAS_SEMANA_PROMO.map((d) => d.id)
+                              : editingPlatillo.dias_promo,
+                          })
+                        }}
+                        className="w-4 h-4 accent-coral cursor-pointer"
+                      />
+                      <span className={editingPlatillo.es_promocion ? 'text-coral' : 'text-negro/60 dark:text-arena/60'}>
+                        {editingPlatillo.es_promocion ? '🟢 PROMOCIÓN ACTIVADA (ENCENDIDA)' : '⚪ PROMOCIÓN DESACTIVADA (APAGADA)'}
+                      </span>
+                    </label>
+
+                    {editingPlatillo.es_promocion && (
+                      <span className="text-[10px] font-sans font-bold text-coral bg-coral/10 border border-coral/30 px-2.5 py-0.5 rounded-full uppercase">
+                        OFERTA VIGENTE
+                      </span>
+                    )}
+                  </div>
+
+                  {editingPlatillo.es_promocion && (
+                    <div className="flex flex-col gap-3.5 pt-3 border-t border-coral/20">
+                      {/* VISTA PREVIA DEL BANNER INTELIGENTE GENERADO */}
+                      <div className="p-2.5 rounded-lg bg-gradient-to-r from-coral/20 via-coral/10 to-oro/20 border border-coral/30 flex items-center justify-between gap-2">
+                        <span className="text-[10px] font-sans font-bold text-arena/80 uppercase">
+                          Banner en Tarjeta del Menú:
+                        </span>
+                        <span className="text-[11px] font-sans font-extrabold text-blanco uppercase bg-gradient-to-r from-coral to-oro px-3 py-1 rounded-full shadow-md flex items-center gap-1">
+                          <Flame className="w-3 h-3 fill-blanco animate-pulse" />
+                          <span>{getPromoBannerText(editingPlatillo)}</span>
+                        </span>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="flex flex-col gap-1">
+                          <label className="text-[11px] font-sans text-negro/80 dark:text-arena uppercase font-semibold">
+                            Etiqueta Corta Opcional (Ej. 2x1, Combo)
+                          </label>
+                          <input
+                            type="text"
+                            placeholder="Ej. 2x1, COMBO, -25%"
+                            value={editingPlatillo.etiqueta_promo || ''}
+                            onChange={(e) =>
+                              setEditingPlatillo({
+                                ...editingPlatillo,
+                                etiqueta_promo: e.target.value,
+                              })
+                            }
+                            className="bg-[#F4F0E8] dark:bg-carbon border border-coral/30 rounded-lg px-3 py-1.5 text-xs text-negro dark:text-blanco focus:border-coral focus:outline-none"
+                          />
+                        </div>
+
+                        <div className="flex flex-col gap-1">
+                          <label className="text-[11px] font-sans text-negro/80 dark:text-arena uppercase font-semibold">
+                            Precio Original (Tachado)
+                          </label>
+                          <input
+                            type="number"
+                            step="1"
+                            placeholder="Ej. 199 (Opcional)"
+                            value={editingPlatillo.precio_anterior || ''}
+                            onChange={(e) =>
+                              setEditingPlatillo({
+                                ...editingPlatillo,
+                                precio_anterior: e.target.value ? parseFloat(e.target.value) : null,
+                              })
+                            }
+                            className="bg-[#F4F0E8] dark:bg-carbon border border-coral/30 rounded-lg px-3 py-1.5 text-xs text-negro dark:text-blanco focus:border-coral focus:outline-none"
+                          />
+                        </div>
+                      </div>
+
+                      {/* SELECTOR DE DÍAS DE LA SEMANA */}
+                      <div className="flex flex-col gap-2 bg-black/20 dark:bg-carbon/60 p-3 rounded-lg border border-coral/20">
+                        <div className="flex justify-between items-center">
+                          <span className="text-[10px] font-sans font-bold text-coral uppercase tracking-wider flex items-center gap-1">
+                            <Calendar className="w-3.5 h-3.5 text-coral" />
+                            <span>Días en los que se activa la promoción:</span>
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const current = editingPlatillo.dias_promo || []
+                              if (current.length === 7) {
+                                setEditingPlatillo({ ...editingPlatillo, dias_promo: [] })
+                              } else {
+                                setEditingPlatillo({
+                                  ...editingPlatillo,
+                                  dias_promo: DIAS_SEMANA_PROMO.map((d) => d.id),
+                                })
+                              }
+                            }}
+                            className="text-[9px] font-sans text-turquesa underline font-semibold hover:text-blanco"
+                          >
+                            {(editingPlatillo.dias_promo || []).length === 7 ? 'Desmarcar todos' : 'Todos los días'}
+                          </button>
+                        </div>
+
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          {DIAS_SEMANA_PROMO.map((dia) => {
+                            const isSelected =
+                              !editingPlatillo.dias_promo ||
+                              editingPlatillo.dias_promo.length === 0 ||
+                              editingPlatillo.dias_promo.includes(dia.id)
+
+                            return (
+                              <button
+                                key={dia.id}
+                                type="button"
+                                onClick={() => {
+                                  let current = editingPlatillo.dias_promo
+                                    ? [...editingPlatillo.dias_promo]
+                                    : DIAS_SEMANA_PROMO.map((d) => d.id)
+
+                                  if (current.includes(dia.id)) {
+                                    current = current.filter((id) => id !== dia.id)
+                                  } else {
+                                    current.push(dia.id)
+                                  }
+
+                                  setEditingPlatillo({
+                                    ...editingPlatillo,
+                                    dias_promo: current,
+                                  })
+                                }}
+                                className={`text-[10px] font-sans font-bold px-3 py-1.5 rounded-md border transition-all ${
+                                  isSelected
+                                    ? 'bg-coral text-blanco border-coral shadow-sm'
+                                    : 'bg-carbon/50 text-arena/40 border-arena/10 hover:border-coral/40'
+                                }`}
+                              >
+                                {dia.label}
+                              </button>
+                            )
+                          })}
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 <div className="flex flex-col gap-1">
@@ -339,6 +538,7 @@ export function MenuManager({
                 </span>
                 <div className="p-4 bg-[#F4F0E8] dark:bg-carbon/60 rounded-2xl border border-arena/30 dark:border-arena/10 transition-colors">
                   <ProductCard
+                    previewMode={true}
                     platillo={{
                       id: editingPlatillo.id || 0,
                       nombre: editingPlatillo.nombre || 'Nombre del Platillo',
@@ -346,6 +546,10 @@ export function MenuManager({
                         editingPlatillo.descripcion ||
                         'Descripción preliminar de los ingredientes del platillo...',
                       precio: editingPlatillo.precio || 149,
+                      precio_anterior: editingPlatillo.precio_anterior || null,
+                      es_promocion: editingPlatillo.es_promocion ?? false,
+                      etiqueta_promo: editingPlatillo.etiqueta_promo || null,
+                      dias_promo: editingPlatillo.dias_promo || null,
                       emoji: editingPlatillo.emoji || '🦐',
                       disponible: editingPlatillo.disponible ?? true,
                       imagen_url: editingPlatillo.imagen_url || null,

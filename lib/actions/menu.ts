@@ -36,20 +36,34 @@ export async function savePlatillo(platilloData: Partial<Platillo>) {
 
   if (platilloData.id) {
     // Actualizar platillo existente
-    const { data, error } = await supabase
+    const updatePayload: any = {
+      nombre: platilloData.nombre,
+      descripcion: platilloData.descripcion,
+      precio: platilloData.precio,
+      precio_anterior: platilloData.precio_anterior || null,
+      es_promocion: platilloData.es_promocion ?? false,
+      etiqueta_promo: platilloData.etiqueta_promo || null,
+      dias_promo: platilloData.dias_promo || null,
+      emoji: platilloData.emoji,
+      categoria_id: platilloData.categoria_id,
+      disponible: platilloData.disponible,
+      imagen_url: platilloData.imagen_url,
+    }
+
+    let { data, error } = await supabase
       .from('platillos')
-      .update({
-        nombre: platilloData.nombre,
-        descripcion: platilloData.descripcion,
-        precio: platilloData.precio,
-        emoji: platilloData.emoji,
-        categoria_id: platilloData.categoria_id,
-        disponible: platilloData.disponible,
-        imagen_url: platilloData.imagen_url,
-      })
+      .update(updatePayload)
       .eq('id', platilloData.id)
       .select()
       .single()
+
+    // Si la base de datos de Supabase no tiene las columnas de promoción creadas aún
+    if (error && error.message.includes('column')) {
+      console.warn('Columnas de promoción faltantes en Supabase:', error.message)
+      throw new Error(
+        'La base de datos de Supabase no tiene aún las columnas de promoción. Por favor ejecuta el archivo 04_promociones_platillos.sql en el SQL Editor de Supabase.'
+      )
+    }
 
     if (error) throw new Error(`Error al guardar platillo: ${error.message}`)
 
@@ -58,19 +72,33 @@ export async function savePlatillo(platilloData: Partial<Platillo>) {
     return { success: true, data }
   } else {
     // Insertar nuevo platillo
-    const { data, error } = await supabase
+    const insertPayload: any = {
+      nombre: platilloData.nombre!,
+      descripcion: platilloData.descripcion || null,
+      precio: platilloData.precio!,
+      precio_anterior: platilloData.precio_anterior || null,
+      es_promocion: platilloData.es_promocion ?? false,
+      etiqueta_promo: platilloData.etiqueta_promo || null,
+      dias_promo: platilloData.dias_promo || null,
+      emoji: platilloData.emoji || '🦐',
+      categoria_id: platilloData.categoria_id || null,
+      disponible: platilloData.disponible ?? true,
+      imagen_url: platilloData.imagen_url || null,
+    }
+
+    let { data, error } = await supabase
       .from('platillos')
-      .insert({
-        nombre: platilloData.nombre!,
-        descripcion: platilloData.descripcion || null,
-        precio: platilloData.precio!,
-        emoji: platilloData.emoji || '🦐',
-        categoria_id: platilloData.categoria_id || null,
-        disponible: platilloData.disponible ?? true,
-        imagen_url: platilloData.imagen_url || null,
-      })
+      .insert(insertPayload)
       .select()
       .single()
+
+    // Si la base de datos de Supabase no tiene las columnas de promoción creadas aún
+    if (error && error.message.includes('column')) {
+      console.warn('Columnas de promoción faltantes en Supabase:', error.message)
+      throw new Error(
+        'La base de datos de Supabase no tiene aún las columnas de promoción. Por favor ejecuta el archivo 04_promociones_platillos.sql en el SQL Editor de Supabase.'
+      )
+    }
 
     if (error) throw new Error(`Error al crear platillo: ${error.message}`)
 

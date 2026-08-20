@@ -19,6 +19,7 @@ const UserHeaderBadge = dynamic(
 import { TicketImageDownload } from '@/components/menu/TicketImageDownload'
 import { RestauranteCerradoModal } from '@/components/menu/RestauranteCerradoModal'
 import { generateWhatsAppMessageUrl } from '@/lib/utils/whatsapp'
+import { isPromoActiveToday, getPromoBannerText, isPromoItem } from '@/lib/utils/promo'
 import { CustomSelect } from '@/components/ui/CustomSelect'
 import { DiaHorario, getEstadoRestaurante } from '@/lib/actions/negocioEstado'
 import { Award, Lock } from 'lucide-react'
@@ -572,7 +573,13 @@ export function OrderStepper({
             </div>
 
             {categorias.map((cat) => {
-              const catDishes = platillos.filter((p) => p.categoria_id === cat.id)
+              const catDishes = platillos
+                .filter((p) => p.categoria_id === cat.id)
+                .sort((a, b) => {
+                  const aPromo = isPromoItem(a) ? 1 : 0
+                  const bPromo = isPromoItem(b) ? 1 : 0
+                  return bPromo - aPromo
+                })
               if (catDishes.length === 0) return null
 
               return (
@@ -582,53 +589,71 @@ export function OrderStepper({
                   </h3>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                    {catDishes.map((platillo) => (
-                      <div
-                        key={platillo.id}
-                        onClick={() => handleOpenCustomizeModal(platillo)}
-                        className="bg-white dark:bg-[#050404] border border-arena/30 dark:border-arena/10 rounded-2xl overflow-hidden hover:border-turquesa/50 transition-all cursor-pointer shadow-lg flex flex-col sm:flex-row group"
-                      >
-                        {/* Imagen Thumbnail con Object-Cover Perfecto y Transición Difuminada Suave */}
-                        <div className="relative w-full sm:w-40 h-48 sm:h-auto min-h-[160px] flex-shrink-0 bg-[#EBE5D8] dark:bg-carbon overflow-hidden">
-                          {platillo.imagen_url ? (
-                            <StepperDishImage src={platillo.imagen_url} alt={platillo.nombre} />
-                          ) : (
-                            <div className="w-full h-full flex flex-col items-center justify-center bg-dots-pattern text-turquesa/40 gap-1 p-2">
-                              <Flame className="w-8 h-8 text-turquesa/50" />
-                              <span className="text-[10px] font-sans font-bold text-arena/60 uppercase">Marea Negra</span>
-                            </div>
-                          )}
-                        </div>
+                    {catDishes.map((platillo) => {
+                      const hasPromo = isPromoItem(platillo)
 
-                        {/* Detalle Texto y Precio */}
-                        <div className="p-5 flex-1 flex flex-col justify-between gap-3">
-                          <div>
-                            <div className="flex justify-between items-start">
-                              <h4 className="font-sans font-bold text-xl text-negro dark:text-blanco group-hover:text-turquesa transition-colors">
-                                {platillo.nombre}
-                              </h4>
-                            </div>
+                      return (
+                        <div
+                          key={platillo.id}
+                          onClick={() => handleOpenCustomizeModal(platillo)}
+                          className="bg-white dark:bg-[#050404] border border-arena/30 dark:border-arena/10 rounded-2xl overflow-hidden hover:border-turquesa/50 transition-all cursor-pointer shadow-lg flex flex-col sm:flex-row group"
+                        >
+                          {/* Imagen Thumbnail con Object-Cover Perfecto y Transición Difuminada Suave */}
+                          <div className="relative w-full sm:w-40 h-48 sm:h-auto min-h-[160px] flex-shrink-0 bg-[#EBE5D8] dark:bg-carbon overflow-hidden">
+                            {platillo.imagen_url ? (
+                              <StepperDishImage src={platillo.imagen_url} alt={platillo.nombre} />
+                            ) : (
+                              <div className="w-full h-full flex flex-col items-center justify-center bg-dots-pattern text-turquesa/40 gap-1 p-2">
+                                <Flame className="w-8 h-8 text-turquesa/50" />
+                                <span className="text-[10px] font-sans font-bold text-arena/60 uppercase">Marea Negra</span>
+                              </div>
+                            )}
 
-                            {platillo.descripcion && (
-                              <p className="font-sans italic text-sm text-negro/70 dark:text-arena/70 line-clamp-2 mt-1">
-                                {platillo.descripcion}
-                              </p>
+                            {hasPromo && (
+                              <span className="absolute top-2 left-2 z-10 text-[9px] font-sans font-extrabold tracking-wider uppercase border border-coral/40 text-blanco bg-gradient-to-r from-coral to-oro px-2 py-0.5 rounded-full shadow-md flex items-center gap-1">
+                                <Flame className="w-2.5 h-2.5 fill-blanco animate-pulse" />
+                                <span>{getPromoBannerText(platillo)}</span>
+                              </span>
                             )}
                           </div>
 
-                          <div className="flex justify-between items-center pt-2 border-t border-arena/30 dark:border-arena/10">
-                            <span className="font-display text-3xl text-coral">
-                              ${platillo.precio.toFixed(0)} <span className="text-xs font-sans text-negro/60 dark:text-arena">MXN</span>
-                            </span>
+                          {/* Detalle Texto y Precio */}
+                          <div className="p-5 flex-1 flex flex-col justify-between gap-3">
+                            <div>
+                              <div className="flex justify-between items-start">
+                                <h4 className="font-sans font-bold text-xl text-negro dark:text-blanco group-hover:text-turquesa transition-colors">
+                                  {platillo.nombre}
+                                </h4>
+                              </div>
 
-                            <button className="bg-turquesa text-negro font-sans font-bold text-xs px-4 py-2 rounded-full flex items-center gap-1 shadow-md">
-                              <Plus className="w-4 h-4 stroke-[3]" />
-                              <span>ORDENAR</span>
-                            </button>
+                              {platillo.descripcion && (
+                                <p className="font-sans italic text-sm text-negro/70 dark:text-arena/70 line-clamp-2 mt-1">
+                                  {platillo.descripcion}
+                                </p>
+                              )}
+                            </div>
+
+                            <div className="flex justify-between items-center pt-2 border-t border-arena/30 dark:border-arena/10">
+                              <div className="flex items-baseline gap-2">
+                                <span className="font-display text-3xl text-coral">
+                                  ${platillo.precio.toFixed(0)} <span className="text-xs font-sans text-negro/60 dark:text-arena">MXN</span>
+                                </span>
+                                {hasPromo && platillo.precio_anterior && platillo.precio_anterior > platillo.precio && (
+                                  <span className="font-display text-base text-negro/40 dark:text-arena/40 line-through">
+                                    ${platillo.precio_anterior.toFixed(0)}
+                                  </span>
+                                )}
+                              </div>
+
+                              <button className="bg-turquesa text-negro font-sans font-bold text-xs px-4 py-2 rounded-full flex items-center gap-1 shadow-md">
+                                <Plus className="w-4 h-4 stroke-[3]" />
+                                <span>ORDENAR</span>
+                              </button>
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    ))}
+                      )
+                    })}
                   </div>
                 </div>
               )

@@ -23,6 +23,7 @@ import { AnimatedTagline } from '@/components/ui/AnimatedTagline'
 import { RippleButton } from '@/components/ui/RippleButton'
 import { DishCarouselSection } from '@/components/menu/DishCarouselSection'
 import { generateWhatsAppMessageUrl } from '@/lib/utils/whatsapp'
+import { isPromoActiveToday, isPromoItem } from '@/lib/utils/promo'
 import { TraditionalMenuBoard } from '@/components/menu/TraditionalMenuBoard'
 import { getEstadoRestaurante } from '@/lib/actions/negocioEstado'
 import {
@@ -40,13 +41,14 @@ import {
   Award,
   FileText,
   Clock,
+  Flame,
 } from 'lucide-react'
 
 export default function PublicMenuPage() {
   const router = useRouter()
   const [categorias, setCategorias] = useState<Categoria[]>([])
   const [platillos, setPlatillos] = useState<Platillo[]>([])
-  const [activeCategory, setActiveCategory] = useState<number | 'all'>('all')
+  const [activeCategory, setActiveCategory] = useState<number | 'all' | 'promos'>('all')
   const [mobileNavOpen, setMobileNavOpen] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
   const [viewMode, setViewMode] = useState<'interactive' | 'carta'>('interactive')
@@ -121,10 +123,18 @@ export default function PublicMenuPage() {
     router.push('/pedir')
   }
 
+  // Promos activas HOY (validadas por día de semana en Sinaloa)
+  const promoPlatillos = platillos.filter((p) => isPromoActiveToday(p))
+  // Platillos sin ninguna promoción configurada — siempre visibles en su categoría
+  // Los que tienen es_promocion=true pero hoy NO es su día: se ocultan completamente
+  const platillosNormales = platillos.filter((p) => !isPromoItem(p))
+
   const filteredPlatillos =
-    activeCategory === 'all'
-      ? platillos
-      : platillos.filter((p) => p.categoria_id === activeCategory)
+    activeCategory === 'promos'
+      ? promoPlatillos
+      : activeCategory === 'all'
+      ? platillosNormales
+      : platillosNormales.filter((p) => p.categoria_id === activeCategory)
 
   // Bloquear scroll del body al abrir el menú de navegación móvil
   useEffect(() => {
@@ -401,6 +411,19 @@ export default function PublicMenuPage() {
               TODOS LOS PLATILLOS
             </button>
 
+            {promoPlatillos.length > 0 && (
+              <button
+                onClick={() => setActiveCategory('promos')}
+                className={`px-5 py-2 rounded-full font-sans text-xs font-extrabold tracking-wider transition-all whitespace-nowrap flex items-center gap-1.5 ${activeCategory === 'promos'
+                  ? 'bg-gradient-to-r from-coral via-coral to-oro text-blanco shadow-[0_0_20px_rgba(232,67,10,0.4)]'
+                  : 'bg-coral/10 text-coral border border-coral/30 hover:bg-coral/20'
+                  }`}
+              >
+                <Flame className="w-3.5 h-3.5 fill-coral animate-pulse" />
+                <span>🔥 PROMOCIONES ({promoPlatillos.length})</span>
+              </button>
+            )}
+
             {categorias.map((cat) => (
               <button
                 key={cat.id}
@@ -474,15 +497,42 @@ export default function PublicMenuPage() {
           </div>
         )}
 
-        {/* LISTADO REAL DE PLATILLOS POR CATEGORÍA CON ANIMACIONES Y SWIPE SNAP */}
+        {/* 1. SECCIÓN DESTACADA DE PROMOCIONES Y ESPECIALES EN PRIMER LUGAR */}
+        {!isLoading && (activeCategory === 'all' || activeCategory === 'promos') && promoPlatillos.length > 0 && (
+          <section className="mb-16 bg-gradient-to-b from-coral/10 via-transparent to-transparent p-4 sm:p-6 rounded-3xl border border-coral/20">
+            <div className="flex items-center justify-between mb-8 border-b border-coral/30 pb-4">
+              <div className="flex items-center gap-3">
+                <span className="font-sans text-xs font-bold text-blanco tracking-widest uppercase bg-gradient-to-r from-coral to-oro px-3 py-1 rounded-full flex items-center gap-1 shadow-md">
+                  <Flame className="w-3.5 h-3.5 fill-blanco animate-pulse" />
+                  <span>DESTACADO DE HOY</span>
+                </span>
+                <h3 className="font-display text-4xl text-negro dark:text-blanco tracking-wider">
+                  🔥 PROMOCIONES & ESPECIALES
+                </h3>
+              </div>
+              <span className="text-xs font-sans font-bold text-coral uppercase tracking-wider hidden sm:inline-block">
+                ¡Aprovecha por tiempo limitado!
+              </span>
+            </div>
+
+            <DishCarouselSection
+              platillos={promoPlatillos}
+              onSelect={() => router.push('/pedir')}
+              categoryIndex={0}
+            />
+          </section>
+        )}
+
+        {/* 2. LISTADO DE PLATILLOS POR CATEGORÍA CON PROMOCIONES PRIORIZADAS AL INICIO */}
         {!isLoading &&
           platillos.length > 0 &&
+          activeCategory !== 'promos' &&
           (categorias.length > 0 ? categorias : [{ id: 1, nombre: 'Menú General', orden: 1 }])
             .filter((cat) => activeCategory === 'all' || activeCategory === cat.id)
             .map((cat, idx) => {
-              const catPlatillos = filteredPlatillos.filter(
-                (p) => p.categoria_id === cat.id || (!p.categoria_id && cat.id === 1)
-              )
+              const catPlatillos = filteredPlatillos
+                .filter((p) => p.categoria_id === cat.id || (!p.categoria_id && cat.id === 1))
+
               if (catPlatillos.length === 0) return null
 
               return (
@@ -499,7 +549,7 @@ export default function PublicMenuPage() {
                   <DishCarouselSection
                     platillos={catPlatillos}
                     onSelect={() => router.push('/pedir')}
-                    categoryIndex={idx}
+                    categoryIndex={idx + 1}
                   />
                 </section>
               )

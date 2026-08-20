@@ -29,6 +29,10 @@ export interface Platillo {
   nombre: string
   descripcion: string | null
   precio: number
+  precio_anterior?: number | null
+  es_promocion?: boolean | null
+  etiqueta_promo?: string | null
+  dias_promo?: string[] | null
   emoji: string | null
   disponible: boolean
   imagen_url: string | null

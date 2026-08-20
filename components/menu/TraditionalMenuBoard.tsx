@@ -6,6 +6,7 @@ import { Categoria, Platillo } from '@/lib/types/database'
 import { BrandLogo } from '@/components/ui/BrandLogo'
 import { ArrowLeft, MessageCircle } from 'lucide-react'
 import { generateWhatsAppMessageUrl } from '@/lib/utils/whatsapp'
+import { isPromoActiveToday, getPromoBannerText } from '@/lib/utils/promo'
 
 interface TraditionalMenuBoardProps {
   categorias: Categoria[]
@@ -76,7 +77,7 @@ export function TraditionalMenuBoard({
         {/* SECCIONES DEL MENÚ */}
         {groupedCategories.map((cat, cIdx) => {
           const catPlatillos = platillos.filter(
-            (p) => p.categoria_id === cat.id || (!p.categoria_id && cat.id === 1)
+            (p) => (p.categoria_id === cat.id || (!p.categoria_id && cat.id === 1)) && (!p.es_promocion || isPromoActiveToday(p))
           )
           if (catPlatillos.length === 0) return null
 
@@ -97,10 +98,15 @@ export function TraditionalMenuBoard({
                 {catPlatillos.map((platillo) => (
                   <div key={platillo.id} className="flex flex-col gap-1 group">
                     <div className="flex items-baseline justify-between gap-2">
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 flex-wrap">
                         <h3 className="font-display text-xl sm:text-2xl text-negro dark:text-blanco tracking-wide group-hover:text-turquesa transition-colors">
                           {platillo.nombre}
                         </h3>
+                        {isPromoActiveToday(platillo) && (
+                          <span className="text-[9px] font-sans font-bold text-blanco uppercase bg-gradient-to-r from-coral to-oro border border-coral/30 px-2 py-0.5 rounded-full shadow-sm">
+                            {getPromoBannerText(platillo)}
+                          </span>
+                        )}
                         {!platillo.disponible && (
                           <span className="text-[10px] font-sans font-bold text-coral uppercase bg-coral/10 border border-coral/20 px-2 py-0.5 rounded-full">
                             AGOTADO
@@ -111,9 +117,16 @@ export function TraditionalMenuBoard({
                       {/* LÍNEA DE PUNTOS LÍDER */}
                       <span className="flex-1 border-b border-dotted border-arena/40 dark:border-arena/30 mx-2 hidden sm:inline-block" />
 
-                      <span className="font-display text-2xl text-coral font-bold">
-                        ${platillo.precio.toFixed(0)} <span className="text-xs text-negro/60 dark:text-arena/60 font-sans font-normal">MXN</span>
-                      </span>
+                      <div className="flex items-baseline gap-2">
+                        <span className="font-display text-2xl text-coral font-bold">
+                          ${platillo.precio.toFixed(0)} <span className="text-xs text-negro/60 dark:text-arena/60 font-sans font-normal">MXN</span>
+                        </span>
+                        {platillo.precio_anterior && platillo.precio_anterior > platillo.precio && (
+                          <span className="font-display text-base text-negro/40 dark:text-arena/40 line-through">
+                            ${platillo.precio_anterior.toFixed(0)}
+                          </span>
+                        )}
+                      </div>
                     </div>
 
                     {platillo.descripcion && (
