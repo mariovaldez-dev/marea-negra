@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState, useRef, useEffect } from 'react'
-import { X, Sparkles, Check, Loader2, Plus, Trash2 } from 'lucide-react'
+import { X, Sparkles, Check, Loader2, Trash2, LayoutGrid, Columns2, Rows2 } from 'lucide-react'
 import { Platillo } from '@/lib/types/database'
 import { createBrowserClient } from '@/lib/supabase/client'
 
@@ -21,6 +21,41 @@ const MAX_SELECT = 3
 const CANVAS_W = 1080
 const CANVAS_H = 1080
 
+/**
+ * Dibuja una imagen sobre un área del Canvas aplicando "object-fit: cover"
+ * (recorta centrado sin estirar ni deformar la foto original cuadrada/rectangular).
+ */
+function drawImageCover(
+  ctx: CanvasRenderingContext2D,
+  img: HTMLImageElement,
+  dx: number,
+  dy: number,
+  dw: number,
+  dh: number
+) {
+  const naturalW = img.naturalWidth || img.width || 1
+  const naturalH = img.naturalHeight || img.height || 1
+  const imgRatio = naturalW / naturalH
+  const targetRatio = dw / dh
+
+  let sWidth = naturalW
+  let sHeight = naturalH
+  let sx = 0
+  let sy = 0
+
+  if (imgRatio > targetRatio) {
+    // La imagen es más ancha que el área objetivo -> recortar laterales centrando
+    sWidth = naturalH * targetRatio
+    sx = (naturalW - sWidth) / 2
+  } else {
+    // La imagen es más alta que el área objetivo -> recortar arriba/abajo centrando
+    sHeight = naturalW / targetRatio
+    sy = (naturalH - sHeight) / 2
+  }
+
+  ctx.drawImage(img, sx, sy, sWidth, sHeight, dx, dy, dw, dh)
+}
+
 export function ComboImageGenerator({
   allPlatillos,
   comboPlatilloId,
@@ -29,9 +64,9 @@ export function ComboImageGenerator({
   onClose,
 }: ComboImageGeneratorProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
-  const previewCanvasRef = useRef<HTMLCanvasElement>(null)
 
   const [selected, setSelected] = useState<Platillo[]>([])
+  const [layoutMode, setLayoutMode] = useState<'split-v' | 'split-h'>('split-v')
   const [isGenerating, setIsGenerating] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
@@ -96,77 +131,132 @@ export function ComboImageGenerator({
 
       const count = imgs.length
 
-      // ── Diseño del collage según número de fotos ──
+      // ── Diseño del collage según número de fotos y layout seleccionado ──
       if (count === 2) {
-        // Dos fotos: izquierda | derecha, cada una 50% de ancho
-        const half = CANVAS_W / 2
-        ctx.save()
-        ctx.beginPath()
-        ctx.rect(0, 0, half - 2, CANVAS_H)
-        ctx.clip()
-        ctx.drawImage(imgs[0], 0, 0, half - 2, CANVAS_H)
-        ctx.restore()
+        if (layoutMode === 'split-v') {
+          // Dos fotos: Izquierda | Derecha (cada una 538px x 1080px, sin deformar gracias a drawImageCover)
+          const half = CANVAS_W / 2
+          ctx.save()
+          ctx.beginPath()
+          ctx.rect(0, 0, half - 2, CANVAS_H)
+          ctx.clip()
+          drawImageCover(ctx, imgs[0], 0, 0, half - 2, CANVAS_H)
+          ctx.restore()
 
-        ctx.save()
-        ctx.beginPath()
-        ctx.rect(half + 2, 0, half - 2, CANVAS_H)
-        ctx.clip()
-        ctx.drawImage(imgs[1], half + 2, 0, half - 2, CANVAS_H)
-        ctx.restore()
+          ctx.save()
+          ctx.beginPath()
+          ctx.rect(half + 2, 0, half - 2, CANVAS_H)
+          ctx.clip()
+          drawImageCover(ctx, imgs[1], half + 2, 0, half - 2, CANVAS_H)
+          ctx.restore()
 
-        // Línea divisoria dorada
-        ctx.fillStyle = '#C9A84C'
-        ctx.fillRect(half - 2, 0, 4, CANVAS_H)
+          // Separador dorado vertical
+          ctx.fillStyle = '#C9A84C'
+          ctx.fillRect(half - 2, 0, 4, CANVAS_H)
+        } else {
+          // Dos fotos: Arriba / Abajo (cada una 1080px x 538px, excelente para fotos horizontales de platos)
+          const half = CANVAS_H / 2
+          ctx.save()
+          ctx.beginPath()
+          ctx.rect(0, 0, CANVAS_W, half - 2)
+          ctx.clip()
+          drawImageCover(ctx, imgs[0], 0, 0, CANVAS_W, half - 2)
+          ctx.restore()
+
+          ctx.save()
+          ctx.beginPath()
+          ctx.rect(0, half + 2, CANVAS_W, half - 2)
+          ctx.clip()
+          drawImageCover(ctx, imgs[1], 0, half + 2, CANVAS_W, half - 2)
+          ctx.restore()
+
+          // Separador dorado horizontal
+          ctx.fillStyle = '#C9A84C'
+          ctx.fillRect(0, half - 2, CANVAS_W, 4)
+        }
       } else {
-        // Tres fotos: top grande (2/3 de alto) + dos abajo (1/3)
-        const topH = Math.round(CANVAS_H * 0.6)
-        const botH = CANVAS_H - topH - 4
-        const halfW = CANVAS_W / 2
+        // Tres fotos:
+        if (layoutMode === 'split-v') {
+          // 1 Izquierda grande + 2 Derecha apiladas
+          const halfW = CANVAS_W / 2
+          const halfH = CANVAS_H / 2
 
-        ctx.save()
-        ctx.beginPath()
-        ctx.rect(0, 0, CANVAS_W, topH)
-        ctx.clip()
-        ctx.drawImage(imgs[0], 0, 0, CANVAS_W, topH)
-        ctx.restore()
+          ctx.save()
+          ctx.beginPath()
+          ctx.rect(0, 0, halfW - 2, CANVAS_H)
+          ctx.clip()
+          drawImageCover(ctx, imgs[0], 0, 0, halfW - 2, CANVAS_H)
+          ctx.restore()
 
-        ctx.save()
-        ctx.beginPath()
-        ctx.rect(0, topH + 4, halfW - 2, botH)
-        ctx.clip()
-        ctx.drawImage(imgs[1], 0, topH + 4, halfW - 2, botH)
-        ctx.restore()
+          ctx.save()
+          ctx.beginPath()
+          ctx.rect(halfW + 2, 0, halfW - 2, halfH - 2)
+          ctx.clip()
+          drawImageCover(ctx, imgs[1], halfW + 2, 0, halfW - 2, halfH - 2)
+          ctx.restore()
 
-        ctx.save()
-        ctx.beginPath()
-        ctx.rect(halfW + 2, topH + 4, halfW - 2, botH)
-        ctx.clip()
-        ctx.drawImage(imgs[2], halfW + 2, topH + 4, halfW - 2, botH)
-        ctx.restore()
+          ctx.save()
+          ctx.beginPath()
+          ctx.rect(halfW + 2, halfH + 2, halfW - 2, halfH - 2)
+          ctx.clip()
+          drawImageCover(ctx, imgs[2], halfW + 2, halfH + 2, halfW - 2, halfH - 2)
+          ctx.restore()
 
-        // Separadores dorados
-        ctx.fillStyle = '#C9A84C'
-        ctx.fillRect(0, topH, CANVAS_W, 4)
-        ctx.fillRect(halfW - 2, topH + 4, 4, botH)
+          // Separadores dorados
+          ctx.fillStyle = '#C9A84C'
+          ctx.fillRect(halfW - 2, 0, 4, CANVAS_H)
+          ctx.fillRect(halfW + 2, halfH - 2, halfW - 2, 4)
+        } else {
+          // 1 Arriba grande (60% alto) + 2 Abajo (40% alto)
+          const topH = Math.round(CANVAS_H * 0.58)
+          const botH = CANVAS_H - topH - 4
+          const halfW = CANVAS_W / 2
+
+          ctx.save()
+          ctx.beginPath()
+          ctx.rect(0, 0, CANVAS_W, topH)
+          ctx.clip()
+          drawImageCover(ctx, imgs[0], 0, 0, CANVAS_W, topH)
+          ctx.restore()
+
+          ctx.save()
+          ctx.beginPath()
+          ctx.rect(0, topH + 4, halfW - 2, botH)
+          ctx.clip()
+          drawImageCover(ctx, imgs[1], 0, topH + 4, halfW - 2, botH)
+          ctx.restore()
+
+          ctx.save()
+          ctx.beginPath()
+          ctx.rect(halfW + 2, topH + 4, halfW - 2, botH)
+          ctx.clip()
+          drawImageCover(ctx, imgs[2], halfW + 2, topH + 4, halfW - 2, botH)
+          ctx.restore()
+
+          // Separadores dorados
+          ctx.fillStyle = '#C9A84C'
+          ctx.fillRect(0, topH, CANVAS_W, 4)
+          ctx.fillRect(halfW - 2, topH + 4, 4, botH)
+        }
       }
 
-      // ── Overlay gradiente oscuro en la parte inferior ──
-      const grad = ctx.createLinearGradient(0, CANVAS_H * 0.55, 0, CANVAS_H)
+      // ── Overlay gradiente oscuro en la parte inferior para textos ──
+      const grad = ctx.createLinearGradient(0, CANVAS_H * 0.5, 0, CANVAS_H)
       grad.addColorStop(0, 'rgba(8,8,8,0)')
-      grad.addColorStop(0.4, 'rgba(8,8,8,0.75)')
+      grad.addColorStop(0.35, 'rgba(8,8,8,0.78)')
       grad.addColorStop(1, 'rgba(8,8,8,0.96)')
       ctx.fillStyle = grad
       ctx.fillRect(0, 0, CANVAS_W, CANVAS_H)
 
       // ── Ornamento — ✦ — ──
-      ctx.fillStyle = 'rgba(201,168,76,0.5)'
+      ctx.fillStyle = 'rgba(201,168,76,0.6)'
       ctx.font = 'bold 28px serif'
       ctx.textAlign = 'center'
       ctx.fillText('— ✦ —', CANVAS_W / 2, CANVAS_H - 310)
 
       // ── Logo MAREA NEGRA ──
       ctx.fillStyle = '#F7F3EE'
-      ctx.font = '900 90px Arial, sans-serif'
+      ctx.font = '900 86px Arial, sans-serif'
       ctx.letterSpacing = '10px'
       ctx.fillText('MAREA NEGRA', CANVAS_W / 2, CANVAS_H - 230)
 
@@ -186,8 +276,8 @@ export function ComboImageGenerator({
 
       // ── Nombre del combo ──
       ctx.fillStyle = '#F7F3EE'
-      ctx.font = '900 56px Arial, sans-serif'
-      ctx.letterSpacing = '4px'
+      ctx.font = '900 52px Arial, sans-serif'
+      ctx.letterSpacing = '3px'
 
       // Dividir en 2 líneas si es muy largo
       const maxW = CANVAS_W - 120
@@ -195,7 +285,7 @@ export function ComboImageGenerator({
       let line1 = ''
       let line2 = ''
       let currentLine = ''
-      ctx.font = '900 56px Arial, sans-serif'
+      ctx.font = '900 52px Arial, sans-serif'
       for (const word of words) {
         const test = currentLine ? `${currentLine} ${word}` : word
         if (ctx.measureText(test).width > maxW && currentLine) {
@@ -211,23 +301,23 @@ export function ComboImageGenerator({
 
       if (line2) {
         ctx.fillText(line1, CANVAS_W / 2, CANVAS_H - 110)
-        ctx.fillText(line2, CANVAS_W / 2, CANVAS_H - 48)
+        ctx.fillText(line2, CANVAS_W / 2, CANVAS_H - 52)
       } else {
         ctx.fillText(line1, CANVAS_W / 2, CANVAS_H - 78)
       }
 
       // ── Platillos incluidos (pequeño) ──
-      ctx.fillStyle = 'rgba(212,197,169,0.6)'
+      ctx.fillStyle = 'rgba(212,197,169,0.7)'
       ctx.font = 'italic 24px Georgia, serif'
       ctx.letterSpacing = '1px'
       const subtext = selected.map((p) => p.nombre).join(' + ')
       const maxSubW = CANVAS_W - 160
       if (ctx.measureText(subtext).width <= maxSubW) {
-        ctx.fillText(subtext, CANVAS_W / 2, CANVAS_H - 30)
+        ctx.fillText(subtext, CANVAS_W / 2, CANVAS_H - 28)
       }
 
       // ── Marca de agua esquina inferior derecha ──
-      ctx.fillStyle = 'rgba(201,168,76,0.3)'
+      ctx.fillStyle = 'rgba(201,168,76,0.35)'
       ctx.font = '300 20px Arial, sans-serif'
       ctx.textAlign = 'right'
       ctx.letterSpacing = '2px'
@@ -256,7 +346,7 @@ export function ComboImageGenerator({
 
       const supabase = createBrowserClient()
       const filename = comboPlatilloId
-        ? `${comboPlatilloId}.jpg`
+        ? `combo-${comboPlatilloId}.jpg`
         : `combo-${Date.now()}.jpg`
 
       const { error: uploadError } = await supabase.storage
@@ -316,7 +406,7 @@ export function ComboImageGenerator({
                   No hay platillos con fotos cargadas aún.
                 </div>
               ) : (
-                <div className="grid grid-cols-2 gap-2 max-h-[380px] overflow-y-auto pr-1">
+                <div className="grid grid-cols-2 gap-2 max-h-[280px] overflow-y-auto pr-1">
                   {platillosConFoto.map((p) => {
                     const isSelected = selected.some((s) => s.id === p.id)
                     const isDisabled = !isSelected && selected.length >= MAX_SELECT
@@ -337,7 +427,7 @@ export function ComboImageGenerator({
                         <img
                           src={p.imagen_url!}
                           alt={p.nombre}
-                          className="w-full h-24 object-cover"
+                          className="w-full h-20 object-cover"
                         />
                         <div className="absolute inset-0 bg-gradient-to-t from-negro/80 to-transparent" />
                         <div className="absolute bottom-0 left-0 right-0 p-2">
@@ -357,6 +447,48 @@ export function ComboImageGenerator({
                 </div>
               )}
             </div>
+
+            {/* Selector de Disposición / Layout */}
+            {selected.length >= 2 && (
+              <div className="bg-carbon border border-arena/10 rounded-xl p-3 flex flex-col gap-2">
+                <p className="text-[10px] font-sans text-arena/50 uppercase tracking-wider">
+                  Disposición de las fotos:
+                </p>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setLayoutMode('split-v')
+                      setPreviewUrl(null)
+                    }}
+                    className={`flex items-center justify-center gap-2 p-2 rounded-lg text-xs font-sans font-bold border transition-all ${
+                      layoutMode === 'split-v'
+                        ? 'bg-turquesa/10 border-turquesa text-turquesa shadow-sm'
+                        : 'bg-[#080808] border-arena/10 text-arena/60 hover:text-blanco'
+                    }`}
+                  >
+                    <Columns2 className="w-3.5 h-3.5" />
+                    <span>Vertical (Columnas)</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setLayoutMode('split-h')
+                      setPreviewUrl(null)
+                    }}
+                    className={`flex items-center justify-center gap-2 p-2 rounded-lg text-xs font-sans font-bold border transition-all ${
+                      layoutMode === 'split-h'
+                        ? 'bg-turquesa/10 border-turquesa text-turquesa shadow-sm'
+                        : 'bg-[#080808] border-arena/10 text-arena/60 hover:text-blanco'
+                    }`}
+                  >
+                    <Rows2 className="w-3.5 h-3.5" />
+                    <span>Horizontal (Filas)</span>
+                  </button>
+                </div>
+              </div>
+            )}
 
             {/* Orden seleccionados */}
             {selected.length > 0 && (
@@ -410,16 +542,16 @@ export function ComboImageGenerator({
           {/* Derecha: Preview y botón guardar */}
           <div className="flex flex-col gap-4">
             <div className="text-[10px] font-sans text-arena/50 uppercase tracking-wider">
-              Vista previa del collage
+              Vista previa del collage (1080×1080 px)
             </div>
 
             {previewUrl ? (
               <>
-                <div className="rounded-xl overflow-hidden border border-oro/20 shadow-xl">
+                <div className="rounded-xl overflow-hidden border border-oro/20 shadow-xl aspect-square bg-[#080808]">
                   <img
                     src={previewUrl}
                     alt="Preview collage"
-                    className="w-full aspect-square object-cover"
+                    className="w-full h-full object-cover"
                   />
                 </div>
 
