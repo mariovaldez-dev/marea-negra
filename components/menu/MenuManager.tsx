@@ -7,7 +7,8 @@ import { ProductCard } from '@/components/ui/ProductCard'
 import { ImageUploader } from '@/components/menu/ImageUploader'
 import { togglePlatilloDisponible, savePlatillo, deletePlatillo } from '@/lib/actions/menu'
 import { DIAS_SEMANA_PROMO, getPromoBannerText } from '@/lib/utils/promo'
-import { Plus, Edit2, Trash2, Eye, X, Check, Loader2, Power, PowerOff, Calendar, Flame } from 'lucide-react'
+import { InstagramStoryModal } from '@/components/menu/InstagramStoryModal'
+import { Plus, Edit2, Trash2, Eye, X, Check, Loader2, Power, PowerOff, Calendar, Flame, Instagram } from 'lucide-react'
 
 interface MenuManagerProps {
   initialPlatillos: Platillo[]
@@ -23,6 +24,7 @@ export function MenuManager({
   const [showModal, setShowModal] = useState(false)
   const [editingPlatillo, setEditingPlatillo] = useState<Partial<Platillo> | null>(null)
   const [isSaving, setIsSaving] = useState(false)
+  const [storyPlatillo, setStoryPlatillo] = useState<Platillo | null>(null)
 
   // Optimistic UI for Availability Toggle
   const [optimisticPlatillos, setOptimisticPlatillos] = useOptimistic(
@@ -204,6 +206,14 @@ export function MenuManager({
                             }`}
                         >
                           {platillo.disponible ? <PowerOff className='w-4 h-4' /> : <PowerOff className='w-4 h-4' />}
+                        </button>
+
+                        <button
+                          onClick={() => setStoryPlatillo(platillo)}
+                          className="p-2 text-arena/70 hover:text-blanco bg-carbon border border-arena/10 rounded-lg hover:border-coral/40 transition-colors"
+                          title="Crear Historia de Instagram"
+                        >
+                          <Instagram className="w-4 h-4" />
                         </button>
 
                         <button
@@ -562,6 +572,14 @@ export function MenuManager({
             </div>
           </div>
         </div>
+      )}
+
+      {/* MODAL HISTORIA DE INSTAGRAM */}
+      {storyPlatillo && (
+        <InstagramStoryModal
+          platillo={storyPlatillo}
+          onClose={() => setStoryPlatillo(null)}
+        />
       )}
     </div>
   )
