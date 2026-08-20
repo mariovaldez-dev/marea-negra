@@ -34,7 +34,7 @@ BEGIN
     'COMBO PREMIUM',
     ARRAY['lunes','martes','miercoles','jueves','viernes','sabado','domingo'],
     '🦐',
-    TRUE
+    FALSE
   )
   ON CONFLICT DO NOTHING;
 
@@ -50,7 +50,7 @@ BEGIN
     'COMBO ESPECIAL',
     ARRAY['lunes','martes','miercoles','jueves','viernes','sabado','domingo'],
     '🌊',
-    TRUE
+    FALSE
   )
   ON CONFLICT DO NOTHING;
 
@@ -66,7 +66,7 @@ BEGIN
     'COMBO CLÁSICO',
     ARRAY['lunes','martes','miercoles','jueves','viernes','sabado','domingo'],
     '🍋',
-    TRUE
+    FALSE
   )
   ON CONFLICT DO NOTHING;
 
@@ -82,7 +82,7 @@ BEGIN
     'COMBO CRUNCH',
     ARRAY['lunes','martes','miercoles','jueves','viernes','sabado','domingo'],
     '🥑',
-    TRUE
+    FALSE
   )
   ON CONFLICT DO NOTHING;
 
@@ -98,7 +98,7 @@ BEGIN
     'COMBO LIGERO',
     ARRAY['lunes','martes','miercoles','jueves','viernes','sabado','domingo'],
     '🌮',
-    TRUE
+    FALSE
   )
   ON CONFLICT DO NOTHING;
 
@@ -114,7 +114,7 @@ BEGIN
     'COMBO INDIVIDUAL',
     ARRAY['lunes','martes','miercoles','jueves','viernes','sabado','domingo'],
     '🍤',
-    TRUE
+    FALSE
   )
   ON CONFLICT DO NOTHING;
 
@@ -134,7 +134,7 @@ BEGIN
     'TRIO DE LA CASA',
     ARRAY['lunes','martes','miercoles','jueves','viernes','sabado','domingo'],
     '🎉',
-    TRUE
+    FALSE
   )
   ON CONFLICT DO NOTHING;
 
@@ -150,7 +150,7 @@ BEGIN
     'TRIO CAMARÓN',
     ARRAY['lunes','martes','miercoles','jueves','viernes','sabado','domingo'],
     '🦐',
-    TRUE
+    FALSE
   )
   ON CONFLICT DO NOTHING;
 
@@ -166,7 +166,7 @@ BEGIN
     'TRIO CEVICHES',
     ARRAY['lunes','martes','miercoles','jueves','viernes','sabado','domingo'],
     '🌊',
-    TRUE
+    FALSE
   )
   ON CONFLICT DO NOTHING;
 
@@ -186,7 +186,7 @@ BEGIN
     '2×1.5 OFERTA',
     ARRAY['lunes','martes','miercoles','jueves','viernes','sabado','domingo'],
     '🌮',
-    TRUE
+    FALSE
   )
   ON CONFLICT DO NOTHING;
 
@@ -202,7 +202,7 @@ BEGIN
     'DUPLA',
     ARRAY['lunes','martes','miercoles','jueves','viernes','sabado','domingo'],
     '🥑',
-    TRUE
+    FALSE
   )
   ON CONFLICT DO NOTHING;
 
@@ -218,7 +218,7 @@ BEGIN
     'DUPLA',
     ARRAY['lunes','martes','miercoles','jueves','viernes','sabado','domingo'],
     '🍋',
-    TRUE
+    FALSE
   )
   ON CONFLICT DO NOTHING;
 
