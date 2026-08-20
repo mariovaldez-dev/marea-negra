@@ -1,6 +1,5 @@
-'use client'
-
-import React, { useState } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
+import { createPortal } from 'react-dom'
 import Image from 'next/image'
 import { Platillo } from '@/lib/types/database'
 import { isPromoActiveToday, getPromoBannerText, isPromoItem, parsePrice, formatPrice } from '@/lib/utils/promo'
@@ -22,6 +21,7 @@ export function ProductCard({
   priority = false,
   previewMode = false,
 }: ProductCardProps) {
+  const [mounted, setMounted] = useState(false)
   const isAvailable = platillo.disponible
   const hasPromo = isPromoItem(platillo)
   // isPromoActive: en previewMode muestra siempre; en producción solo si hoy es día de la promo
@@ -31,6 +31,10 @@ export function ProductCard({
   const isCached = platillo.imagen_url ? globalLoadedImages.has(platillo.imagen_url) : false
   const [imageLoaded, setImageLoaded] = useState(isCached)
   const [zoomImageLoaded, setZoomImageLoaded] = useState(isCached)
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
 
   const lastCloseRef = React.useRef<number>(0)
 
@@ -232,15 +236,15 @@ export function ProductCard({
         </div>
       </div>
 
-      {/* MODAL LIGHTBOX FOTO HD CON VISTA RESPONSIVA DE 2 COLUMNAS EN DESKTOP */}
-      {isZoomOpen && (
+      {/* MODAL LIGHTBOX FOTO HD CON VISTA RESPONSIVA DE 2 COLUMNAS EN DESKTOP (AISLADO EN BODY VIA PORTAL) */}
+      {isZoomOpen && mounted && typeof document !== 'undefined' && createPortal(
         <div
           onClick={(e) => {
             if (e.target === e.currentTarget) {
               handleCloseZoom(e)
             }
           }}
-          className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4 select-none animate-in fade-in duration-200"
+          className="fixed inset-0 z-[9999] bg-black/85 flex items-center justify-center p-4 select-none animate-in fade-in duration-200"
         >
           <div
             onClick={(e) => e.stopPropagation()}
@@ -322,23 +326,23 @@ export function ProductCard({
 
                 <div className="flex flex-col pt-2 border-t border-arena/20 dark:border-arena/10 mt-2">
                   <span className="text-[10px] font-sans text-negro/60 dark:text-arena/60 uppercase font-bold">
-                    {isPromoActive && platillo.precio_anterior && platillo.precio_anterior > platillo.precio ? 'Precio Oferta Especial' : 'Precio'}
+                    {hasPromo && parsePrice(platillo.precio_anterior) > parsePrice(platillo.precio) ? 'Precio Oferta Especial' : 'Precio'}
                   </span>
                   <div className="flex items-baseline gap-3">
                     <span className="font-display text-4xl lg:text-5xl text-coral tracking-tight">
-                      ${platillo.precio.toFixed(0)} <span className="text-sm font-sans text-negro/60 dark:text-arena">MXN</span>
+                      ${formatPrice(platillo.precio)} <span className="text-sm font-sans text-negro/60 dark:text-arena">MXN</span>
                     </span>
 
-                    {isPromoActive && platillo.precio_anterior && platillo.precio_anterior > platillo.precio && (
+                    {hasPromo && parsePrice(platillo.precio_anterior) > parsePrice(platillo.precio) && (
                       <span className="font-display text-2xl text-negro/40 dark:text-arena/40 line-through">
-                        ${platillo.precio_anterior.toFixed(0)}
+                        ${formatPrice(platillo.precio_anterior)}
                       </span>
                     )}
                   </div>
 
-                  {isPromoActive && platillo.precio_anterior && platillo.precio_anterior > platillo.precio && (
+                  {hasPromo && parsePrice(platillo.precio_anterior) > parsePrice(platillo.precio) && (
                     <span className="text-xs font-sans font-bold text-turquesa uppercase tracking-wider mt-1">
-                      ¡Ahorras ${(platillo.precio_anterior - platillo.precio).toFixed(0)} MXN en este platillo!
+                      ¡Ahorras ${(parsePrice(platillo.precio_anterior) - parsePrice(platillo.precio)).toFixed(0)} MXN en este platillo!
                     </span>
                   )}
                 </div>
@@ -370,7 +374,8 @@ export function ProductCard({
               </div>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </>
   )
