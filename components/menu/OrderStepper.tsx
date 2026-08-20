@@ -19,7 +19,7 @@ const UserHeaderBadge = dynamic(
 import { TicketImageDownload } from '@/components/menu/TicketImageDownload'
 import { RestauranteCerradoModal } from '@/components/menu/RestauranteCerradoModal'
 import { generateWhatsAppMessageUrl } from '@/lib/utils/whatsapp'
-import { isPromoActiveToday, getPromoBannerText, isPromoItem } from '@/lib/utils/promo'
+import { isPromoActiveToday, getPromoBannerText, isPromoItem, parsePrice, formatPrice } from '@/lib/utils/promo'
 import { CustomSelect } from '@/components/ui/CustomSelect'
 import { DiaHorario, getEstadoRestaurante } from '@/lib/actions/negocioEstado'
 import { Award, Lock } from 'lucide-react'
@@ -127,6 +127,11 @@ export function OrderStepper({
 }: OrderStepperProps) {
   const router = useRouter()
   const [currentStep, setCurrentStep] = useState<1 | 2 | 3 | 4>(1)
+
+  // Promos activas HOY (validadas por día de semana en Sinaloa)
+  const promoPlatillos = (platillos || []).filter((p) => isPromoActiveToday(p))
+  // Platillos normales (excluye cualquier platillo configurado como promo)
+  const platillosNormales = (platillos || []).filter((p) => !isPromoItem(p))
 
   const [isMounted, setIsMounted] = useState(false)
 
@@ -586,14 +591,103 @@ export function OrderStepper({
               </p>
             </div>
 
+            {/* SECCIÓN ESPECIAL DE PROMOCIONES DEL DÍA (SI EXISTEN ACTIVAS HOY) */}
+            {promoPlatillos.length > 0 && (
+              <section className="flex flex-col gap-4 mb-4">
+                <div className="flex items-center gap-3 border-b border-coral/30 pb-2">
+                  <span className="font-sans text-xs font-bold text-coral tracking-widest uppercase bg-coral/10 border border-coral/30 px-3 py-1 rounded-full flex items-center gap-1.5 shadow-sm">
+                    <Flame className="w-3.5 h-3.5 fill-coral animate-pulse" />
+                    <span>OFERTAS DE HOY</span>
+                  </span>
+                  <h3 className="font-display text-3xl md:text-4xl text-negro dark:text-blanco tracking-wider">
+                    PROMOCIONES & ESPECIALES
+                  </h3>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                  {promoPlatillos.map((platillo) => {
+                    const bannerText = getPromoBannerText(platillo)
+                    const pActual = parsePrice(platillo.precio)
+                    const pAnterior = parsePrice(platillo.precio_anterior)
+                    const ahorro = pAnterior > pActual ? pAnterior - pActual : 0
+
+                    return (
+                      <div
+                        key={platillo.id}
+                        onClick={() => handleOpenCustomizeModal(platillo)}
+                        className="bg-white dark:bg-[#050404] border-2 border-coral/40 hover:border-coral rounded-2xl overflow-hidden transition-all cursor-pointer shadow-xl flex flex-col sm:flex-row group relative"
+                      >
+                        {/* Imagen Thumbnail */}
+                        <div className="relative w-full sm:w-44 h-48 sm:h-auto min-h-[170px] flex-shrink-0 bg-[#EBE5D8] dark:bg-carbon overflow-hidden">
+                          {platillo.imagen_url ? (
+                            <StepperDishImage src={platillo.imagen_url} alt={platillo.nombre} />
+                          ) : (
+                            <div className="w-full h-full flex flex-col items-center justify-center bg-dots-pattern text-coral/40 gap-1 p-2">
+                              <Flame className="w-8 h-8 text-coral/50" />
+                              <span className="text-[10px] font-sans font-bold text-arena/60 uppercase">Marea Negra</span>
+                            </div>
+                          )}
+
+                          <span className="absolute top-2 left-2 z-10 text-[9px] font-sans font-extrabold tracking-wider uppercase border border-coral/40 text-blanco bg-gradient-to-r from-coral via-coral/90 to-oro px-2.5 py-1 rounded-full shadow-md flex items-center gap-1">
+                            <Flame className="w-2.5 h-2.5 fill-blanco animate-pulse" />
+                            <span>{bannerText}</span>
+                          </span>
+                        </div>
+
+                        {/* Detalle Texto y Precio */}
+                        <div className="p-5 flex-1 flex flex-col justify-between gap-3">
+                          <div>
+                            <div className="flex justify-between items-start">
+                              <h4 className="font-sans font-bold text-xl text-negro dark:text-blanco group-hover:text-coral transition-colors">
+                                {platillo.nombre}
+                              </h4>
+                            </div>
+
+                            {platillo.descripcion && (
+                              <p className="font-sans italic text-sm text-negro/70 dark:text-arena/70 line-clamp-2 mt-1">
+                                {platillo.descripcion}
+                              </p>
+                            )}
+                          </div>
+
+                          <div className="flex justify-between items-end pt-2 border-t border-arena/30 dark:border-arena/10">
+                            <div className="flex flex-col">
+                              <span className="text-[10px] font-sans text-negro/60 dark:text-arena/60 uppercase font-bold">
+                                {pAnterior > pActual ? 'Precio Oferta' : 'Precio'}
+                              </span>
+                              <div className="flex items-baseline gap-2">
+                                <span className="font-display text-3xl text-coral tracking-tight">
+                                  ${formatPrice(pActual)} <span className="text-xs font-sans text-negro/60 dark:text-arena">MXN</span>
+                                </span>
+                                {pAnterior > pActual && (
+                                  <span className="font-display text-base text-negro/40 dark:text-arena/40 line-through tracking-tight">
+                                    ${formatPrice(pAnterior)}
+                                  </span>
+                                )}
+                              </div>
+                              {ahorro > 0 && (
+                                <span className="text-[9px] font-sans font-bold text-turquesa uppercase tracking-wider">
+                                  ¡Ahorras ${ahorro.toFixed(0)} MXN!
+                                </span>
+                              )}
+                            </div>
+
+                            <button className="bg-coral text-blanco font-sans font-bold text-xs px-4 py-2 rounded-full flex items-center gap-1 shadow-md hover:bg-coral/90 transition-all">
+                              <Plus className="w-4 h-4 stroke-[3]" />
+                              <span>ORDENAR</span>
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              </section>
+            )}
+
+            {/* CATEGORÍAS REGULARES (PLATILLOS NORMALES) */}
             {categorias.map((cat) => {
-              const catDishes = platillos
-                .filter((p) => p.categoria_id === cat.id)
-                .sort((a, b) => {
-                  const aPromo = isPromoItem(a) ? 1 : 0
-                  const bPromo = isPromoItem(b) ? 1 : 0
-                  return bPromo - aPromo
-                })
+              const catDishes = platillosNormales.filter((p) => p.categoria_id === cat.id)
               if (catDishes.length === 0) return null
 
               return (
@@ -604,7 +698,7 @@ export function OrderStepper({
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                     {catDishes.map((platillo) => {
-                      const hasPromo = isPromoItem(platillo)
+                      const pActual = parsePrice(platillo.precio)
 
                       return (
                         <div
@@ -612,7 +706,7 @@ export function OrderStepper({
                           onClick={() => handleOpenCustomizeModal(platillo)}
                           className="bg-white dark:bg-[#050404] border border-arena/30 dark:border-arena/10 rounded-2xl overflow-hidden hover:border-turquesa/50 transition-all cursor-pointer shadow-lg flex flex-col sm:flex-row group"
                         >
-                          {/* Imagen Thumbnail con Object-Cover Perfecto y Transición Difuminada Suave */}
+                          {/* Imagen Thumbnail */}
                           <div className="relative w-full sm:w-40 h-48 sm:h-auto min-h-[160px] flex-shrink-0 bg-[#EBE5D8] dark:bg-carbon overflow-hidden">
                             {platillo.imagen_url ? (
                               <StepperDishImage src={platillo.imagen_url} alt={platillo.nombre} />
@@ -621,13 +715,6 @@ export function OrderStepper({
                                 <Flame className="w-8 h-8 text-turquesa/50" />
                                 <span className="text-[10px] font-sans font-bold text-arena/60 uppercase">Marea Negra</span>
                               </div>
-                            )}
-
-                            {hasPromo && (
-                              <span className="absolute top-2 left-2 z-10 text-[9px] font-sans font-extrabold tracking-wider uppercase border border-coral/40 text-blanco bg-gradient-to-r from-coral to-oro px-2 py-0.5 rounded-full shadow-md flex items-center gap-1">
-                                <Flame className="w-2.5 h-2.5 fill-blanco animate-pulse" />
-                                <span>{getPromoBannerText(platillo)}</span>
-                              </span>
                             )}
                           </div>
 
@@ -650,13 +737,8 @@ export function OrderStepper({
                             <div className="flex justify-between items-center pt-2 border-t border-arena/30 dark:border-arena/10">
                               <div className="flex items-baseline gap-2">
                                 <span className="font-display text-3xl text-coral">
-                                  ${platillo.precio.toFixed(0)} <span className="text-xs font-sans text-negro/60 dark:text-arena">MXN</span>
+                                  ${formatPrice(pActual)} <span className="text-xs font-sans text-negro/60 dark:text-arena">MXN</span>
                                 </span>
-                                {hasPromo && platillo.precio_anterior && platillo.precio_anterior > platillo.precio && (
-                                  <span className="font-display text-base text-negro/40 dark:text-arena/40 line-through">
-                                    ${platillo.precio_anterior.toFixed(0)}
-                                  </span>
-                                )}
                               </div>
 
                               <button className="bg-turquesa text-negro font-sans font-bold text-xs px-4 py-2 rounded-full flex items-center gap-1 shadow-md">
@@ -1333,19 +1415,35 @@ export function OrderStepper({
                 </div>
               )}
 
-              {/* CABECERA CON TÍTULO Y PRECIO EN UNA SOLA LÍNEA */}
-              <div className="flex justify-between items-baseline gap-2 mb-3">
+              {/* CABECERA CON TÍTULO Y PRECIO */}
+              <div className="flex justify-between items-start gap-2 mb-3">
                 <div>
                   <span className="text-[10px] font-sans font-bold tracking-widest text-turquesa uppercase block">
-                    PERSONALIZAR PRODUCTO
+                    {isPromoActiveToday(selectedPlatillo)
+                      ? `🔥 ${getPromoBannerText(selectedPlatillo)}`
+                      : 'PERSONALIZAR PRODUCTO'}
                   </span>
                   <h3 className="font-display text-2xl sm:text-3xl text-negro dark:text-blanco leading-tight">
                     {selectedPlatillo.nombre}
                   </h3>
                 </div>
-                <span className="font-display text-2xl sm:text-3xl text-coral shrink-0">
-                  ${selectedPlatillo.precio.toFixed(0)} <span className="text-xs font-sans text-negro/60 dark:text-arena">MXN</span>
-                </span>
+                <div className="flex flex-col items-end shrink-0">
+                  <div className="flex items-baseline gap-2">
+                    <span className="font-display text-2xl sm:text-3xl text-coral">
+                      ${formatPrice(selectedPlatillo.precio)} <span className="text-xs font-sans text-negro/60 dark:text-arena">MXN</span>
+                    </span>
+                    {isPromoActiveToday(selectedPlatillo) && parsePrice(selectedPlatillo.precio_anterior) > parsePrice(selectedPlatillo.precio) && (
+                      <span className="font-display text-base text-negro/40 dark:text-arena/40 line-through">
+                        ${formatPrice(selectedPlatillo.precio_anterior)}
+                      </span>
+                    )}
+                  </div>
+                  {isPromoActiveToday(selectedPlatillo) && parsePrice(selectedPlatillo.precio_anterior) > parsePrice(selectedPlatillo.precio) && (
+                    <span className="text-[9px] font-sans font-bold text-turquesa uppercase tracking-wider">
+                      ¡Ahorras ${(parsePrice(selectedPlatillo.precio_anterior) - parsePrice(selectedPlatillo.precio)).toFixed(0)} MXN!
+                    </span>
+                  )}
+                </div>
               </div>
 
               <div className="flex flex-col gap-3">
