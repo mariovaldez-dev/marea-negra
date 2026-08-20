@@ -19,7 +19,7 @@ const UserHeaderBadge = dynamic(
 import { TicketImageDownload } from '@/components/menu/TicketImageDownload'
 import { RestauranteCerradoModal } from '@/components/menu/RestauranteCerradoModal'
 import { generateWhatsAppMessageUrl } from '@/lib/utils/whatsapp'
-import { isPromoActiveToday, getPromoBannerText, isPromoItem, parsePrice, formatPrice } from '@/lib/utils/promo'
+import { isPromoActiveToday, getPromoBannerText, isPromoItem, parsePrice, formatPrice, getCurrentDayId } from '@/lib/utils/promo'
 import { CustomSelect } from '@/components/ui/CustomSelect'
 import { DiaHorario, getEstadoRestaurante } from '@/lib/actions/negocioEstado'
 import { Award, Lock } from 'lucide-react'
@@ -58,8 +58,8 @@ interface OrderStepperProps {
 const PICOR_OPTIONS: { id: NivelPicor; label: string; desc: string; color: string; flames: number }[] = [
   { id: 'sin_chile', label: 'Sin Chile', desc: 'Mariscos frescos al natural con limón', color: 'border-arena/40 text-negro dark:text-arena bg-arena/10', flames: 0 },
   { id: 'suave', label: 'Suave', desc: 'Toque leve de chilitos frescos', color: 'border-turquesa text-turquesa bg-turquesa/10', flames: 1 },
-  { id: 'medio', label: 'Medio (Sinaloa)', desc: 'Picor tradicional de la casa', color: 'border-oro text-oro bg-oro/10', flames: 2 },
-  { id: 'bravo', label: 'Bravo (Chiltepín Extra)', desc: 'Sabor intenso para conocedores', color: 'border-coral text-coral bg-coral/10', flames: 3 },
+  { id: 'medio', label: 'Medio', desc: 'Picor tradicional de la casa', color: 'border-oro text-oro bg-oro/10', flames: 2 },
+  { id: 'bravo', label: 'Bravo', desc: 'Sabor intenso para conocedores', color: 'border-coral text-coral bg-coral/10', flames: 3 },
 ]
 
 // CACHE GLOBAL EN MEMORIA DE IMÁGENES DESCARGADAS
@@ -173,7 +173,7 @@ export function OrderStepper({
   const [clienteTelefono, setClienteTelefono] = useState('')
   const [tipoEntrega, setTipoEntrega] = useState<'local' | 'didi'>('local')
   const [metodoPago, setMetodoPago] = useState<MetodoPago>('efectivo')
-  const [horaRecogida, setHoraRecogida] = useState('')
+  const [horaRecogida, setHoraRecogida] = useState('lo_antes_posible')
   const [notasGenerales, setNotasGenerales] = useState('')
   const [isPreFilled, setIsPreFilled] = useState(false)
 
@@ -182,6 +182,53 @@ export function OrderStepper({
   const [mensajeCerrado, setMensajeCerrado] = useState(inicialMensaje)
   const [horariosDias, setHorariosDias] = useState<DiaHorario[] | undefined>(inicialHorarios)
   const [showClosedModal, setShowClosedModal] = useState(false)
+
+  // Generar opciones de horarios cada 15 minutos desde apertura hasta 15 min antes de cerrar
+  const timeSlots = React.useMemo(() => {
+    const todayId = getCurrentDayId()
+    const todaySchedule = (horariosDias || []).find((h) => h.id === todayId)
+
+    const aperturaStr = todaySchedule?.apertura || '11:00'
+    const cierreStr = todaySchedule?.cierre || '20:00'
+
+    const [startH, startM] = aperturaStr.split(':').map((v) => parseInt(v, 10) || 0)
+    const [endH, endM] = cierreStr.split(':').map((v) => parseInt(v, 10) || 0)
+
+    const startMinutes = startH * 60 + startM
+    const endMinutes = endH * 60 + endM
+    // La última hora para recoger o enviar es 15 minutos antes de cerrar
+    const lastSlotMinutes = Math.max(startMinutes, endMinutes - 15)
+
+    const slots: Array<{ value: string; label: string; emoji?: string }> = [
+      { value: 'lo_antes_posible', label: '⚡ Lo antes posible (Inmediato)', emoji: '⚡' },
+    ]
+
+    for (let current = startMinutes; current <= lastSlotMinutes; current += 15) {
+      const h24 = Math.floor(current / 60)
+      const m = current % 60
+      const timeVal = `${h24.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`
+
+      // Formato 12 horas amigable (ej. 11:15 AM / 7:45 PM)
+      const period = h24 >= 12 ? 'PM' : 'AM'
+      const h12 = h24 % 12 === 0 ? 12 : h24 % 12
+      const timeLabel = `${h12}:${m.toString().padStart(2, '0')} ${period}`
+
+      let labelExtra = timeLabel
+      if (current === startMinutes) {
+        labelExtra = `${timeLabel} (Apertura)`
+      } else if (current === lastSlotMinutes) {
+        labelExtra = `${timeLabel} (Último horario)`
+      }
+
+      slots.push({
+        value: timeVal,
+        label: labelExtra,
+        emoji: '🕒',
+      })
+    }
+
+    return slots
+  }, [horariosDias])
 
   useEffect(() => {
     async function checkStatus() {
@@ -429,7 +476,7 @@ export function OrderStepper({
         cliente_telefono: clienteTelefono,
         tipo_entrega: tipoEntrega,
         metodo_pago: metodoPago,
-        hora_recogida: horaRecogida,
+        hora_recogida: horaRecogida === 'lo_antes_posible' ? undefined : (horaRecogida || undefined),
         notas: `${notasGenerales ? `${notasGenerales} ` : ''}${appliedCoupon ? `[Cupón: ${appliedCoupon} -${discountPercent}%]` : ''}`.trim(),
         subtotal: rawSubtotal,
         descuento: discountAmount,
@@ -471,11 +518,13 @@ export function OrderStepper({
       )
       .join('\n')
 
-    const message = `Hola Marea Negra! Acabo de hacer el Pedido #${completedOrderNum} en línea:\n\n${itemText}\n\n${
-      discountAmount > 0
-        ? `Subtotal: $${rawSubtotal.toFixed(0)} MXN\nDescuento (${appliedCoupon || 'Cupón'}): -$${discountAmount.toFixed(0)} MXN\n`
-        : ''
-    }Total: $${totalOrderPrice.toFixed(0)} MXN\nCliente: ${clienteNombre}\nTeléfono: ${clienteTelefono}\nMétodo de Pago: ${metodoPago.toUpperCase()}\nEntrega: ${tipoEntrega === 'didi' ? 'Envío por DiDi/Uber' : 'Recoger en Local'}\nHora: ${horaRecogida || 'Lo antes posible'}`
+    const horaSeleccionadaObj = timeSlots.find((s) => s.value === horaRecogida)
+    const horaTexto = horaSeleccionadaObj ? horaSeleccionadaObj.label : (horaRecogida || 'Lo antes posible')
+
+    const message = `Hola Marea Negra! Acabo de hacer el Pedido #${completedOrderNum} en línea:\n\n${itemText}\n\n${discountAmount > 0
+      ? `Subtotal: $${rawSubtotal.toFixed(0)} MXN\nDescuento (${appliedCoupon || 'Cupón'}): -$${discountAmount.toFixed(0)} MXN\n`
+      : ''
+      }Total: $${totalOrderPrice.toFixed(0)} MXN\nCliente: ${clienteNombre}\nTeléfono: ${clienteTelefono}\nMétodo de Pago: ${metodoPago.toUpperCase()}\nEntrega: ${tipoEntrega === 'didi' ? 'Envío por DiDi/Uber' : 'Recoger en Local'}\nHora: ${horaTexto}`
 
     return generateWhatsAppMessageUrl(message)
   }
@@ -972,8 +1021,8 @@ export function OrderStepper({
                   <div
                     onClick={() => setTipoEntrega('local')}
                     className={`flex flex-col items-center justify-center p-4 rounded-2xl border-2 transition-all cursor-pointer ${tipoEntrega === 'local'
-                        ? 'border-turquesa bg-turquesa/10 dark:bg-turquesa/5'
-                        : 'border-arena/30 dark:border-arena/20 bg-[#F4F0E8] dark:bg-carbon hover:border-turquesa/50'
+                      ? 'border-turquesa bg-turquesa/10 dark:bg-turquesa/5'
+                      : 'border-arena/30 dark:border-arena/20 bg-[#F4F0E8] dark:bg-carbon hover:border-turquesa/50'
                       }`}
                   >
                     <span className="text-3xl mb-1">🚗</span>
@@ -988,8 +1037,8 @@ export function OrderStepper({
                   <div
                     onClick={() => setTipoEntrega('didi')}
                     className={`flex flex-col items-center justify-center p-4 rounded-2xl border-2 transition-all cursor-pointer ${tipoEntrega === 'didi'
-                        ? 'border-oro bg-oro/10 dark:bg-oro/5'
-                        : 'border-arena/30 dark:border-arena/20 bg-[#F4F0E8] dark:bg-carbon hover:border-oro/50'
+                      ? 'border-oro bg-oro/10 dark:bg-oro/5'
+                      : 'border-arena/30 dark:border-arena/20 bg-[#F4F0E8] dark:bg-carbon hover:border-oro/50'
                       }`}
                   >
                     <span className="text-3xl mb-1">🛵</span>
@@ -1033,11 +1082,11 @@ export function OrderStepper({
                     <Clock className="w-4 h-4 text-turquesa" />
                     <span>{tipoEntrega === 'local' ? 'Hora Estimada Recogida' : 'Hora de Preparación/Envío'}</span>
                   </label>
-                  <input
-                    type="time"
+                  <CustomSelect
+                    options={timeSlots}
                     value={horaRecogida}
-                    onChange={(e) => setHoraRecogida(e.target.value)}
-                    className="bg-[#F4F0E8] dark:bg-carbon border border-arena/30 dark:border-arena/20 rounded-xl px-3 py-3 text-base text-negro dark:text-blanco focus:border-turquesa focus:outline-none"
+                    onChange={(val) => setHoraRecogida(val)}
+                    placeholder="-- Selecciona un horario --"
                   />
                 </div>
               </div>
@@ -1407,7 +1456,7 @@ export function OrderStepper({
               <X className="w-4 h-4 sm:w-5 sm:h-5" />
             </button>
 
-            <div>
+            <div className='py-6'>
               {/* FOTO COMPACTA EN HEADER CON OBJECT-COVER Y BLUR TRANSICIÓN */}
               {selectedPlatillo.imagen_url && (
                 <div className="relative w-full h-32 sm:h-44 rounded-xl overflow-hidden mb-3 bg-[#EBE5D8] dark:bg-carbon border border-arena/30 dark:border-arena/10">
