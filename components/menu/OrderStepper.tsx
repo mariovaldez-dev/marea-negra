@@ -1068,9 +1068,8 @@ export function OrderStepper({
                   </label>
                   <CustomSelect
                     options={[
-                      { value: 'efectivo', label: 'Efectivo al Recoger', emoji: '💵' },
-                      { value: 'transferencia', label: 'Transferencia SPEI', emoji: '🏦' },
-                      { value: 'oxxo', label: 'Depósito OXXO', emoji: '🏪' },
+                      { value: 'efectivo', label: 'Efectivo', emoji: '💵' },
+                      { value: 'transferencia', label: 'Transferencia SPEI', emoji: '🏦' }
                     ]}
                     value={metodoPago}
                     onChange={(val) => setMetodoPago(val as MetodoPago)}

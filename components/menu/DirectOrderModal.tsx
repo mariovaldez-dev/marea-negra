@@ -194,9 +194,8 @@ export function DirectOrderModal({
                     onChange={(e) => setMetodoPago(e.target.value as MetodoPago)}
                     className="bg-carbon dark:bg-carbon light:bg-white border border-arena/20 light:border-arena/40 rounded-lg px-3 py-2.5 text-xs text-blanco dark:text-blanco light:text-negro focus:border-turquesa focus:outline-none"
                   >
-                    <option value="efectivo">Efectivo al Recoger</option>
+                    <option value="efectivo">Efectivo</option>
                     <option value="transferencia">Transferencia bancaria</option>
-                    <option value="oxxo">Depósito OXXO</option>
                   </select>
                 </div>
 

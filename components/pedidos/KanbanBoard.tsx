@@ -286,43 +286,40 @@ export function KanbanBoard({
             {filterMode === 'hoy'
               ? `PEDIDOS DE HOY (${todayStr})`
               : filterMode === 'activos'
-              ? 'SOLO ACTIVOS EN COCINA'
-              : filterMode === 'fecha'
-              ? `FECHA: ${selectedDate}`
-              : 'HISTÓRICO COMPLETO'}
+                ? 'SOLO ACTIVOS EN COCINA'
+                : filterMode === 'fecha'
+                  ? `FECHA: ${selectedDate}`
+                  : 'HISTÓRICO COMPLETO'}
           </span>
         </div>
 
         <div className="flex items-center gap-2 flex-wrap">
           <button
             onClick={() => setFilterMode('hoy')}
-            className={`px-4 py-2 rounded-xl text-xs font-sans font-bold transition-all border ${
-              filterMode === 'hoy'
+            className={`px-4 py-2 rounded-xl text-xs font-sans font-bold transition-all border ${filterMode === 'hoy'
                 ? 'bg-turquesa text-negro border-turquesa shadow-md'
                 : 'bg-carbon text-arena/70 border-arena/20 hover:border-turquesa'
-            }`}
+              }`}
           >
             📅 PEDIDOS DE HOY
           </button>
 
           <button
             onClick={() => setFilterMode('activos')}
-            className={`px-4 py-2 rounded-xl text-xs font-sans font-bold transition-all border ${
-              filterMode === 'activos'
+            className={`px-4 py-2 rounded-xl text-xs font-sans font-bold transition-all border ${filterMode === 'activos'
                 ? 'bg-coral text-blanco border-coral shadow-md'
                 : 'bg-carbon text-arena/70 border-arena/20 hover:border-coral'
-            }`}
+              }`}
           >
             ⚡ SOLO ACTIVOS
           </button>
 
           <button
             onClick={() => setFilterMode('todos')}
-            className={`px-4 py-2 rounded-xl text-xs font-sans font-bold transition-all border ${
-              filterMode === 'todos'
+            className={`px-4 py-2 rounded-xl text-xs font-sans font-bold transition-all border ${filterMode === 'todos'
                 ? 'bg-oro text-negro border-oro shadow-md'
                 : 'bg-carbon text-arena/70 border-arena/20 hover:border-oro'
-            }`}
+              }`}
           >
             🗓️ HISTÓRICO
           </button>
@@ -357,15 +354,14 @@ export function KanbanBoard({
                 <div className="flex items-center justify-between border-b border-arena/10 pb-3">
                   <div className="flex items-center gap-2">
                     <span
-                      className={`w-2.5 h-2.5 rounded-full ${
-                        col.dot === 'coral'
+                      className={`w-2.5 h-2.5 rounded-full ${col.dot === 'coral'
                           ? 'bg-coral shadow-[0_0_8px_#E8430A]'
                           : col.dot === 'oro'
-                          ? 'bg-oro shadow-[0_0_8px_#C9A84C]'
-                          : col.dot === 'turquesa'
-                          ? 'bg-turquesa shadow-[0_0_8px_#2ABFBF]'
-                          : 'bg-arena/40'
-                      }`}
+                            ? 'bg-oro shadow-[0_0_8px_#C9A84C]'
+                            : col.dot === 'turquesa'
+                              ? 'bg-turquesa shadow-[0_0_8px_#2ABFBF]'
+                              : 'bg-arena/40'
+                        }`}
                     />
                     <h3 className="font-display text-xl text-blanco tracking-wider">
                       {col.label}
@@ -383,9 +379,8 @@ export function KanbanBoard({
                     <div
                       ref={provided.innerRef}
                       {...provided.droppableProps}
-                      className={`flex flex-col gap-3 flex-1 transition-colors rounded-lg p-1 ${
-                        snapshot.isDraggingOver ? 'bg-carbon/50 border border-dashed border-turquesa/30' : ''
-                      }`}
+                      className={`flex flex-col gap-3 flex-1 transition-colors rounded-lg p-1 ${snapshot.isDraggingOver ? 'bg-carbon/50 border border-dashed border-turquesa/30' : ''
+                        }`}
                     >
                       {colPedidos.map((pedido, index) => (
                         <Draggable
@@ -398,9 +393,8 @@ export function KanbanBoard({
                               ref={providedDrag.innerRef}
                               {...providedDrag.draggableProps}
                               {...providedDrag.dragHandleProps}
-                              className={`transition-transform ${
-                                snapshotDrag.isDragging ? 'rotate-2 scale-105 z-50' : ''
-                              }`}
+                              className={`transition-transform ${snapshotDrag.isDragging ? 'rotate-2 scale-105 z-50' : ''
+                                }`}
                             >
                               {/* TARJETA KANBAN CLICKEABLE CON DETALLE PREVIEW */}
                               <div
@@ -569,11 +563,10 @@ export function KanbanBoard({
                     <button
                       key={st.id}
                       onClick={() => handleStatusChange(previewPedido.id, st.id as EstadoPedido)}
-                      className={`py-2 px-2 rounded-xl text-[10px] font-sans font-bold tracking-wider transition-all border ${
-                        isCurrent
+                      className={`py-2 px-2 rounded-xl text-[10px] font-sans font-bold tracking-wider transition-all border ${isCurrent
                           ? `${st.color} shadow-lg ring-2 ring-blanco/30 scale-105`
                           : 'bg-carbon/80 text-arena/60 border-arena/20 hover:border-blanco/40'
-                      }`}
+                        }`}
                     >
                       {st.label}
                     </button>
@@ -774,9 +767,8 @@ export function KanbanBoard({
                     onChange={(e) => setMetodoPago(e.target.value as MetodoPago)}
                     className="bg-carbon border border-arena/20 rounded-xl px-4 py-3 text-base text-blanco focus:border-turquesa focus:outline-none"
                   >
-                    <option value="efectivo">Efectivo al Recoger</option>
+                    <option value="efectivo">Efectivo</option>
                     <option value="transferencia">Transferencia SPEI</option>
-                    <option value="oxxo">Depósito OXXO</option>
                   </select>
                 </div>
 
@@ -945,7 +937,7 @@ export function KanbanBoard({
               <p className="text-arena/70 font-sans text-sm mb-6">
                 Estás a punto de cancelar la orden de <strong>{pedidoToReject.cliente_nombre}</strong>. Esta acción no se puede deshacer y el cliente no recibirá su pedido.
               </p>
-              
+
               <div className="flex justify-end gap-3">
                 <button
                   onClick={() => setPedidoToReject(null)}
