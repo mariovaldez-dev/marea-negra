@@ -386,6 +386,14 @@ export function OrderStepper({
   const [isValidatingCoupon, setIsValidatingCoupon] = useState(false)
 
   const handleApplySpecificCoupon = async (codeToApply: string) => {
+    if (!codeToApply || !codeToApply.trim()) return
+
+    // Si el pedido tiene solo productos de promoción/combos, no se puede redimir cupón
+    if (cart.length > 0 && regularSubtotal === 0) {
+      setCouponError('Los cupones de descuento no aplican en pedidos con solo productos en promoción o combos. Agrega al menos un platillo regular a tu pedido.')
+      return
+    }
+
     setCuponInput(codeToApply)
     setIsValidatingCoupon(true)
     setCouponError(null)
@@ -394,6 +402,14 @@ export function OrderStepper({
       const activePhone = clienteTelefono || (typeof window !== 'undefined' ? localStorage.getItem('marea_cliente_telefono') || '' : '')
       const res = await validateCuponAction(codeToApply, activePhone)
       if (res.valid) {
+        if (res.descuento_porcentaje && regularSubtotal === 0 && !res.producto_regalo) {
+          setCouponError('Los cupones de descuento no aplican en pedidos con solo productos en promoción o combos. Agrega al menos un platillo regular.')
+          setDiscountPercent(0)
+          setFixedDiscount(0)
+          setAppliedCoupon(null)
+          return
+        }
+
         setDiscountPercent(res.descuento_porcentaje || 0)
         setFixedDiscount(res.monto_fijo || 0)
         setAppliedCoupon(res.codigo || codeToApply)
@@ -420,6 +436,15 @@ export function OrderStepper({
   const handleApplyCoupon = async () => {
     handleApplySpecificCoupon(cuponInput)
   }
+
+  // Si el usuario modifica el carrito y se queda con puros productos de promo, desaplicar cupón y avisar
+  useEffect(() => {
+    if (appliedCoupon && cart.length > 0 && regularSubtotal === 0 && !appliedGiftProduct) {
+      setAppliedCoupon(null)
+      setDiscountPercent(0)
+      setCouponError('El cupón se desaplicó porque tu pedido ahora contiene únicamente productos en promoción.')
+    }
+  }, [regularSubtotal, appliedCoupon, appliedGiftProduct, cart.length])
 
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
 
@@ -1133,10 +1158,17 @@ export function OrderStepper({
                 )}
 
                 {couponError && (
-                  <span className="text-xs font-sans font-bold text-coral flex items-center gap-1">
-                    <AlertCircle className="w-3.5 h-3.5 text-coral shrink-0" />
-                    <span>{couponError}</span>
-                  </span>
+                  <div className="bg-coral/10 border border-coral/30 rounded-xl p-3.5 flex items-start gap-2 text-coral shadow-sm animate-in fade-in slide-in-from-top-1 duration-200">
+                    <AlertCircle className="w-4 h-4 text-coral shrink-0 mt-0.5" />
+                    <span className="text-xs font-sans font-bold leading-relaxed">{couponError}</span>
+                  </div>
+                )}
+
+                {cart.length > 0 && regularSubtotal === 0 && !couponError && (
+                  <div className="bg-arena/10 border border-arena/20 rounded-xl p-2.5 flex items-center gap-2 text-negro/70 dark:text-arena/70 text-[11px] font-sans">
+                    <span className="text-base shrink-0">ℹ️</span>
+                    <span>Tu pedido contiene solo promociones/combos. Los cupones aplican en platillos regulares a precio de lista.</span>
+                  </div>
                 )}
 
                 {appliedCoupon && (
