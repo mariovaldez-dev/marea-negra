@@ -240,64 +240,35 @@ export async function incrementCuponUsos(codigoInput: string) {
   }
 }
 
-// Obtener cupones públicos válidos para el selector tipo Uber Eats en checkout (Reales desde BDD)
+// Obtener cupones asignados exclusivamente al cliente autenticado / teléfono ingresado
 export async function getAvailableCuponesPublic(clienteTelefono?: string): Promise<AvailableCouponPublic[]> {
   const supabase = createServerClient()
   const availableList: AvailableCouponPublic[] = []
   const now = new Date()
   const cleanPhone = (clienteTelefono || '').replace(/\D/g, '')
 
-  // 1. Obtener cupones promocionales GLOBALES / PÚBLICOS (creados para toda la clientela)
-  // Excluimos cupones personales que empiezan con 'BIENVENIDO-', 'MAREA-', 'LEALTAD-', 'RECOMPENSA-'
-  const { data: dbCupones } = await supabase
-    .from('cupones')
-    .select('id, codigo, descuento_porcentaje, usos_maximos, usos_actuales, fecha_expiracion')
-    .eq('activo', true)
-    .not('codigo', 'ilike', 'BIENVENIDO-%')
-    .not('codigo', 'ilike', 'MAREA-%')
-    .not('codigo', 'ilike', 'LEALTAD-%')
-    .not('codigo', 'ilike', 'RECOMPENSA-%')
-    .neq('codigo', 'CONFIG_LEALTAD_SINALOA')
-    .order('descuento_porcentaje', { ascending: false })
-
-  if (dbCupones) {
-    dbCupones
-      .filter((c) => c.usos_maximos === null || (c.usos_actuales || 0) < c.usos_maximos)
-      .filter((c) => !c.fecha_expiracion || new Date(c.fecha_expiracion) > now)
-      .forEach((c) => {
-        availableList.push({
-          codigo: c.codigo,
-          descuento: Number(c.descuento_porcentaje) || 10,
-          titulo: `Cupón Promocional: ${c.descuento_porcentaje}% OFF`,
-          tipo: 'promocional',
-        })
-      })
+  // Si no hay teléfono registrado o válido (mínimo 7 dígitos), no se despliega ningún cupón asignado
+  if (!cleanPhone || cleanPhone.length < 7) {
+    return []
   }
 
-  // 2. Si el cliente tiene teléfono registrado, consultar EXCLUSIVAMENTE sus cupones asignados personales
-  if (cleanPhone && cleanPhone.length >= 7) {
-    const { data: clienteReg } = await supabase
-      .from('clientes_club')
-      .select('id, nombre, codigo_referido')
-      .eq('telefono', cleanPhone)
-      .single()
+  // 1. Consultar si el cliente está registrado en el Club Marea Negra
+  const { data: clienteReg } = await supabase
+    .from('clientes_club')
+    .select('id, nombre, codigo_referido')
+    .eq('telefono', cleanPhone)
+    .single()
 
-    if (clienteReg) {
-      const cleanName = clienteReg.nombre?.trim().replace(/\s+/g, '').slice(0, 4).toUpperCase() || ''
+  if (clienteReg) {
+    const cleanName = clienteReg.nombre?.trim().replace(/\s+/g, '').slice(0, 4).toUpperCase() || ''
 
-      // A) Buscar el cupón de bienvenida exclusivo de este cliente (BIENVENIDO-{cleanName}-%)
-      let welcomeQuery = supabase
+    // A) Buscar el cupón de bienvenida EXCLUSIVO de este cliente (BIENVENIDO-{cleanName}-%)
+    if (cleanName) {
+      const { data: personalWelcome } = await supabase
         .from('cupones')
         .select('id, codigo, descuento_porcentaje, usos_maximos, usos_actuales, fecha_expiracion')
         .eq('activo', true)
-
-      if (cleanName) {
-        welcomeQuery = welcomeQuery.ilike('codigo', `BIENVENIDO-${cleanName}-%`)
-      } else {
-        welcomeQuery = welcomeQuery.ilike('codigo', 'BIENVENIDO-%')
-      }
-
-      const { data: personalWelcome } = await welcomeQuery
+        .ilike('codigo', `BIENVENIDO-${cleanName}-%`)
 
       if (personalWelcome) {
         personalWelcome
@@ -305,7 +276,7 @@ export async function getAvailableCuponesPublic(clienteTelefono?: string): Promi
           .filter((c) => !c.fecha_expiracion || new Date(c.fecha_expiracion) > now)
           .forEach((c) => {
             if (!availableList.some((item) => item.codigo === c.codigo)) {
-              availableList.unshift({
+              availableList.push({
                 codigo: c.codigo,
                 descuento: Number(c.descuento_porcentaje) || 10,
                 titulo: '🎁 Tu Cupón Personal de Bienvenida (10% OFF)',
@@ -314,28 +285,28 @@ export async function getAvailableCuponesPublic(clienteTelefono?: string): Promi
             }
           })
       }
+    }
 
-      // B) Recompensas por compras de Lealtad alcanzadas por este cliente en BDD
-      const recompensasLealtad = await getRecompensasLealtadList()
-      if (recompensasLealtad.length > 0) {
-        const { data: pedidosCliente } = await supabase
-          .from('pedidos')
-          .select('id')
-          .or(`cliente_telefono.eq.${cleanPhone},cliente_telefono.ilike.%${cleanPhone}%`)
+    // B) Recompensas por compras de Lealtad alcanzadas por este cliente en BDD
+    const recompensasLealtad = await getRecompensasLealtadList()
+    if (recompensasLealtad.length > 0) {
+      const { data: pedidosCliente } = await supabase
+        .from('pedidos')
+        .select('id')
+        .or(`cliente_telefono.eq.${cleanPhone},cliente_telefono.ilike.%${cleanPhone}%`)
 
-        const totalOrders = pedidosCliente?.length || 0
+      const totalOrders = pedidosCliente?.length || 0
 
-        recompensasLealtad.forEach((reward) => {
-          if (reward.activo !== false && totalOrders >= reward.pedidos_requeridos) {
-            availableList.unshift({
-              codigo: reward.codigo,
-              descuento: reward.descuento_porcentaje,
-              titulo: `🏆 ¡Desbloqueado! ${reward.titulo}`,
-              tipo: 'lealtad',
-            })
-          }
-        })
-      }
+      recompensasLealtad.forEach((reward) => {
+        if (reward.activo !== false && totalOrders >= reward.pedidos_requeridos) {
+          availableList.push({
+            codigo: reward.codigo,
+            descuento: reward.descuento_porcentaje,
+            titulo: `🏆 ¡Desbloqueado! ${reward.titulo}`,
+            tipo: 'lealtad',
+          })
+        }
+      })
     }
   }
 
