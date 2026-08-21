@@ -152,19 +152,20 @@ export function InstagramStoryModal({ platillo, onClose }: InstagramStoryModalPr
                   crossOrigin="anonymous"
                   style={{
                     position: 'absolute',
-                    inset: 0,
+                    top: 0,
+                    left: 0,
                     width: '100%',
-                    height: '58%',
+                    height: '50%',
                     objectFit: 'cover',
                   }}
                 />
                 {/* Overlay gradiente que une imagen con fondo negro */}
                 <div style={{
                   position: 'absolute',
-                  top: '40%',
+                  top: '32%',
                   left: 0,
                   right: 0,
-                  height: '25%',
+                  height: '20%',
                   background: 'linear-gradient(to bottom, transparent, #080808)',
                 }} />
               </>
@@ -175,13 +176,13 @@ export function InstagramStoryModal({ platillo, onClose }: InstagramStoryModalPr
                 top: 0,
                 left: 0,
                 right: 0,
-                height: '58%',
+                height: '50%',
                 background: 'linear-gradient(135deg, #0D3B5E 0%, #080808 60%, #1a0a05 100%)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
               }}>
-                <span style={{ fontSize: 100, filter: 'drop-shadow(0 0 30px rgba(42,191,191,0.4))' }}>
+                <span style={{ fontSize: 90, filter: 'drop-shadow(0 0 30px rgba(42,191,191,0.4))' }}>
                   {platillo.emoji || '🦐'}
                 </span>
               </div>
@@ -200,6 +201,7 @@ export function InstagramStoryModal({ platillo, onClose }: InstagramStoryModalPr
                 alignItems: 'center',
                 gap: 5,
                 boxShadow: '0 0 20px rgba(232,67,10,0.5)',
+                zIndex: 10,
               }}>
                 <span style={{ fontSize: 11 }}>🔥</span>
                 <span style={{
@@ -214,14 +216,17 @@ export function InstagramStoryModal({ platillo, onClose }: InstagramStoryModalPr
               </div>
             )}
 
-            {/* ── CONTENIDO INFERIOR ── */}
+            {/* ── CONTENIDO INFERIOR (FLEX ESTRUCTURADO Y NUNCA SOLAPADO) ── */}
             <div style={{
               position: 'absolute',
               bottom: 0,
               left: 0,
               right: 0,
-              padding: '16px 20px 14px',
-              background: 'linear-gradient(to top, #080808 82%, transparent)',
+              padding: '14px 20px 14px',
+              background: 'linear-gradient(to top, #080808 88%, rgba(8,8,8,0.7) 96%, transparent)',
+              display: 'flex',
+              flexDirection: 'column',
+              zIndex: 10,
             }}>
               {/* Ornamento separador */}
               <div style={{
@@ -230,7 +235,7 @@ export function InstagramStoryModal({ platillo, onClose }: InstagramStoryModalPr
                 opacity: 0.4,
                 fontSize: 9,
                 letterSpacing: 3,
-                marginBottom: 3,
+                marginBottom: 2,
               }}>
                 — ✦ —
               </div>
@@ -246,28 +251,31 @@ export function InstagramStoryModal({ platillo, onClose }: InstagramStoryModalPr
                 />
               </div>
 
-              {/* Línea dorada */}
+              {/* Línea dorada superior */}
               <div style={{
+                width: '100%',
                 height: 1,
                 background: 'linear-gradient(90deg, transparent, #C9A84C, transparent)',
-                margin: '5px 0',
+                marginTop: 4,
+                marginBottom: 6,
                 opacity: 0.35,
+                display: 'block',
               }} />
 
               {/* Nombre del platillo */}
               <div style={{
                 color: '#F7F3EE',
-                fontSize: 23,
+                fontSize: 22,
                 fontWeight: 900,
                 letterSpacing: 2,
                 textTransform: 'uppercase',
-                lineHeight: 1.05,
+                lineHeight: 1.1,
                 marginBottom: 3,
               }}>
                 {platillo.nombre}
               </div>
 
-              {/* Descripción */}
+              {/* Descripción limpia sin solapamientos */}
               {platillo.descripcion && (
                 <div style={{
                   color: '#D4C5A9',
@@ -276,17 +284,16 @@ export function InstagramStoryModal({ platillo, onClose }: InstagramStoryModalPr
                   opacity: 0.8,
                   marginBottom: 6,
                   lineHeight: 1.3,
-                  overflow: 'hidden',
-                  display: '-webkit-box',
-                  WebkitLineClamp: 2,
-                  WebkitBoxOrient: 'vertical',
-                } as React.CSSProperties}>
-                  {platillo.descripcion}
+                  display: 'block',
+                }}>
+                  {platillo.descripcion.length > 95
+                    ? `${platillo.descripcion.slice(0, 95)}...`
+                    : platillo.descripcion}
                 </div>
               )}
 
               {/* Precio */}
-              <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, marginBottom: 3 }}>
+              <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, marginBottom: 4 }}>
                 {hasPromo && pAnterior > pActual && (
                   <span style={{
                     color: '#D4C5A9',
@@ -309,45 +316,34 @@ export function InstagramStoryModal({ platillo, onClose }: InstagramStoryModalPr
                 <span style={{ color: '#D4C5A9', fontSize: 11, opacity: 0.7 }}>MXN</span>
               </div>
 
-              {/* Ahorro */}
-              {ahorro > 0 && (
-                <div style={{
-                  color: '#2ABFBF',
-                  fontSize: 9.5,
-                  fontWeight: 700,
-                  letterSpacing: 1.2,
-                  textTransform: 'uppercase',
-                  marginBottom: 6,
-                }}>
-                  ¡Ahorras ${ahorro.toFixed(0)} MXN!
-                </div>
-              )}
-
-              {/* Línea dorada */}
+              {/* Línea dorada inferior */}
               <div style={{
+                width: '100%',
                 height: 1,
                 background: 'linear-gradient(90deg, transparent, #C9A84C, transparent)',
-                margin: '5px 0',
+                marginTop: 2,
+                marginBottom: 6,
                 opacity: 0.25,
+                display: 'block',
               }} />
 
               {/* CTA WhatsApp */}
               <div style={{
                 background: 'linear-gradient(135deg, #2ABFBF, #1a9999)',
                 borderRadius: 50,
-                padding: '8px 14px',
+                padding: '7px 12px',
                 textAlign: 'center',
-                marginBottom: 6,
+                marginBottom: 5,
                 boxShadow: '0 0 16px rgba(42,191,191,0.25)',
               }}>
                 <span style={{
                   color: '#080808',
-                  fontSize: 11,
+                  fontSize: 10.5,
                   fontWeight: 900,
-                  letterSpacing: 1.5,
+                  letterSpacing: 1.2,
                   textTransform: 'uppercase',
                 }}>
-                  📲 Ordena por WhatsApp
+                  📲 Ordena por WhatsApp o en la APP
                 </span>
               </div>
 

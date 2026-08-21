@@ -113,7 +113,7 @@ export function BrandLogo({
   const subtextSizeClasses = {
     xs: 'text-xs md:text-sm tracking-[0.18em] mt-0.5 leading-none',
     sm: 'text-sm md:text-base tracking-[0.2em] mt-0.5 leading-none',
-    story: 'text-base md:text-lg tracking-[0.2em] mt-0.5 leading-none',
+    story: 'text-base md:text-lg tracking-[0.2em]',
     md: 'text-2xl md:text-3xl tracking-[0.25em] mt-1.5 pl-2',
     lg: 'text-3xl md:text-4xl tracking-[0.25em] mt-2 pl-2',
     hero: 'text-3xl md:text-5xl tracking-[0.25em] mt-2 pl-2',
