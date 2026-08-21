@@ -38,6 +38,9 @@ export function InstagramStoryModal({ platillo, onClose }: InstagramStoryModalPr
   const [copied, setCopied] = useState(false)
   const [shared, setShared] = useState(false)
 
+  const [base64Image, setBase64Image] = useState<string | null>(null)
+  const [imageReady, setImageReady] = useState(false)
+
   const hasPromo = isPromoItem(platillo)
   const pActual = parsePrice(platillo.precio)
   const pAnterior = parsePrice(platillo.precio_anterior)
@@ -52,6 +55,65 @@ export function InstagramStoryModal({ platillo, onClose }: InstagramStoryModalPr
     }
   }, [])
 
+  // Convertir la imagen a Base64 via /api/image-proxy para evitar cualquier bloqueo de CORS en html-to-image
+  useEffect(() => {
+    if (!platillo.imagen_url) {
+      setImageReady(true)
+      return
+    }
+
+    let isMounted = true
+    setImageReady(false)
+
+    const fetchImageBase64 = async () => {
+      try {
+        const proxyUrl = `/api/image-proxy?url=${encodeURIComponent(platillo.imagen_url!)}`
+        const res = await fetch(proxyUrl)
+        if (res.ok) {
+          const blob = await res.blob()
+          const reader = new FileReader()
+          reader.onloadend = () => {
+            if (isMounted && typeof reader.result === 'string') {
+              setBase64Image(reader.result)
+              setImageReady(true)
+            }
+          }
+          reader.readAsDataURL(blob)
+          return
+        }
+      } catch (proxyErr) {
+        console.warn('Proxy fetch fallo, intentando fallback directo:', proxyErr)
+      }
+
+      // Fallback directo
+      try {
+        const resDirect = await fetch(platillo.imagen_url!, { mode: 'cors' })
+        const blobDirect = await resDirect.blob()
+        const reader = new FileReader()
+        reader.onloadend = () => {
+          if (isMounted && typeof reader.result === 'string') {
+            setBase64Image(reader.result)
+            setImageReady(true)
+          }
+        }
+        reader.readAsDataURL(blobDirect)
+      } catch (err) {
+        console.error('Error cargando base64 de imagen:', err)
+        if (isMounted) {
+          setBase64Image(platillo.imagen_url)
+          setImageReady(true)
+        }
+      }
+    }
+
+    fetchImageBase64()
+    return () => {
+      isMounted = false
+    }
+  }, [platillo.imagen_url])
+
+  const displayImgSrc: string | undefined = (base64Image || platillo.imagen_url) || undefined
+
   /** Genera el Blob PNG en Ultra HD (1080×1920) usando el motor nativo del navegador */
   const generateStoryBlob = async (): Promise<{ blob: Blob; fileName: string } | null> => {
     if (!storyDomRef.current) return null
@@ -61,6 +123,9 @@ export function InstagramStoryModal({ platillo, onClose }: InstagramStoryModalPr
       if (typeof document !== 'undefined' && document.fonts) {
         await document.fonts.ready
       }
+
+      // Pequeño delay de 50ms para asegurar que el DOM con la imagen Base64 esté pintado
+      await new Promise((r) => setTimeout(r, 60))
 
       const blob = await toBlob(storyDomRef.current, {
         pixelRatio: 3, // 360x640 * 3 = 1080x1920 Ultra HD
@@ -229,7 +294,7 @@ export function InstagramStoryModal({ platillo, onClose }: InstagramStoryModalPr
                   {platillo.imagen_url ? (
                     <>
                       <img
-                        src={platillo.imagen_url}
+                        src={displayImgSrc}
                         alt={platillo.nombre}
                         crossOrigin="anonymous"
                         style={{
@@ -521,7 +586,7 @@ export function InstagramStoryModal({ platillo, onClose }: InstagramStoryModalPr
                 <>
                   {platillo.imagen_url ? (
                     <img
-                      src={platillo.imagen_url}
+                      src={displayImgSrc}
                       alt={platillo.nombre}
                       crossOrigin="anonymous"
                       style={{
@@ -794,7 +859,7 @@ export function InstagramStoryModal({ platillo, onClose }: InstagramStoryModalPr
                   >
                     {platillo.imagen_url ? (
                       <img
-                        src={platillo.imagen_url}
+                        src={displayImgSrc}
                         alt={platillo.nombre}
                         crossOrigin="anonymous"
                         style={{ width: '100%', height: '100%', objectFit: 'cover' }}
@@ -980,7 +1045,7 @@ export function InstagramStoryModal({ platillo, onClose }: InstagramStoryModalPr
                     >
                       {platillo.imagen_url ? (
                         <img
-                          src={platillo.imagen_url}
+                          src={displayImgSrc}
                           alt={platillo.nombre}
                           crossOrigin="anonymous"
                           style={{ width: '100%', height: '100%', objectFit: 'cover' }}
