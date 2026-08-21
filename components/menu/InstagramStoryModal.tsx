@@ -220,26 +220,25 @@ export function InstagramStoryModal({ platillo, onClose }: InstagramStoryModalPr
               bottom: 0,
               left: 0,
               right: 0,
-              padding: '24px 22px 20px',
-              background: 'linear-gradient(to top, #080808 80%, transparent)',
+              padding: '16px 20px 14px',
+              background: 'linear-gradient(to top, #080808 82%, transparent)',
             }}>
               {/* Ornamento separador */}
               <div style={{
                 textAlign: 'center',
                 color: '#C9A84C',
-                opacity: 0.5,
-                fontSize: 11,
-                letterSpacing: 4,
-                marginBottom: 10,
+                opacity: 0.4,
+                fontSize: 9,
+                letterSpacing: 3,
+                marginBottom: 3,
               }}>
                 — ✦ —
               </div>
 
               {/* Logo MAREA NEGRA (Variante Historia IG con Slogan y Subtexto) */}
-              <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 8 }}>
+              <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 4 }}>
                 <BrandLogo
                   size="story"
-                  stacked
                   withSubtext
                   withSlogan
                   align="center"
@@ -251,19 +250,19 @@ export function InstagramStoryModal({ platillo, onClose }: InstagramStoryModalPr
               <div style={{
                 height: 1,
                 background: 'linear-gradient(90deg, transparent, #C9A84C, transparent)',
-                margin: '10px 0',
-                opacity: 0.4,
+                margin: '5px 0',
+                opacity: 0.35,
               }} />
 
               {/* Nombre del platillo */}
               <div style={{
                 color: '#F7F3EE',
-                fontSize: 26,
+                fontSize: 23,
                 fontWeight: 900,
-                letterSpacing: 3,
+                letterSpacing: 2,
                 textTransform: 'uppercase',
-                lineHeight: 1.1,
-                marginBottom: 6,
+                lineHeight: 1.05,
+                marginBottom: 3,
               }}>
                 {platillo.nombre}
               </div>
@@ -272,11 +271,11 @@ export function InstagramStoryModal({ platillo, onClose }: InstagramStoryModalPr
               {platillo.descripcion && (
                 <div style={{
                   color: '#D4C5A9',
-                  fontSize: 11,
+                  fontSize: 10.5,
                   fontStyle: 'italic',
                   opacity: 0.8,
-                  marginBottom: 10,
-                  lineHeight: 1.4,
+                  marginBottom: 6,
+                  lineHeight: 1.3,
                   overflow: 'hidden',
                   display: '-webkit-box',
                   WebkitLineClamp: 2,
@@ -287,11 +286,11 @@ export function InstagramStoryModal({ platillo, onClose }: InstagramStoryModalPr
               )}
 
               {/* Precio */}
-              <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 6 }}>
+              <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, marginBottom: 3 }}>
                 {hasPromo && pAnterior > pActual && (
                   <span style={{
                     color: '#D4C5A9',
-                    fontSize: 14,
+                    fontSize: 13,
                     textDecoration: 'line-through',
                     opacity: 0.6,
                   }}>
@@ -300,25 +299,25 @@ export function InstagramStoryModal({ platillo, onClose }: InstagramStoryModalPr
                 )}
                 <span style={{
                   color: '#E8430A',
-                  fontSize: 38,
+                  fontSize: 32,
                   fontWeight: 900,
-                  letterSpacing: 2,
+                  letterSpacing: 1.5,
                   lineHeight: 1,
                 }}>
                   ${formatPrice(pActual)}
                 </span>
-                <span style={{ color: '#D4C5A9', fontSize: 12, opacity: 0.7 }}>MXN</span>
+                <span style={{ color: '#D4C5A9', fontSize: 11, opacity: 0.7 }}>MXN</span>
               </div>
 
               {/* Ahorro */}
               {ahorro > 0 && (
                 <div style={{
                   color: '#2ABFBF',
-                  fontSize: 10,
+                  fontSize: 9.5,
                   fontWeight: 700,
-                  letterSpacing: 1.5,
+                  letterSpacing: 1.2,
                   textTransform: 'uppercase',
-                  marginBottom: 10,
+                  marginBottom: 6,
                 }}>
                   ¡Ahorras ${ahorro.toFixed(0)} MXN!
                 </div>
@@ -328,24 +327,24 @@ export function InstagramStoryModal({ platillo, onClose }: InstagramStoryModalPr
               <div style={{
                 height: 1,
                 background: 'linear-gradient(90deg, transparent, #C9A84C, transparent)',
-                margin: '10px 0',
-                opacity: 0.3,
+                margin: '5px 0',
+                opacity: 0.25,
               }} />
 
               {/* CTA WhatsApp */}
               <div style={{
                 background: 'linear-gradient(135deg, #2ABFBF, #1a9999)',
                 borderRadius: 50,
-                padding: '10px 18px',
+                padding: '8px 14px',
                 textAlign: 'center',
-                marginBottom: 12,
-                boxShadow: '0 0 20px rgba(42,191,191,0.3)',
+                marginBottom: 6,
+                boxShadow: '0 0 16px rgba(42,191,191,0.25)',
               }}>
                 <span style={{
                   color: '#080808',
-                  fontSize: 12,
+                  fontSize: 11,
                   fontWeight: 900,
-                  letterSpacing: 2,
+                  letterSpacing: 1.5,
                   textTransform: 'uppercase',
                 }}>
                   📲 Ordena por WhatsApp
@@ -356,8 +355,8 @@ export function InstagramStoryModal({ platillo, onClose }: InstagramStoryModalPr
               <div style={{
                 textAlign: 'center',
                 color: '#D4C5A9',
-                fontSize: 10,
-                opacity: 0.6,
+                fontSize: 9.5,
+                opacity: 0.65,
                 letterSpacing: 2,
               }}>
                 {HANDLE_IG}

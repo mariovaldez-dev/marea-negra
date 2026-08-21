@@ -111,10 +111,10 @@ export function BrandLogo({
   }
 
   const subtextSizeClasses = {
-    xs: 'text-sm md:text-base tracking-[0.2em] mt-1 pl-0.5',
-    sm: 'text-base md:text-lg tracking-[0.22em] mt-1 pl-1',
-    story: 'text-lg md:text-xl tracking-[0.25em] mt-1',
-    md: 'text-2xl md:text-3xl tracking-[0.25em] mt-2 pl-2',
+    xs: 'text-xs md:text-sm tracking-[0.18em] mt-0.5 leading-none',
+    sm: 'text-sm md:text-base tracking-[0.2em] mt-0.5 leading-none',
+    story: 'text-base md:text-lg tracking-[0.2em] mt-0.5 leading-none',
+    md: 'text-2xl md:text-3xl tracking-[0.25em] mt-1.5 pl-2',
     lg: 'text-3xl md:text-4xl tracking-[0.25em] mt-2 pl-2',
     hero: 'text-3xl md:text-5xl tracking-[0.25em] mt-2 pl-2',
   }
@@ -142,7 +142,7 @@ export function BrandLogo({
         animated ? (
           <motion.span
             initial={{ opacity: 0, letterSpacing: '0.05em' }}
-            animate={{ opacity: 1, letterSpacing: '0.25em' }}
+            animate={{ opacity: 1, letterSpacing: '0.2em' }}
             transition={{ delay: 0.85, duration: 0.6, ease: 'easeOut' }}
             className={`font-display font-bold text-coral uppercase ${subtextSizeClasses[size]}`}
           >
@@ -156,11 +156,11 @@ export function BrandLogo({
       )}
 
       {showSlogan && (
-        <div className={`mt-1 flex items-center gap-1.5 ${align === 'center' ? 'justify-center' : 'justify-start'}`}>
-          <span className="font-display font-bold text-blanco tracking-wider text-xs md:text-sm uppercase">
+        <div className={`mt-0.5 flex items-center gap-1 ${align === 'center' ? 'justify-center' : 'justify-start'} leading-none`}>
+          <span className="font-display font-bold text-blanco tracking-wider text-xs uppercase">
             ¡AL VRGAZO!,
           </span>
-          <span className="font-serif italic text-arena/90 text-xs md:text-sm">
+          <span className="font-serif italic text-arena/90 text-xs">
             como nos gusta.
           </span>
         </div>
