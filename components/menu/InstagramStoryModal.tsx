@@ -379,39 +379,90 @@ export function InstagramStoryModal({ platillo, onClose }: InstagramStoryModalPr
                       </div>
                     )}
 
-                    <div
-                      style={{
-                        display: 'flex',
-                        alignItems: 'baseline',
-                        justifyContent: 'center',
-                        gap: 6,
-                        marginBottom: 4,
-                      }}
-                    >
-                      {hasPromo && pAnterior > pActual && (
-                        <span
-                          style={{
-                            color: '#D4C5A9',
-                            fontSize: 13,
-                            textDecoration: 'line-through',
-                            opacity: 0.6,
-                          }}
-                        >
-                          ${formatPrice(pAnterior)}
-                        </span>
-                      )}
-                      <span
+                    {/* BLOQUE DE PRECIO ULTRA LLAMATIVO (CLÁSICO) */}
+                    <div style={{ display: 'flex', justifyContent: 'center', margin: '4px 0 6px' }}>
+                      <div
                         style={{
-                          color: '#E8430A',
-                          fontSize: 32,
-                          fontWeight: 900,
-                          letterSpacing: 1.5,
-                          lineHeight: 1,
+                          background: 'linear-gradient(135deg, rgba(232,67,10,0.18) 0%, rgba(8,8,8,0.9) 50%, rgba(201,168,76,0.18) 100%)',
+                          border: '1.5px solid rgba(232,67,10,0.5)',
+                          borderRadius: 16,
+                          padding: '6px 18px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 10,
+                          boxShadow: '0 0 25px rgba(232,67,10,0.25), inset 0 0 15px rgba(201,168,76,0.1)',
                         }}
                       >
-                        ${formatPrice(pActual)}
-                      </span>
-                      <span style={{ color: '#D4C5A9', fontSize: 11, opacity: 0.7 }}>MXN</span>
+                        {hasPromo && pAnterior > pActual && (
+                          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
+                            <span
+                              style={{
+                                color: '#D4C5A9',
+                                fontSize: 13,
+                                textDecoration: 'line-through',
+                                textDecorationColor: '#E8430A',
+                                opacity: 0.65,
+                                lineHeight: 1,
+                              }}
+                            >
+                              ${formatPrice(pAnterior)}
+                            </span>
+                            {ahorro > 0 && (
+                              <span
+                                style={{
+                                  background: '#2ABFBF',
+                                  color: '#080808',
+                                  fontSize: 8.5,
+                                  fontWeight: 900,
+                                  padding: '1px 5px',
+                                  borderRadius: 6,
+                                  marginTop: 2,
+                                  letterSpacing: 0.5,
+                                }}
+                              >
+                                -${ahorro.toFixed(0)}
+                              </span>
+                            )}
+                          </div>
+                        )}
+
+                        <div style={{ display: 'flex', alignItems: 'baseline', gap: 2 }}>
+                          <span
+                            style={{
+                              color: '#FFA800',
+                              fontSize: 18,
+                              fontWeight: 900,
+                              fontFamily: 'var(--font-bebas), sans-serif',
+                            }}
+                          >
+                            $
+                          </span>
+                          <span
+                            className="font-display"
+                            style={{
+                              color: '#FF5500',
+                              fontSize: 42,
+                              fontWeight: 900,
+                              letterSpacing: 1,
+                              lineHeight: 1,
+                              filter: 'drop-shadow(0 0 12px rgba(232,67,10,0.6))',
+                            }}
+                          >
+                            {formatPrice(pActual)}
+                          </span>
+                          <span
+                            style={{
+                              color: '#D4C5A9',
+                              fontSize: 11,
+                              fontWeight: 800,
+                              opacity: 0.8,
+                              marginLeft: 3,
+                            }}
+                          >
+                            MXN
+                          </span>
+                        </div>
+                      </div>
                     </div>
 
                     <div
@@ -596,37 +647,58 @@ export function InstagramStoryModal({ platillo, onClose }: InstagramStoryModalPr
                       {platillo.nombre}
                     </div>
 
+                    {/* PRECIO FULL FOTO */}
                     <div
                       style={{
                         display: 'flex',
-                        alignItems: 'baseline',
-                        gap: 8,
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        background: 'rgba(5,4,4,0.75)',
+                        border: '1px solid rgba(201,168,76,0.35)',
+                        borderRadius: 14,
+                        padding: '6px 14px',
                         margin: '2px 0',
                       }}
                     >
-                      {hasPromo && pAnterior > pActual && (
+                      <div style={{ display: 'flex', flexDirection: 'column' }}>
+                        <span style={{ color: '#C9A84C', fontSize: 9, fontWeight: 900, letterSpacing: 1, textTransform: 'uppercase' }}>
+                          {hasPromo ? 'Precio Promoción' : 'Precio Especial'}
+                        </span>
+                        {hasPromo && pAnterior > pActual && (
+                          <span
+                            style={{
+                              color: '#D4C5A9',
+                              fontSize: 12,
+                              textDecoration: 'line-through',
+                              textDecorationColor: '#E8430A',
+                              opacity: 0.65,
+                            }}
+                          >
+                            ${formatPrice(pAnterior)} MXN
+                          </span>
+                        )}
+                      </div>
+
+                      <div style={{ display: 'flex', alignItems: 'baseline', gap: 2 }}>
+                        <span style={{ color: '#FFA800', fontSize: 16, fontWeight: 900, fontFamily: 'var(--font-bebas), sans-serif' }}>
+                          $
+                        </span>
                         <span
+                          className="font-display"
                           style={{
-                            color: '#D4C5A9',
-                            fontSize: 14,
-                            textDecoration: 'line-through',
-                            opacity: 0.6,
+                            color: '#FF5500',
+                            fontSize: 38,
+                            fontWeight: 900,
+                            lineHeight: 1,
+                            filter: 'drop-shadow(0 0 10px rgba(232,67,10,0.5))',
                           }}
                         >
-                          ${formatPrice(pAnterior)}
+                          {formatPrice(pActual)}
                         </span>
-                      )}
-                      <span
-                        style={{
-                          color: '#E8430A',
-                          fontSize: 34,
-                          fontWeight: 900,
-                          lineHeight: 1,
-                        }}
-                      >
-                        ${formatPrice(pActual)}
-                      </span>
-                      <span style={{ color: '#D4C5A9', fontSize: 12, opacity: 0.7 }}>MXN</span>
+                        <span style={{ color: '#D4C5A9', fontSize: 11, fontWeight: 700, marginLeft: 2 }}>
+                          MXN
+                        </span>
+                      </div>
                     </div>
 
                     <div
@@ -748,21 +820,22 @@ export function InstagramStoryModal({ platillo, onClose }: InstagramStoryModalPr
                           position: 'absolute',
                           bottom: 10,
                           right: 10,
-                          background: '#2ABFBF',
+                          background: 'linear-gradient(135deg, #2ABFBF, #149393)',
                           color: '#080808',
-                          padding: '4px 10px',
+                          padding: '6px 14px',
                           borderRadius: 20,
-                          fontSize: 10,
+                          fontSize: 12,
                           fontWeight: 900,
-                          boxShadow: '0 0 15px rgba(42,191,191,0.6)',
+                          boxShadow: '0 0 20px rgba(42,191,191,0.7)',
+                          letterSpacing: 0.5,
                         }}
                       >
-                        AHORRAS ${ahorro.toFixed(0)} MXN
+                        💥 AHORRAS ${ahorro.toFixed(0)} MXN
                       </div>
                     )}
                   </div>
 
-                  {/* Nombre y Precio Gigante */}
+                  {/* Nombre y Precio Gigante de Fuego */}
                   <div style={{ textAlign: 'center', display: 'flex', flexDirection: 'column', gap: 4 }}>
                     <div
                       style={{
@@ -777,36 +850,54 @@ export function InstagramStoryModal({ platillo, onClose }: InstagramStoryModalPr
                       {platillo.nombre}
                     </div>
 
-                    <div
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        gap: 10,
-                      }}
-                    >
-                      {hasPromo && pAnterior > pActual && (
-                        <span
-                          style={{
-                            color: '#D4C5A9',
-                            fontSize: 18,
-                            textDecoration: 'line-through',
-                            opacity: 0.6,
-                          }}
-                        >
-                          ${formatPrice(pAnterior)}
-                        </span>
-                      )}
-                      <span
+                    {/* Caja de Precio Fuego Gigante */}
+                    <div style={{ display: 'flex', justifyContent: 'center' }}>
+                      <div
                         style={{
-                          color: '#E8430A',
-                          fontSize: 42,
-                          fontWeight: 900,
-                          lineHeight: 1,
+                          background: 'linear-gradient(135deg, rgba(232,67,10,0.25) 0%, rgba(5,4,4,0.95) 50%, rgba(201,168,76,0.25) 100%)',
+                          border: '2px solid #E8430A',
+                          borderRadius: 18,
+                          padding: '8px 24px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 14,
+                          boxShadow: '0 0 30px rgba(232,67,10,0.4)',
                         }}
                       >
-                        ${formatPrice(pActual)} <span style={{ fontSize: 14, color: '#D4C5A9' }}>MXN</span>
-                      </span>
+                        {hasPromo && pAnterior > pActual && (
+                          <span
+                            style={{
+                              color: '#D4C5A9',
+                              fontSize: 20,
+                              textDecoration: 'line-through',
+                              textDecorationColor: '#E8430A',
+                              opacity: 0.65,
+                            }}
+                          >
+                            ${formatPrice(pAnterior)}
+                          </span>
+                        )}
+                        <div style={{ display: 'flex', alignItems: 'baseline', gap: 2 }}>
+                          <span style={{ color: '#FFA800', fontSize: 24, fontWeight: 900, fontFamily: 'var(--font-bebas), sans-serif' }}>
+                            $
+                          </span>
+                          <span
+                            className="font-display"
+                            style={{
+                              color: '#FF5500',
+                              fontSize: 50,
+                              fontWeight: 900,
+                              lineHeight: 1,
+                              filter: 'drop-shadow(0 0 16px rgba(232,67,10,0.8))',
+                            }}
+                          >
+                            {formatPrice(pActual)}
+                          </span>
+                          <span style={{ fontSize: 13, color: '#D4C5A9', fontWeight: 800, marginLeft: 4 }}>
+                            MXN
+                          </span>
+                        </div>
+                      </div>
                     </div>
                   </div>
 
@@ -940,16 +1031,39 @@ export function InstagramStoryModal({ platillo, onClose }: InstagramStoryModalPr
                       </div>
                     )}
 
-                    <div
-                      style={{
-                        color: '#C9A84C',
-                        fontSize: 34,
-                        fontWeight: 900,
-                        letterSpacing: 2,
-                        marginTop: 2,
-                      }}
-                    >
-                      ${formatPrice(pActual)} <span style={{ fontSize: 12, color: '#D4C5A9' }}>MXN</span>
+                    {/* Placa de Precio Dorada */}
+                    <div style={{ display: 'flex', justifyContent: 'center', marginTop: 4 }}>
+                      <div
+                        style={{
+                          background: 'linear-gradient(135deg, rgba(201,168,76,0.15) 0%, rgba(5,4,4,0.9) 50%, rgba(201,168,76,0.15) 100%)',
+                          border: '1.5px solid rgba(201,168,76,0.6)',
+                          borderRadius: 14,
+                          padding: '4px 18px',
+                          display: 'flex',
+                          alignItems: 'baseline',
+                          gap: 3,
+                          boxShadow: '0 0 20px rgba(201,168,76,0.25)',
+                        }}
+                      >
+                        <span style={{ color: '#FFA800', fontSize: 18, fontWeight: 900, fontFamily: 'var(--font-bebas), sans-serif' }}>
+                          $
+                        </span>
+                        <span
+                          className="font-display"
+                          style={{
+                            color: '#C9A84C',
+                            fontSize: 40,
+                            fontWeight: 900,
+                            lineHeight: 1,
+                            letterSpacing: 1,
+                          }}
+                        >
+                          {formatPrice(pActual)}
+                        </span>
+                        <span style={{ fontSize: 11, color: '#D4C5A9', fontWeight: 700, marginLeft: 2 }}>
+                          MXN
+                        </span>
+                      </div>
                     </div>
                   </div>
 
