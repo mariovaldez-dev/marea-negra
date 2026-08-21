@@ -2,13 +2,14 @@ import React, { useRef, useState, useEffect } from 'react'
 import { X, Download, Loader2, Instagram, Camera, Share2, Copy, Check, Sparkles } from 'lucide-react'
 import { Platillo } from '@/lib/types/database'
 import { isPromoItem, isPromoActiveToday, getPromoBannerText, parsePrice, formatPrice } from '@/lib/utils/promo'
+import { BrandLogo } from '../ui/BrandLogo'
 
 interface InstagramStoryModalProps {
   platillo: Platillo
   onClose: () => void
 }
 
-const HANDLE_IG = '@mareanegra.sinaloa'
+const HANDLE_IG = '@mareanegra.aguachiles'
 const WHATSAPP_NUM = '6671234567'
 
 export function InstagramStoryModal({ platillo, onClose }: InstagramStoryModalProps) {
@@ -234,27 +235,16 @@ export function InstagramStoryModal({ platillo, onClose }: InstagramStoryModalPr
                 — ✦ —
               </div>
 
-              {/* Logo MAREA NEGRA */}
-              <div style={{ textAlign: 'center', marginBottom: 6 }}>
-                <div style={{
-                  color: '#F7F3EE',
-                  fontSize: 32,
-                  fontWeight: 900,
-                  letterSpacing: 6,
-                  textTransform: 'uppercase',
-                  lineHeight: 1,
-                }}>
-                  MAREA NEGRA
-                </div>
-                <div style={{
-                  color: '#E8430A',
-                  fontSize: 10,
-                  fontStyle: 'italic',
-                  letterSpacing: 3,
-                  marginTop: 2,
-                }}>
-                  Aguachiles & Cocteles · Sinaloa
-                </div>
+              {/* Logo MAREA NEGRA (Variante Historia IG con Slogan y Subtexto) */}
+              <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 8 }}>
+                <BrandLogo
+                  size="story"
+                  stacked
+                  withSubtext
+                  withSlogan
+                  align="center"
+                  href={null}
+                />
               </div>
 
               {/* Línea dorada */}

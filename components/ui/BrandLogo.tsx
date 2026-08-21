@@ -5,24 +5,37 @@ import Link from 'next/link'
 import { motion, Variants } from 'framer-motion'
 
 interface BrandLogoProps {
-  size?: 'sm' | 'md' | 'lg' | 'hero'
+  size?: 'xs' | 'sm' | 'md' | 'lg' | 'hero' | 'story'
+  variant?: 'default' | 'story'
   stacked?: boolean
   withSubtext?: boolean
+  withSlogan?: boolean
+  align?: 'left' | 'center' | 'right'
   animated?: boolean
   className?: string
-  href?: string
+  href?: string | null
 }
 
 export function BrandLogo({
   size = 'md',
+  variant = 'default',
   stacked = false,
   withSubtext = false,
+  withSlogan = false,
+  align = 'left',
   animated = false,
   className = '',
   href = '/',
 }: BrandLogoProps) {
+  const isStory = variant === 'story' || size === 'story'
+  const isStacked = isStory ? (stacked ?? true) : stacked
+  const showSubtext = isStory ? true : withSubtext
+  const showSlogan = isStory ? true : withSlogan
+
   const sizeClasses = {
+    xs: 'text-xl md:text-2xl leading-[0.88]',
     sm: 'text-2xl md:text-3xl leading-[0.88]',
+    story: 'text-3xl md:text-4xl leading-[0.88]',
     md: 'text-3xl md:text-4xl leading-[0.88]',
     lg: 'text-5xl md:text-6xl leading-[0.88]',
     hero: 'text-7xl md:text-9xl leading-[0.84]',
@@ -97,34 +110,60 @@ export function BrandLogo({
     )
   }
 
+  const subtextSizeClasses = {
+    xs: 'text-sm md:text-base tracking-[0.2em] mt-1 pl-0.5',
+    sm: 'text-base md:text-lg tracking-[0.22em] mt-1 pl-1',
+    story: 'text-lg md:text-xl tracking-[0.25em] mt-1',
+    md: 'text-2xl md:text-3xl tracking-[0.25em] mt-2 pl-2',
+    lg: 'text-3xl md:text-4xl tracking-[0.25em] mt-2 pl-2',
+    hero: 'text-3xl md:text-5xl tracking-[0.25em] mt-2 pl-2',
+  }
+
+  const alignClasses = {
+    left: 'items-start text-left',
+    center: 'items-center text-center',
+    right: 'items-end text-right',
+  }
+
   const logoContent = (
-    <div className={`flex flex-col select-none group ${className}`}>
-      {stacked ? (
-        <div className="flex flex-col items-start font-display uppercase tracking-tight">
+    <div className={`flex flex-col select-none group ${alignClasses[align]} ${className}`}>
+      {isStacked ? (
+        <div className={`flex flex-col ${align === 'center' ? 'items-center' : 'items-start'} font-display uppercase tracking-tight`}>
           {renderText('MAREA', 0)}
           {renderText('NEGRA', 5)}
         </div>
       ) : (
-        <div className="flex items-center gap-2 font-display uppercase tracking-tight">
+        <div className={`flex items-center gap-2 font-display uppercase tracking-tight ${align === 'center' ? 'justify-center' : 'justify-start'}`}>
           {renderText('MAREA NEGRA', 0)}
         </div>
       )}
 
-      {withSubtext && (
+      {showSubtext && (
         animated ? (
           <motion.span
             initial={{ opacity: 0, letterSpacing: '0.05em' }}
             animate={{ opacity: 1, letterSpacing: '0.25em' }}
             transition={{ delay: 0.85, duration: 0.6, ease: 'easeOut' }}
-            className="font-display font-bold text-coral text-2xl md:text-3xl uppercase mt-2 pl-2"
+            className={`font-display font-bold text-coral uppercase ${subtextSizeClasses[size]}`}
           >
             AGUACHILES
           </motion.span>
         ) : (
-          <span className="font-display font-bold text-coral text-2xl md:text-3xl tracking-[0.25em] uppercase mt-2 pl-2">
+          <span className={`font-display font-bold text-coral uppercase ${subtextSizeClasses[size]}`}>
             AGUACHILES
           </span>
         )
+      )}
+
+      {showSlogan && (
+        <div className={`mt-1 flex items-center gap-1.5 ${align === 'center' ? 'justify-center' : 'justify-start'}`}>
+          <span className="font-display font-bold text-blanco tracking-wider text-xs md:text-sm uppercase">
+            ¡AL VRGAZO!,
+          </span>
+          <span className="font-serif italic text-arena/90 text-xs md:text-sm">
+            como nos gusta.
+          </span>
+        </div>
       )}
     </div>
   )
