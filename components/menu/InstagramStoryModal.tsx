@@ -1,9 +1,10 @@
 'use client'
 
 import React, { useRef, useState, useEffect, useCallback } from 'react'
-import { X, Download, Loader2, Instagram, Camera, Copy, Check, Sparkles } from 'lucide-react'
+import { X, Download, Loader2, Instagram, Camera, Copy, Check, Sparkles, Layers, Cpu } from 'lucide-react'
 import { Platillo } from '@/lib/types/database'
 import { isPromoItem, isPromoActiveToday, getPromoBannerText, parsePrice, formatPrice } from '@/lib/utils/promo'
+import { BrandLogo } from '../ui/BrandLogo'
 
 interface InstagramStoryModalProps {
   platillo: Platillo
@@ -94,9 +95,12 @@ function wrapTextLines(
 }
 
 export function InstagramStoryModal({ platillo, onClose }: InstagramStoryModalProps) {
+  const [engineMode, setEngineMode] = useState<'dom' | 'canvas'>('dom')
+  const storyDomRef = useRef<HTMLDivElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
+
   const [isExporting, setIsExporting] = useState(false)
-  const [isRendering, setIsRendering] = useState(true)
+  const [isRenderingCanvas, setIsRenderingCanvas] = useState(true)
   const [copied, setCopied] = useState(false)
   const [shared, setShared] = useState(false)
 
@@ -124,10 +128,10 @@ export function InstagramStoryModal({ platillo, onClose }: InstagramStoryModalPr
       img.src = src
     })
 
-  /** Dibuja la historia completa en Canvas 2D nativo sin desfases ni html2canvas */
+  /** Dibuja la historia en el Canvas 2D */
   const renderStoryCanvas = useCallback(async () => {
     if (!canvasRef.current) return
-    setIsRendering(true)
+    setIsRenderingCanvas(true)
 
     const canvas = canvasRef.current
     canvas.width = CANVAS_W
@@ -136,16 +140,13 @@ export function InstagramStoryModal({ platillo, onClose }: InstagramStoryModalPr
     if (!ctx) return
 
     try {
-      // 1. Asegurar fuentes cargadas
       if (typeof document !== 'undefined' && document.fonts) {
         await document.fonts.ready
       }
 
-      // 2. Fondo Base Negro
       ctx.fillStyle = '#080808'
       ctx.fillRect(0, 0, CANVAS_W, CANVAS_H)
 
-      // 3. Foto del Platillo (Top 54% del Canvas = 1040px)
       const topSectionHeight = 1040
       if (platillo.imagen_url && platillo.imagen_url.trim() !== '') {
         try {
@@ -154,14 +155,12 @@ export function InstagramStoryModal({ platillo, onClose }: InstagramStoryModalPr
           drawImageCover(ctx, img, 0, 0, CANVAS_W, topSectionHeight)
           ctx.restore()
         } catch {
-          // Fallback en caso de error de red
           drawGradientFallback(ctx, topSectionHeight, platillo.emoji)
         }
       } else {
         drawGradientFallback(ctx, topSectionHeight, platillo.emoji)
       }
 
-      // 4. Overlay gradiente oscuro suave entre foto y textos
       const photoGrad = ctx.createLinearGradient(0, topSectionHeight - 340, 0, topSectionHeight + 40)
       photoGrad.addColorStop(0, 'rgba(8,8,8,0)')
       photoGrad.addColorStop(0.5, 'rgba(8,8,8,0.75)')
@@ -170,7 +169,6 @@ export function InstagramStoryModal({ platillo, onClose }: InstagramStoryModalPr
       ctx.fillStyle = photoGrad
       ctx.fillRect(0, topSectionHeight - 340, CANVAS_W, 380)
 
-      // 5. Badge de Promoción (Esquina superior derecha)
       if (hasPromo) {
         ctx.save()
         const badgeText = `🔥 ${bannerText.toUpperCase()}`
@@ -181,7 +179,6 @@ export function InstagramStoryModal({ platillo, onClose }: InstagramStoryModalPr
         const badgeX = CANVAS_W - badgeW - 40
         const badgeY = 50
 
-        // Sombra y gradiente
         ctx.shadowColor = 'rgba(232,67,10,0.6)'
         ctx.shadowBlur = 24
         const bGrad = ctx.createLinearGradient(badgeX, badgeY, badgeX + badgeW, badgeY + badgeH)
@@ -192,7 +189,6 @@ export function InstagramStoryModal({ platillo, onClose }: InstagramStoryModalPr
         ctx.fill()
         ctx.shadowBlur = 0
 
-        // Texto Badge
         ctx.fillStyle = '#F7F3EE'
         ctx.textAlign = 'center'
         ctx.textBaseline = 'middle'
@@ -200,22 +196,18 @@ export function InstagramStoryModal({ platillo, onClose }: InstagramStoryModalPr
         ctx.restore()
       }
 
-      // ── PANEL INFERIOR DE TEXTOS Y MARCA (Y = 1040 a 1920) ──
       const midX = CANVAS_W / 2
 
-      // 6. Ornamento — ✦ —
       ctx.fillStyle = 'rgba(201,168,76,0.5)'
       ctx.font = 'bold 24px serif'
       ctx.textAlign = 'center'
       ctx.fillText('— ✦ —', midX, 1070)
 
-      // 7. BRAND LOGO: MAREA NEGRA con sombra 3D Coral
       ctx.textAlign = 'center'
       ctx.textBaseline = 'alphabetic'
       const logoY = 1150
       ctx.font = '900 76px "Bebas Neue", -apple-system, sans-serif'
 
-      // Capas de sombra 3D
       ctx.fillStyle = '#421001'
       ctx.fillText('MAREA NEGRA', midX + 9, logoY + 9)
       ctx.fillStyle = '#822204'
@@ -225,14 +217,12 @@ export function InstagramStoryModal({ platillo, onClose }: InstagramStoryModalPr
       ctx.fillStyle = '#F7F3EE'
       ctx.fillText('MAREA NEGRA', midX, logoY)
 
-      // 8. SUBTEXTO: AGUACHILES
       ctx.fillStyle = '#E8430A'
       ctx.font = 'bold 30px "Bebas Neue", sans-serif'
       ctx.letterSpacing = '10px'
       ctx.fillText('AGUACHILES', midX, 1195)
       ctx.letterSpacing = '0px'
 
-      // 9. SLOGAN: ¡AL VRGAZO!, como nos gusta.
       ctx.font = 'bold 24px "Bebas Neue", sans-serif'
       const linePart1 = '¡AL VRGAZO!,'
       const w1 = ctx.measureText(linePart1).width
@@ -252,7 +242,6 @@ export function InstagramStoryModal({ platillo, onClose }: InstagramStoryModalPr
       ctx.font = 'italic 22px "Cormorant Garamond", Georgia, serif'
       ctx.fillText(linePart2, startSloganX + w1, sloganY)
 
-      // 10. LÍNEA DIVISORIA DORADA 1
       const line1Grad = ctx.createLinearGradient(120, 0, CANVAS_W - 120, 0)
       line1Grad.addColorStop(0, 'transparent')
       line1Grad.addColorStop(0.5, 'rgba(201,168,76,0.45)')
@@ -260,7 +249,6 @@ export function InstagramStoryModal({ platillo, onClose }: InstagramStoryModalPr
       ctx.fillStyle = line1Grad
       ctx.fillRect(120, 1265, CANVAS_W - 240, 2)
 
-      // 11. NOMBRE DEL PLATILLO (Ajuste automático a 1 o 2 líneas si es largo)
       ctx.textAlign = 'center'
       ctx.fillStyle = '#F7F3EE'
       ctx.font = '900 56px "Bebas Neue", Arial, sans-serif'
@@ -276,7 +264,6 @@ export function InstagramStoryModal({ platillo, onClose }: InstagramStoryModalPr
         currentY += 95
       }
 
-      // 12. DESCRIPCIÓN DEL PLATILLO
       if (platillo.descripcion && platillo.descripcion.trim()) {
         ctx.fillStyle = 'rgba(212,197,169,0.85)'
         ctx.font = 'italic 26px "Space Grotesk", Georgia, sans-serif'
@@ -290,13 +277,11 @@ export function InstagramStoryModal({ platillo, onClose }: InstagramStoryModalPr
         currentY += 20
       }
 
-      // 13. PRECIO
       ctx.textAlign = 'center'
       let priceText = `$${formatPrice(pActual)}`
       ctx.font = '900 86px "Bebas Neue", Arial, sans-serif'
       const priceW = ctx.measureText(priceText).width
 
-      // Si tiene precio anterior tachado
       if (hasPromo && pAnterior > pActual) {
         ctx.font = '700 36px "Bebas Neue", Arial, sans-serif'
         const oldPriceText = `$${formatPrice(pAnterior)}`
@@ -304,11 +289,10 @@ export function InstagramStoryModal({ platillo, onClose }: InstagramStoryModalPr
         const combinedW = oldPriceW + 20 + priceW + 50
         const startPriceX = midX - combinedW / 2
 
-        // Precio anterior
         ctx.textAlign = 'left'
         ctx.fillStyle = 'rgba(212,197,169,0.55)'
         ctx.fillText(oldPriceText, startPriceX, currentY + 15)
-        // Tachadura
+
         ctx.strokeStyle = 'rgba(232,67,10,0.8)'
         ctx.lineWidth = 3
         ctx.beginPath()
@@ -316,17 +300,14 @@ export function InstagramStoryModal({ platillo, onClose }: InstagramStoryModalPr
         ctx.lineTo(startPriceX + oldPriceW + 4, currentY + 5)
         ctx.stroke()
 
-        // Precio nuevo
         ctx.fillStyle = '#E8430A'
         ctx.font = '900 86px "Bebas Neue", Arial, sans-serif'
         ctx.fillText(priceText, startPriceX + oldPriceW + 20, currentY + 20)
 
-        // Moneda MXN
         ctx.fillStyle = '#D4C5A9'
         ctx.font = 'bold 24px -apple-system, sans-serif'
         ctx.fillText('MXN', startPriceX + oldPriceW + 20 + priceW + 8, currentY + 10)
       } else {
-        // Precio normal centrado
         ctx.fillStyle = '#E8430A'
         ctx.fillText(priceText, midX - 25, currentY + 20)
 
@@ -338,7 +319,6 @@ export function InstagramStoryModal({ platillo, onClose }: InstagramStoryModalPr
 
       currentY += 75
 
-      // 14. LÍNEA DIVISORIA DORADA 2
       const line2Grad = ctx.createLinearGradient(160, 0, CANVAS_W - 160, 0)
       line2Grad.addColorStop(0, 'transparent')
       line2Grad.addColorStop(0.5, 'rgba(201,168,76,0.35)')
@@ -346,7 +326,6 @@ export function InstagramStoryModal({ platillo, onClose }: InstagramStoryModalPr
       ctx.fillStyle = line2Grad
       ctx.fillRect(160, currentY, CANVAS_W - 320, 2)
 
-      // 15. BOTÓN CTA WHATSAPP / APP
       const btnW = 760
       const btnH = 80
       const btnX = midX - btnW / 2
@@ -363,7 +342,6 @@ export function InstagramStoryModal({ platillo, onClose }: InstagramStoryModalPr
       ctx.fill()
       ctx.shadowBlur = 0
 
-      // Texto botón
       ctx.fillStyle = '#080808'
       ctx.font = '900 28px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
       ctx.textAlign = 'center'
@@ -371,7 +349,6 @@ export function InstagramStoryModal({ platillo, onClose }: InstagramStoryModalPr
       ctx.fillText('📲 ORDENA POR WHATSAPP O EN LA APP', midX, btnY + btnH / 2 + 1)
       ctx.restore()
 
-      // 16. HANDLE DE INSTAGRAM
       ctx.textAlign = 'center'
       ctx.textBaseline = 'alphabetic'
       ctx.fillStyle = 'rgba(212,197,169,0.7)'
@@ -382,11 +359,10 @@ export function InstagramStoryModal({ platillo, onClose }: InstagramStoryModalPr
     } catch (err) {
       console.error('Error renderizando canvas historia:', err)
     } finally {
-      setIsRendering(false)
+      setIsRenderingCanvas(false)
     }
   }, [platillo, bannerText, hasPromo, pActual, pAnterior])
 
-  /** Fallback decorativo para platillos sin imagen */
   const drawGradientFallback = (
     ctx: CanvasRenderingContext2D,
     height: number,
@@ -409,35 +385,57 @@ export function InstagramStoryModal({ platillo, onClose }: InstagramStoryModalPr
     ctx.restore()
   }
 
-  // Renderizar canvas cada vez que cambie el platillo
   useEffect(() => {
     renderStoryCanvas()
   }, [renderStoryCanvas])
 
-  /** Obtiene el blob PNG del canvas para descargar o copiar */
-  const getCanvasBlob = async (): Promise<{ blob: Blob; fileName: string } | null> => {
-    if (!canvasRef.current) return null
-    const canvas = canvasRef.current
+  /** Genera el blob PNG de la versión activa (DOM o Canvas) */
+  const getActiveBlob = async (): Promise<{ blob: Blob; fileName: string } | null> => {
     const fileName = `${platillo.nombre.replace(/\s+/g, '-').toLowerCase()}-historia-ig.png`
 
-    return new Promise((resolve) => {
-      canvas.toBlob((blob) => {
-        if (blob) resolve({ blob, fileName })
-        else resolve(null)
-      }, 'image/png', 1.0)
-    })
+    if (engineMode === 'canvas') {
+      if (!canvasRef.current) return null
+      return new Promise((resolve) => {
+        canvasRef.current!.toBlob((blob) => {
+          if (blob) resolve({ blob, fileName })
+          else resolve(null)
+        }, 'image/png', 1.0)
+      })
+    } else {
+      if (!storyDomRef.current) return null
+      const html2canvas = (await import('html2canvas')).default
+      const canvas = await html2canvas(storyDomRef.current, {
+        scale: 3,
+        useCORS: true,
+        allowTaint: true,
+        backgroundColor: '#080808',
+        logging: false,
+        scrollX: 0,
+        scrollY: 0,
+        windowWidth: 360,
+        windowHeight: 640,
+        width: 360,
+        height: 640,
+      })
+
+      return new Promise((resolve) => {
+        canvas.toBlob((blob) => {
+          if (blob) resolve({ blob, fileName })
+          else resolve(null)
+        }, 'image/png', 1.0)
+      })
+    }
   }
 
   /** Descarga directa al carrete / carpeta de descargas */
   const handleDownloadAndSavePhotos = async () => {
     setIsExporting(true)
     try {
-      const result = await getCanvasBlob()
+      const result = await getActiveBlob()
       if (!result) return
 
       const { blob, fileName } = result
 
-      // 1. Descarga directa en macOS / navegador
       const blobUrl = URL.createObjectURL(blob)
       const link = document.createElement('a')
       link.download = fileName
@@ -447,7 +445,6 @@ export function InstagramStoryModal({ platillo, onClose }: InstagramStoryModalPr
       document.body.removeChild(link)
       setTimeout(() => URL.revokeObjectURL(blobUrl), 1500)
 
-      // 2. Web Share API para Guardar en Fotos en iOS / macOS Safari
       const file = new File([blob], fileName, { type: 'image/png' })
       if (typeof navigator !== 'undefined' && navigator.canShare && navigator.canShare({ files: [file] })) {
         try {
@@ -459,7 +456,7 @@ export function InstagramStoryModal({ platillo, onClose }: InstagramStoryModalPr
           setShared(true)
           setTimeout(() => setShared(false), 3000)
         } catch {
-          // Share omitido o cancelado
+          // Share omitido
         }
       }
     } catch (err) {
@@ -473,7 +470,7 @@ export function InstagramStoryModal({ platillo, onClose }: InstagramStoryModalPr
   const handleCopyToClipboard = async () => {
     setIsExporting(true)
     try {
-      const result = await getCanvasBlob()
+      const result = await getActiveBlob()
       if (!result) return
 
       if (typeof navigator !== 'undefined' && navigator.clipboard && (window as any).ClipboardItem) {
@@ -496,35 +493,283 @@ export function InstagramStoryModal({ platillo, onClose }: InstagramStoryModalPr
     <div className="fixed inset-0 z-[60] bg-black/90 flex items-center justify-center p-4 overflow-y-auto">
       <div className="flex flex-col lg:flex-row items-center lg:items-start justify-center gap-6 w-full max-w-4xl my-auto">
 
-        {/* Panel izquierdo: Preview del Canvas 2D en vivo (340x604) */}
+        {/* Panel izquierdo: Selector de Modo de Vista y Preview */}
         <div className="flex flex-col items-center gap-3 w-full lg:w-auto">
-          <div className="flex items-center gap-2 text-xs font-sans text-arena/60 uppercase tracking-widest">
-            <Camera className="w-3.5 h-3.5 text-turquesa" />
-            <span>Historia Ultra HD (9:16 · 1080×1920)</span>
+          {/* Barra de pestañas para cambiar entre versiones */}
+          <div className="flex items-center bg-carbon border border-arena/20 rounded-xl p-1 gap-1">
+            <button
+              type="button"
+              onClick={() => setEngineMode('dom')}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-sans font-bold transition-all ${
+                engineMode === 'dom'
+                  ? 'bg-turquesa text-negro shadow-md'
+                  : 'text-arena/70 hover:text-blanco'
+              }`}
+            >
+              <Layers className="w-3.5 h-3.5" />
+              <span>Diseño DOM (JSX)</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setEngineMode('canvas')}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-sans font-bold transition-all ${
+                engineMode === 'canvas'
+                  ? 'bg-turquesa text-negro shadow-md'
+                  : 'text-arena/70 hover:text-blanco'
+              }`}
+            >
+              <Cpu className="w-3.5 h-3.5" />
+              <span>Canvas 2D (GPU)</span>
+            </button>
           </div>
 
           <div className="relative rounded-2xl overflow-hidden shadow-2xl border border-arena/20 bg-[#080808] flex items-center justify-center">
-            {isRendering && (
-              <div className="absolute inset-0 z-10 bg-black/70 flex flex-col items-center justify-center gap-2">
-                <Loader2 className="w-6 h-6 text-turquesa animate-spin" />
-                <span className="text-xs font-sans text-blanco">Generando composición HD...</span>
+            {/* VISTA 1: DISEÑO BASADO EN DOM / COMPONENTES JSX */}
+            {engineMode === 'dom' && (
+              <div
+                ref={storyDomRef}
+                className="relative overflow-hidden"
+                style={{
+                  width: 360,
+                  height: 640,
+                  backgroundColor: '#080808',
+                  fontFamily: 'system-ui, sans-serif',
+                }}
+              >
+                {/* Fondo Imagen */}
+                {platillo.imagen_url ? (
+                  <>
+                    <img
+                      src={platillo.imagen_url}
+                      alt={platillo.nombre}
+                      crossOrigin="anonymous"
+                      style={{
+                        position: 'absolute',
+                        top: 0,
+                        left: 0,
+                        width: '100%',
+                        height: '52%',
+                        objectFit: 'cover',
+                      }}
+                    />
+                    <div style={{
+                      position: 'absolute',
+                      top: '36%',
+                      left: 0,
+                      right: 0,
+                      height: '18%',
+                      background: 'linear-gradient(to bottom, transparent, #080808)',
+                    }} />
+                  </>
+                ) : (
+                  <div style={{
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    height: '52%',
+                    background: 'linear-gradient(135deg, #0D3B5E 0%, #080808 60%, #1A0A05 100%)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}>
+                    <span style={{ fontSize: 90, filter: 'drop-shadow(0 0 30px rgba(42,191,191,0.4))' }}>
+                      {platillo.emoji || '🦐'}
+                    </span>
+                  </div>
+                )}
+
+                {/* Badge Promo */}
+                {hasPromo && (
+                  <div style={{
+                    position: 'absolute',
+                    top: 14,
+                    right: 14,
+                    background: 'linear-gradient(135deg, #E8430A, #C9A84C)',
+                    borderRadius: 30,
+                    padding: '5px 12px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 5,
+                    boxShadow: '0 0 20px rgba(232,67,10,0.5)',
+                    zIndex: 10,
+                  }}>
+                    <span style={{ fontSize: 11 }}>🔥</span>
+                    <span style={{
+                      color: '#F7F3EE',
+                      fontSize: 9,
+                      fontWeight: 900,
+                      letterSpacing: 1,
+                      textTransform: 'uppercase',
+                    }}>
+                      {bannerText}
+                    </span>
+                  </div>
+                )}
+
+                {/* Contenido Inferior */}
+                <div style={{
+                  position: 'absolute',
+                  bottom: 0,
+                  left: 0,
+                  right: 0,
+                  padding: '14px 20px 14px',
+                  background: 'linear-gradient(to top, #080808 88%, rgba(8,8,8,0.7) 96%, transparent)',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  zIndex: 10,
+                }}>
+                  <div style={{
+                    textAlign: 'center',
+                    color: '#C9A84C',
+                    opacity: 0.4,
+                    fontSize: 9,
+                    letterSpacing: 3,
+                    marginBottom: 2,
+                  }}>
+                    — ✦ —
+                  </div>
+
+                  <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 4 }}>
+                    <BrandLogo
+                      size="story"
+                      withSubtext
+                      withSlogan
+                      align="center"
+                      href={null}
+                    />
+                  </div>
+
+                  <div style={{
+                    width: '100%',
+                    height: 1,
+                    background: 'linear-gradient(90deg, transparent, #C9A84C, transparent)',
+                    marginTop: 4,
+                    marginBottom: 6,
+                    opacity: 0.35,
+                    display: 'block',
+                  }} />
+
+                  <div style={{
+                    color: '#F7F3EE',
+                    fontSize: 22,
+                    fontWeight: 900,
+                    letterSpacing: 2,
+                    textTransform: 'uppercase',
+                    lineHeight: 1.1,
+                    marginBottom: 3,
+                  }}>
+                    {platillo.nombre}
+                  </div>
+
+                  {platillo.descripcion && (
+                    <div style={{
+                      color: '#D4C5A9',
+                      fontSize: 10.5,
+                      fontStyle: 'italic',
+                      opacity: 0.8,
+                      marginBottom: 6,
+                      lineHeight: 1.3,
+                      display: 'block',
+                    }}>
+                      {platillo.descripcion.length > 95
+                        ? `${platillo.descripcion.slice(0, 95)}...`
+                        : platillo.descripcion}
+                    </div>
+                  )}
+
+                  <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, marginBottom: 4 }}>
+                    {hasPromo && pAnterior > pActual && (
+                      <span style={{
+                        color: '#D4C5A9',
+                        fontSize: 13,
+                        textDecoration: 'line-through',
+                        opacity: 0.6,
+                      }}>
+                        ${formatPrice(pAnterior)}
+                      </span>
+                    )}
+                    <span style={{
+                      color: '#E8430A',
+                      fontSize: 32,
+                      fontWeight: 900,
+                      letterSpacing: 1.5,
+                      lineHeight: 1,
+                    }}>
+                      ${formatPrice(pActual)}
+                    </span>
+                    <span style={{ color: '#D4C5A9', fontSize: 11, opacity: 0.7 }}>MXN</span>
+                  </div>
+
+                  <div style={{
+                    width: '100%',
+                    height: 1,
+                    background: 'linear-gradient(90deg, transparent, #C9A84C, transparent)',
+                    marginTop: 2,
+                    marginBottom: 6,
+                    opacity: 0.25,
+                    display: 'block',
+                  }} />
+
+                  <div style={{
+                    background: 'linear-gradient(135deg, #2ABFBF, #1a9999)',
+                    borderRadius: 50,
+                    padding: '7px 12px',
+                    textAlign: 'center',
+                    marginBottom: 5,
+                    boxShadow: '0 0 16px rgba(42,191,191,0.25)',
+                  }}>
+                    <span style={{
+                      color: '#080808',
+                      fontSize: 10.5,
+                      fontWeight: 900,
+                      letterSpacing: 1.2,
+                      textTransform: 'uppercase',
+                    }}>
+                      📲 Ordena por WhatsApp o en la APP
+                    </span>
+                  </div>
+
+                  <div style={{
+                    textAlign: 'center',
+                    color: '#D4C5A9',
+                    fontSize: 9.5,
+                    opacity: 0.65,
+                    letterSpacing: 2,
+                  }}>
+                    {HANDLE_IG}
+                  </div>
+                </div>
               </div>
             )}
 
-            {/* Canvas Nativo escalado visualmente con máxima nitidez */}
-            <canvas
-              ref={canvasRef}
-              style={{
-                width: 340,
-                height: 604,
-                display: 'block',
-                backgroundColor: '#080808',
-              }}
-            />
+            {/* VISTA 2: RENDERIZADO CANVAS 2D ULTRA HD GPU */}
+            {engineMode === 'canvas' && (
+              <div className="relative flex items-center justify-center">
+                {isRenderingCanvas && (
+                  <div className="absolute inset-0 z-10 bg-black/70 flex flex-col items-center justify-center gap-2">
+                    <Loader2 className="w-6 h-6 text-turquesa animate-spin" />
+                    <span className="text-xs font-sans text-blanco">Generando composición HD...</span>
+                  </div>
+                )}
+                <canvas
+                  ref={canvasRef}
+                  style={{
+                    width: 360,
+                    height: 640,
+                    display: 'block',
+                    backgroundColor: '#080808',
+                  }}
+                />
+              </div>
+            )}
           </div>
 
           <p className="text-[10px] text-arena/40 font-sans text-center max-w-[340px]">
-            Renderizado por GPU en 1080×1920 px. Lo que ves es exactamente lo que se descarga y copia.
+            {engineMode === 'dom'
+              ? '✨ Modo Diseño DOM: Usa componentes JSX nativos de React y Tailwind.'
+              : '⚡ Modo Canvas 2D: Renderizado directo por GPU a 1080×1920 px.'}
           </p>
         </div>
 
@@ -563,8 +808,10 @@ export function InstagramStoryModal({ platillo, onClose }: InstagramStoryModalPr
               <span className="text-blanco font-bold">1080×1920 px (9:16)</span>
             </div>
             <div className="flex justify-between items-center text-xs font-sans">
-              <span className="text-arena/60 uppercase tracking-wider">Motor</span>
-              <span className="text-turquesa font-bold">Canvas 2D Ultra HD</span>
+              <span className="text-arena/60 uppercase tracking-wider">Motor Seleccionado</span>
+              <span className="text-turquesa font-bold">
+                {engineMode === 'dom' ? 'DOM / JSX Componentes' : 'Canvas 2D Ultra HD'}
+              </span>
             </div>
             <div className="flex justify-between items-center text-xs font-sans">
               <span className="text-arena/60 uppercase tracking-wider">Formato de salida</span>
@@ -576,7 +823,7 @@ export function InstagramStoryModal({ platillo, onClose }: InstagramStoryModalPr
           <div className="flex flex-col gap-3">
             <button
               onClick={handleDownloadAndSavePhotos}
-              disabled={isExporting || isRendering}
+              disabled={isExporting}
               className="w-full bg-gradient-to-r from-coral to-oro text-negro font-sans font-black text-sm tracking-wider py-4 px-6 rounded-xl flex items-center justify-center gap-2 shadow-[0_0_30px_rgba(232,67,10,0.3)] hover:shadow-[0_0_40px_rgba(232,67,10,0.5)] transition-all active:scale-95 disabled:opacity-60 disabled:cursor-not-allowed"
             >
               {isExporting ? (
@@ -600,7 +847,7 @@ export function InstagramStoryModal({ platillo, onClose }: InstagramStoryModalPr
             <button
               type="button"
               onClick={handleCopyToClipboard}
-              disabled={isExporting || isRendering}
+              disabled={isExporting}
               className="w-full bg-carbon text-blanco hover:text-turquesa border border-arena/20 hover:border-turquesa/50 font-sans font-bold text-xs py-3.5 px-4 rounded-xl flex items-center justify-center gap-2 transition-all active:scale-95 disabled:opacity-50"
             >
               {copied ? (
