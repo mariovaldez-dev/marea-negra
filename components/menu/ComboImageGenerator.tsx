@@ -264,7 +264,7 @@ export function ComboImageGenerator({
       ctx.fillStyle = '#E8430A'
       ctx.font = 'italic 500 30px Georgia, serif'
       ctx.letterSpacing = '4px'
-      ctx.fillText('Aguachiles & Cocteles · Sinaloa', CANVAS_W / 2, CANVAS_H - 185)
+      ctx.fillText('Aguachiles', CANVAS_W / 2, CANVAS_H - 185)
 
       // ── Línea dorada ──
       const lineGrad = ctx.createLinearGradient(200, 0, CANVAS_W - 200, 0)
@@ -321,7 +321,7 @@ export function ComboImageGenerator({
       ctx.font = '300 20px Arial, sans-serif'
       ctx.textAlign = 'right'
       ctx.letterSpacing = '2px'
-      ctx.fillText('@mareanegra.sinaloa', CANVAS_W - 30, CANVAS_H - 20)
+      ctx.fillText('@mareanegra.aguachiles', CANVAS_W - 30, CANVAS_H - 20)
 
       // Generar preview
       const dataUrl = canvas.toDataURL('image/jpeg', 0.92)
@@ -416,13 +416,12 @@ export function ComboImageGenerator({
                         type="button"
                         onClick={() => !isDisabled && toggleSelect(p)}
                         disabled={isDisabled}
-                        className={`relative rounded-xl overflow-hidden border-2 transition-all text-left ${
-                          isSelected
-                            ? 'border-coral shadow-[0_0_15px_rgba(232,67,10,0.4)]'
-                            : isDisabled
+                        className={`relative rounded-xl overflow-hidden border-2 transition-all text-left ${isSelected
+                          ? 'border-coral shadow-[0_0_15px_rgba(232,67,10,0.4)]'
+                          : isDisabled
                             ? 'border-arena/5 opacity-30 cursor-not-allowed'
                             : 'border-arena/10 hover:border-turquesa/50 cursor-pointer'
-                        }`}
+                          }`}
                       >
                         <img
                           src={p.imagen_url!}
@@ -461,11 +460,10 @@ export function ComboImageGenerator({
                       setLayoutMode('split-v')
                       setPreviewUrl(null)
                     }}
-                    className={`flex items-center justify-center gap-2 p-2 rounded-lg text-xs font-sans font-bold border transition-all ${
-                      layoutMode === 'split-v'
-                        ? 'bg-turquesa/10 border-turquesa text-turquesa shadow-sm'
-                        : 'bg-[#080808] border-arena/10 text-arena/60 hover:text-blanco'
-                    }`}
+                    className={`flex items-center justify-center gap-2 p-2 rounded-lg text-xs font-sans font-bold border transition-all ${layoutMode === 'split-v'
+                      ? 'bg-turquesa/10 border-turquesa text-turquesa shadow-sm'
+                      : 'bg-[#080808] border-arena/10 text-arena/60 hover:text-blanco'
+                      }`}
                   >
                     <Columns2 className="w-3.5 h-3.5" />
                     <span>Vertical (Columnas)</span>
@@ -477,11 +475,10 @@ export function ComboImageGenerator({
                       setLayoutMode('split-h')
                       setPreviewUrl(null)
                     }}
-                    className={`flex items-center justify-center gap-2 p-2 rounded-lg text-xs font-sans font-bold border transition-all ${
-                      layoutMode === 'split-h'
-                        ? 'bg-turquesa/10 border-turquesa text-turquesa shadow-sm'
-                        : 'bg-[#080808] border-arena/10 text-arena/60 hover:text-blanco'
-                    }`}
+                    className={`flex items-center justify-center gap-2 p-2 rounded-lg text-xs font-sans font-bold border transition-all ${layoutMode === 'split-h'
+                      ? 'bg-turquesa/10 border-turquesa text-turquesa shadow-sm'
+                      : 'bg-[#080808] border-arena/10 text-arena/60 hover:text-blanco'
+                      }`}
                   >
                     <Rows2 className="w-3.5 h-3.5" />
                     <span>Horizontal (Filas)</span>
