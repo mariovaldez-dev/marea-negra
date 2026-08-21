@@ -156,11 +156,10 @@ export function InstagramStoryModal({ platillo, onClose }: InstagramStoryModalPr
                 key={tmpl.id}
                 type="button"
                 onClick={() => setActiveTemplate(tmpl.id)}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-sans font-bold transition-all whitespace-nowrap ${
-                  activeTemplate === tmpl.id
-                    ? 'bg-turquesa text-negro shadow-md'
-                    : 'text-arena/70 hover:text-blanco'
-                }`}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-sans font-bold transition-all whitespace-nowrap ${activeTemplate === tmpl.id
+                  ? 'bg-turquesa text-negro shadow-md'
+                  : 'text-arena/70 hover:text-blanco'
+                  }`}
               >
                 {tmpl.icon}
                 <span>{tmpl.name}</span>
@@ -176,10 +175,52 @@ export function InstagramStoryModal({ platillo, onClose }: InstagramStoryModalPr
               style={{
                 width: 360,
                 height: 640,
-                backgroundColor: '#080808',
+                backgroundColor: '#050404',
+                backgroundImage: 'radial-gradient(rgba(201, 168, 76, 0.08) 1.2px, transparent 1.2px)',
+                backgroundSize: '18px 18px',
                 fontFamily: 'system-ui, -apple-system, sans-serif',
               }}
             >
+              {/* Glows de ambientación Dark Luxury */}
+              <div
+                style={{
+                  position: 'absolute',
+                  top: -50,
+                  right: -50,
+                  width: 220,
+                  height: 220,
+                  background: 'radial-gradient(circle, rgba(201,168,76,0.16) 0%, transparent 70%)',
+                  pointerEvents: 'none',
+                  filter: 'blur(25px)',
+                  zIndex: 2,
+                }}
+              />
+              <div
+                style={{
+                  position: 'absolute',
+                  bottom: -50,
+                  left: -50,
+                  width: 240,
+                  height: 240,
+                  background: 'radial-gradient(circle, rgba(232,67,10,0.2) 0%, transparent 70%)',
+                  pointerEvents: 'none',
+                  filter: 'blur(30px)',
+                  zIndex: 2,
+                }}
+              />
+
+              {/* Marco Perimetral Luxury */}
+              <div
+                style={{
+                  position: 'absolute',
+                  inset: 6,
+                  border: '1px solid rgba(201,168,76,0.22)',
+                  borderRadius: 14,
+                  pointerEvents: 'none',
+                  zIndex: 20,
+                }}
+              />
+
               {/* ═══════════════════════════════════════════════════════════
                   PLANTILLA 1: CLÁSICO (DARK LUXURY EQUILIBRADO)
               ═══════════════════════════════════════════════════════════ */}
@@ -203,11 +244,11 @@ export function InstagramStoryModal({ platillo, onClose }: InstagramStoryModalPr
                       <div
                         style={{
                           position: 'absolute',
-                          top: '36%',
+                          top: '34%',
                           left: 0,
                           right: 0,
-                          height: '18%',
-                          background: 'linear-gradient(to bottom, transparent, #080808)',
+                          height: '20%',
+                          background: 'linear-gradient(to bottom, transparent, #050404)',
                         }}
                       />
                     </>
@@ -219,7 +260,7 @@ export function InstagramStoryModal({ platillo, onClose }: InstagramStoryModalPr
                         left: 0,
                         right: 0,
                         height: '52%',
-                        background: 'linear-gradient(135deg, #0D3B5E 0%, #080808 60%, #1A0A05 100%)',
+                        background: 'linear-gradient(135deg, #0D3B5E 0%, #050404 60%, #1A0A05 100%)',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
@@ -235,12 +276,13 @@ export function InstagramStoryModal({ platillo, onClose }: InstagramStoryModalPr
                     <div
                       style={{
                         position: 'absolute',
-                        top: 14,
-                        right: 14,
+                        top: 20,
+                        right: 20,
                         background: 'linear-gradient(135deg, #E8430A, #C9A84C)',
                         borderRadius: 30,
-                        padding: '5px 12px',
+                        padding: '6px 14px',
                         display: 'flex',
+                        justifyContent: 'center',
                         alignItems: 'center',
                         gap: 5,
                         boxShadow: '0 0 20px rgba(232,67,10,0.5)',
@@ -251,7 +293,7 @@ export function InstagramStoryModal({ platillo, onClose }: InstagramStoryModalPr
                       <span
                         style={{
                           color: '#F7F3EE',
-                          fontSize: 9,
+                          fontSize: 11,
                           fontWeight: 900,
                           letterSpacing: 1,
                           textTransform: 'uppercase',
@@ -268,8 +310,8 @@ export function InstagramStoryModal({ platillo, onClose }: InstagramStoryModalPr
                       bottom: 0,
                       left: 0,
                       right: 0,
-                      padding: '14px 20px 14px',
-                      background: 'linear-gradient(to top, #080808 88%, rgba(8,8,8,0.75) 96%, transparent)',
+                      padding: '16px 20px 16px',
+                      background: 'linear-gradient(to top, rgba(5,4,4,0.98) 78%, rgba(5,4,4,0.85) 92%, transparent 100%)',
                       display: 'flex',
                       flexDirection: 'column',
                       zIndex: 10,
@@ -471,6 +513,7 @@ export function InstagramStoryModal({ platillo, onClose }: InstagramStoryModalPr
                       left: 18,
                       right: 18,
                       display: 'flex',
+                      flexDirection: 'column',
                       justifyContent: 'space-between',
                       alignItems: 'center',
                       zIndex: 10,
@@ -478,28 +521,27 @@ export function InstagramStoryModal({ platillo, onClose }: InstagramStoryModalPr
                   >
                     <div
                       style={{
-                        background: 'rgba(8,8,8,0.85)',
                         backdropFilter: 'blur(12px)',
                         padding: '6px 16px',
                         borderRadius: 30,
-                        border: '1px solid rgba(201,168,76,0.35)',
                         display: 'flex',
                         flexDirection: 'column',
                         alignItems: 'center',
                         justifyContent: 'center',
+                        marginBottom: 8,
                       }}
                     >
-                      <BrandLogo size="xs" withSubtext align="center" href={null} />
+                      <BrandLogo size="md" stacked align="center" href={null} />
                     </div>
 
                     {hasPromo && (
                       <div
                         style={{
-                          background: 'linear-gradient(135deg, #E8430A, #C9A84C)',
+                          background: 'linear-gradient(135deg, orange, red , red, orange)',
                           borderRadius: 30,
                           padding: '6px 12px',
                           color: '#F7F3EE',
-                          fontSize: 9.5,
+                          fontSize: 14,
                           fontWeight: 900,
                           letterSpacing: 1,
                           boxShadow: '0 0 15px rgba(232,67,10,0.6)',
