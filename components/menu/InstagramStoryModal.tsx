@@ -278,7 +278,7 @@ export function InstagramStoryModal({ platillo, onClose }: InstagramStoryModalPr
                         position: 'absolute',
                         top: 20,
                         right: 20,
-                        background: 'linear-gradient(135deg, #E8430A, #C9A84C)',
+                        background: 'linear-gradient(135deg, orange,red,red,orange)',
                         borderRadius: 30,
                         padding: '6px 14px',
                         display: 'flex',
@@ -686,24 +686,13 @@ export function InstagramStoryModal({ platillo, onClose }: InstagramStoryModalPr
                   {/* Banner Gigante de Oferta Superior */}
                   <div
                     style={{
-                      background: 'linear-gradient(135deg, #E8430A, #C9A84C)',
+                      background: 'linear-gradient(135deg, orange,red,red,orange)',
                       borderRadius: 16,
                       padding: '10px 14px',
                       textAlign: 'center',
                       boxShadow: '0 0 25px rgba(232,67,10,0.5)',
                     }}
                   >
-                    <div
-                      style={{
-                        color: '#080808',
-                        fontSize: 10,
-                        fontWeight: 900,
-                        letterSpacing: 2,
-                        textTransform: 'uppercase',
-                      }}
-                    >
-                      🔥 {hasPromo ? bannerText : 'ESPECIAL DEL DÍA'} 🔥
-                    </div>
                     <div
                       style={{
                         color: '#F7F3EE',
@@ -714,7 +703,7 @@ export function InstagramStoryModal({ platillo, onClose }: InstagramStoryModalPr
                         lineHeight: 1.1,
                       }}
                     >
-                      ¡OFERTA POR TIEMPO LIMITADO!
+                      🔥 {hasPromo ? bannerText : '¡OFERTA POR TIEMPO LIMITADO!'} 🔥
                     </div>
                   </div>
 
@@ -778,11 +767,12 @@ export function InstagramStoryModal({ platillo, onClose }: InstagramStoryModalPr
                     <div
                       style={{
                         color: '#F7F3EE',
-                        fontSize: 26,
+                        fontSize: 36,
                         fontWeight: 900,
                         letterSpacing: 2,
                         textTransform: 'uppercase',
                       }}
+                      className='font-display'
                     >
                       {platillo.nombre}
                     </div>

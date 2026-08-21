@@ -72,7 +72,7 @@ export function getCurrentDayId(): string {
       weekday: 'long',
     })
     const dayStr = formatter.format(new Date()).toLowerCase()
-    
+
     // Normalizar acentos (miércoles -> miercoles, sábado -> sabado)
     return dayStr
       .normalize('NFD')
@@ -144,7 +144,7 @@ export function getPromoBannerText(platillo: Partial<Platillo>): string {
     textoDias = 'TODOS LOS DÍAS'
   } else if (dias.length === 1) {
     const diaObj = DIAS_SEMANA_PROMO.find((d) => d.id === dias[0])
-    textoDias = `TODOS LOS ${diaObj?.nombre.toUpperCase() || dias[0].toUpperCase()}S`
+    textoDias = `TODOS LOS ${diaObj?.nombre.toUpperCase() || dias[0].toUpperCase()}`
   } else if (dias.length === 2 && dias.includes('sabado') && dias.includes('domingo')) {
     textoDias = 'FIN DE SEMANA'
   } else if (dias.length === 2 && dias.includes('lunes') && dias.includes('martes')) {
