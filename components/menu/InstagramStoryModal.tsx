@@ -637,30 +637,38 @@ export function InstagramStoryModal({ platillo, onClose }: InstagramStoryModalPr
                   >
                     <div
                       style={{
+                        background: 'rgba(5,4,4,0.75)',
                         backdropFilter: 'blur(12px)',
+                        border: '1px solid rgba(201,168,76,0.3)',
                         padding: '6px 16px',
-                        borderRadius: 30,
+                        borderRadius: 24,
                         display: 'flex',
                         flexDirection: 'column',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        marginBottom: 8,
+                        marginBottom: 6,
                       }}
                     >
-                      <BrandLogo size="md" stacked align="center" href={null} />
+                      <BrandLogo size="xs" withSubtext align="center" href={null} />
                     </div>
 
                     {hasPromo && (
                       <div
                         style={{
-                          background: 'linear-gradient(135deg, orange, red , red, orange)',
+                          background: 'linear-gradient(135deg, #FF6B00, #E8430A, #E8430A, #FF6B00)',
                           borderRadius: 30,
-                          padding: '6px 12px',
+                          padding: '5px 14px',
                           color: '#F7F3EE',
-                          fontSize: 14,
+                          fontSize: 11,
                           fontWeight: 900,
-                          letterSpacing: 1,
-                          boxShadow: '0 0 15px rgba(232,67,10,0.6)',
+                          letterSpacing: 0.8,
+                          boxShadow: '0 0 20px rgba(232,67,10,0.6)',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          whiteSpace: 'nowrap',
+                          maxWidth: '90%',
+                          textAlign: 'center',
                         }}
                       >
                         🔥 {bannerText}
@@ -675,16 +683,16 @@ export function InstagramStoryModal({ platillo, onClose }: InstagramStoryModalPr
                       bottom: 18,
                       left: 16,
                       right: 16,
-                      background: 'rgba(8,8,8,0.88)',
+                      background: 'rgba(5,4,4,0.92)',
                       backdropFilter: 'blur(16px)',
                       borderRadius: 22,
-                      padding: '16px 18px',
+                      padding: '14px 16px',
                       border: '1.5px solid rgba(201,168,76,0.35)',
-                      boxShadow: '0 20px 40px rgba(0,0,0,0.8)',
+                      boxShadow: '0 20px 40px rgba(0,0,0,0.85)',
                       zIndex: 10,
                       display: 'flex',
                       flexDirection: 'column',
-                      gap: 6,
+                      gap: 5,
                     }}
                   >
                     <div
@@ -770,19 +778,23 @@ export function InstagramStoryModal({ platillo, onClose }: InstagramStoryModalPr
                       style={{
                         background: 'linear-gradient(135deg, #2ABFBF, #1a9999)',
                         borderRadius: 50,
-                        padding: '9px 14px',
+                        padding: '8px 12px',
                         textAlign: 'center',
-                        marginTop: 4,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        marginTop: 3,
                         boxShadow: '0 0 20px rgba(42,191,191,0.3)',
                       }}
                     >
                       <span
                         style={{
                           color: '#080808',
-                          fontSize: 11,
+                          fontSize: 10.5,
                           fontWeight: 900,
-                          letterSpacing: 1.5,
+                          letterSpacing: 1,
                           textTransform: 'uppercase',
+                          whiteSpace: 'nowrap',
                         }}
                       >
                         📲 Pide por WhatsApp o en la APP
