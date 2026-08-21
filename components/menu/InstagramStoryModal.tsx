@@ -478,14 +478,18 @@ export function InstagramStoryModal({ platillo, onClose }: InstagramStoryModalPr
                   >
                     <div
                       style={{
-                        background: 'rgba(8,8,8,0.82)',
+                        background: 'rgba(8,8,8,0.85)',
                         backdropFilter: 'blur(12px)',
-                        padding: '6px 14px',
+                        padding: '6px 16px',
                         borderRadius: 30,
-                        border: '1px solid rgba(201,168,76,0.3)',
+                        border: '1px solid rgba(201,168,76,0.35)',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        justifyContent: 'center',
                       }}
                     >
-                      <BrandLogo size="xs" withSubtext align="left" href={null} />
+                      <BrandLogo size="xs" withSubtext align="center" href={null} />
                     </div>
 
                     {hasPromo && (
