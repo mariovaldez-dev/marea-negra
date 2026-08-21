@@ -1,7 +1,5 @@
-'use client'
-
 import React, { useRef, useState, useEffect } from 'react'
-import { X, Download, Loader2, Instagram, Camera } from 'lucide-react'
+import { X, Download, Loader2, Instagram, Camera, Share2, Copy, Check, Sparkles } from 'lucide-react'
 import { Platillo } from '@/lib/types/database'
 import { isPromoItem, isPromoActiveToday, getPromoBannerText, parsePrice, formatPrice } from '@/lib/utils/promo'
 
@@ -17,6 +15,8 @@ export function InstagramStoryModal({ platillo, onClose }: InstagramStoryModalPr
   const storyRef = useRef<HTMLDivElement>(null)
   const [isExporting, setIsExporting] = useState(false)
   const [imgLoaded, setImgLoaded] = useState(false)
+  const [copied, setCopied] = useState(false)
+  const [shared, setShared] = useState(false)
 
   const hasPromo = isPromoItem(platillo)
   const promoActive = isPromoActiveToday(platillo)
@@ -31,28 +31,89 @@ export function InstagramStoryModal({ platillo, onClose }: InstagramStoryModalPr
     return () => { document.body.style.overflow = '' }
   }, [])
 
-  const handleDownload = async () => {
+  const generateCanvasBlob = async (): Promise<{ blob: Blob; fileName: string } | null> => {
+    if (!storyRef.current) return null
+    const html2canvas = (await import('html2canvas')).default
+    const canvas = await html2canvas(storyRef.current, {
+      scale: 3, // Resolución Ultra HD 1080×1920
+      useCORS: true,
+      allowTaint: true,
+      backgroundColor: '#080808',
+      logging: false,
+      width: storyRef.current.offsetWidth,
+      height: storyRef.current.offsetHeight,
+    })
+
+    const fileName = `${platillo.nombre.replace(/\s+/g, '-').toLowerCase()}-historia-ig.png`
+    return new Promise((resolve) => {
+      canvas.toBlob((blob) => {
+        if (blob) resolve({ blob, fileName })
+        else resolve(null)
+      }, 'image/png', 1.0)
+    })
+  }
+
+  const handleDownloadAndSavePhotos = async () => {
     if (!storyRef.current) return
     setIsExporting(true)
     try {
-      // Carga dinámica para evitar SSR issues
-      const html2canvas = (await import('html2canvas')).default
-      const canvas = await html2canvas(storyRef.current, {
-        scale: 2,           // 2x resolución para que quede HD
-        useCORS: true,
-        allowTaint: true,
-        backgroundColor: '#080808',
-        logging: false,
-        width: storyRef.current.offsetWidth,
-        height: storyRef.current.offsetHeight,
-      })
+      const result = await generateCanvasBlob()
+      if (!result) return
 
+      const { blob, fileName } = result
+
+      // 1. Descarga directa e inmediata a macOS / Navegador
+      const blobUrl = URL.createObjectURL(blob)
       const link = document.createElement('a')
-      link.download = `${platillo.nombre.replace(/\s+/g, '-').toLowerCase()}-historia-ig.png`
-      link.href = canvas.toDataURL('image/png', 1.0)
+      link.download = fileName
+      link.href = blobUrl
+      document.body.appendChild(link)
       link.click()
+      document.body.removeChild(link)
+      setTimeout(() => URL.revokeObjectURL(blobUrl), 1500)
+
+      // 2. Si el sistema operativo soporta Web Share API con archivos (macOS / iOS Safari), abrir menú para "Guardar en Fotos"
+      const file = new File([blob], fileName, { type: 'image/png' })
+      if (typeof navigator !== 'undefined' && navigator.canShare && navigator.canShare({ files: [file] })) {
+        try {
+          await navigator.share({
+            files: [file],
+            title: `Historia Instagram - ${platillo.nombre}`,
+            text: `Historia de Instagram para ${platillo.nombre} de Marea Negra`,
+          })
+          setShared(true)
+          setTimeout(() => setShared(false), 3000)
+        } catch (shareErr: any) {
+          // El usuario canceló el diálogo de compartir o no es necesario
+          console.log('Share cancelado o completado:', shareErr?.message)
+        }
+      }
     } catch (err) {
       console.error('Error al exportar historia:', err)
+    } finally {
+      setIsExporting(false)
+    }
+  }
+
+  const handleCopyToClipboard = async () => {
+    if (!storyRef.current) return
+    setIsExporting(true)
+    try {
+      const result = await generateCanvasBlob()
+      if (!result) return
+
+      if (typeof navigator !== 'undefined' && navigator.clipboard && (window as any).ClipboardItem) {
+        await navigator.clipboard.write([
+          new (window as any).ClipboardItem({ 'image/png': result.blob })
+        ])
+        setCopied(true)
+        setTimeout(() => setCopied(false), 3000)
+      } else {
+        // Fallback: descargar
+        handleDownloadAndSavePhotos()
+      }
+    } catch (err) {
+      console.error('Error al copiar al portapapeles:', err)
     } finally {
       setIsExporting(false)
     }
@@ -369,27 +430,53 @@ export function InstagramStoryModal({ platillo, onClose }: InstagramStoryModalPr
             </div>
           </div>
 
-          {/* Botón Descargar */}
-          <button
-            onClick={handleDownload}
-            disabled={isExporting}
-            className="w-full bg-gradient-to-r from-coral to-oro text-negro font-sans font-black text-sm tracking-wider py-4 px-6 rounded-xl flex items-center justify-center gap-2 shadow-[0_0_30px_rgba(232,67,10,0.3)] hover:shadow-[0_0_40px_rgba(232,67,10,0.5)] transition-all active:scale-95 disabled:opacity-60 disabled:cursor-not-allowed"
-          >
-            {isExporting ? (
-              <>
-                <Loader2 className="w-4 h-4 animate-spin" />
-                <span>GENERANDO PNG...</span>
-              </>
-            ) : (
-              <>
-                <Download className="w-4 h-4" />
-                <span>DESCARGAR PNG</span>
-              </>
-            )}
-          </button>
+          {/* Botones de Acción */}
+          <div className="flex flex-col gap-3">
+            <button
+              onClick={handleDownloadAndSavePhotos}
+              disabled={isExporting}
+              className="w-full bg-gradient-to-r from-coral to-oro text-negro font-sans font-black text-sm tracking-wider py-4 px-6 rounded-xl flex items-center justify-center gap-2 shadow-[0_0_30px_rgba(232,67,10,0.3)] hover:shadow-[0_0_40px_rgba(232,67,10,0.5)] transition-all active:scale-95 disabled:opacity-60 disabled:cursor-not-allowed"
+            >
+              {isExporting ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <span>GENERANDO EN ALTA RESOLUCIÓN...</span>
+                </>
+              ) : shared ? (
+                <>
+                  <Check className="w-4 h-4 text-negro stroke-[3]" />
+                  <span>¡GUARDADO CON ÉXITO!</span>
+                </>
+              ) : (
+                <>
+                  <Download className="w-4 h-4 stroke-[2.5]" />
+                  <span>DESCARGAR / GUARDAR EN FOTOS</span>
+                </>
+              )}
+            </button>
+
+            <button
+              type="button"
+              onClick={handleCopyToClipboard}
+              disabled={isExporting}
+              className="w-full bg-carbon text-blanco hover:text-turquesa border border-arena/20 hover:border-turquesa/50 font-sans font-bold text-xs py-3 px-4 rounded-xl flex items-center justify-center gap-2 transition-all active:scale-95 disabled:opacity-50"
+            >
+              {copied ? (
+                <>
+                  <Check className="w-4 h-4 text-turquesa" />
+                  <span className="text-turquesa">¡COPIADO! LISTO PARA PEGAR (CMD+V)</span>
+                </>
+              ) : (
+                <>
+                  <Copy className="w-4 h-4 text-turquesa" />
+                  <span>COPIAR IMAGEN (CMD + V)</span>
+                </>
+              )}
+            </button>
+          </div>
 
           <p className="text-[10px] font-sans text-arena/40 text-center leading-relaxed">
-            Descarga la imagen y súbela manualmente a Instagram Stories o Reels desde tu teléfono.
+            💡 En macOS puedes usar <strong>Descargar</strong> o <strong>Copiar Imagen</strong> para pegarla directo con Cmd+V en Instagram, WhatsApp Web o Canva.
           </p>
         </div>
       </div>
