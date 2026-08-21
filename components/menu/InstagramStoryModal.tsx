@@ -246,34 +246,6 @@ export function InstagramStoryModal({ platillo, onClose }: InstagramStoryModalPr
                 fontFamily: 'system-ui, -apple-system, sans-serif',
               }}
             >
-              {/* Glows de ambientación Dark Luxury */}
-              <div
-                style={{
-                  position: 'absolute',
-                  top: -50,
-                  right: -50,
-                  width: 220,
-                  height: 220,
-                  background: 'radial-gradient(circle, rgba(201,168,76,0.16) 0%, transparent 70%)',
-                  pointerEvents: 'none',
-                  filter: 'blur(25px)',
-                  zIndex: 2,
-                }}
-              />
-              <div
-                style={{
-                  position: 'absolute',
-                  bottom: -50,
-                  left: -50,
-                  width: 240,
-                  height: 240,
-                  background: 'radial-gradient(circle, rgba(232,67,10,0.2) 0%, transparent 70%)',
-                  pointerEvents: 'none',
-                  filter: 'blur(30px)',
-                  zIndex: 2,
-                }}
-              />
-
               {/* Marco Perimetral Luxury */}
               <div
                 style={{
@@ -612,12 +584,13 @@ export function InstagramStoryModal({ platillo, onClose }: InstagramStoryModalPr
                     </div>
                   )}
 
-                  {/* Viñeta de fondo oscura */}
+                  {/* Gradiente sutil superior e inferior para legibilidad sin oscurecer la foto */}
                   <div
                     style={{
                       position: 'absolute',
                       inset: 0,
-                      background: 'radial-gradient(circle at center, transparent 40%, rgba(8,8,8,0.7) 100%)',
+                      background: 'linear-gradient(to bottom, rgba(5,4,4,0.5) 0%, transparent 20%, transparent 65%, rgba(5,4,4,0.8) 100%)',
+                      pointerEvents: 'none',
                     }}
                   />
 
@@ -637,9 +610,8 @@ export function InstagramStoryModal({ platillo, onClose }: InstagramStoryModalPr
                   >
                     <div
                       style={{
-                        background: 'rgba(5,4,4,0.75)',
-                        backdropFilter: 'blur(12px)',
-                        border: '1px solid rgba(201,168,76,0.3)',
+                        background: '#050404',
+                        border: '1px solid rgba(201,168,76,0.4)',
                         padding: '6px 16px',
                         borderRadius: 24,
                         display: 'flex',
@@ -647,6 +619,7 @@ export function InstagramStoryModal({ platillo, onClose }: InstagramStoryModalPr
                         alignItems: 'center',
                         justifyContent: 'center',
                         marginBottom: 6,
+                        boxShadow: '0 4px 15px rgba(0,0,0,0.6)',
                       }}
                     >
                       <BrandLogo size="xs" withSubtext align="center" href={null} />
@@ -676,19 +649,18 @@ export function InstagramStoryModal({ platillo, onClose }: InstagramStoryModalPr
                     )}
                   </div>
 
-                  {/* Tarjeta Flotante Glassmorphism en la Base */}
+                  {/* Tarjeta Flotante en la Base */}
                   <div
                     style={{
                       position: 'absolute',
                       bottom: 18,
                       left: 16,
                       right: 16,
-                      background: 'rgba(5,4,4,0.92)',
-                      backdropFilter: 'blur(16px)',
+                      background: '#050404',
                       borderRadius: 22,
                       padding: '14px 16px',
-                      border: '1.5px solid rgba(201,168,76,0.35)',
-                      boxShadow: '0 20px 40px rgba(0,0,0,0.85)',
+                      border: '1.5px solid rgba(201,168,76,0.45)',
+                      boxShadow: '0 20px 40px rgba(0,0,0,0.9)',
                       zIndex: 10,
                       display: 'flex',
                       flexDirection: 'column',
