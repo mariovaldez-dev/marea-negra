@@ -9,6 +9,7 @@ import { ThemeToggle } from '@/components/ui/ThemeToggle'
 import { BrandLogo } from '@/components/ui/BrandLogo'
 import { RestauranteStateToggle } from '@/components/admin/RestauranteStateToggle'
 import { NotificationButton } from '@/components/ui/NotificationButton'
+import { CambiarPasswordAdminModal } from '@/components/auth/CambiarPasswordAdminModal'
 import {
   LayoutDashboard,
   ShoppingBag,
@@ -24,6 +25,7 @@ import {
   Users,
   Clock,
   LayoutGrid,
+  KeyRound,
 } from 'lucide-react'
 
 export default function AdminLayout({
@@ -37,6 +39,7 @@ export default function AdminLayout({
 
   const [role, setRole] = useState<UserRole>('admin')
   const [userName, setUserName] = useState<string>('Administrador')
+  const [showPasswordModal, setShowPasswordModal] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
 
   useEffect(() => {
@@ -215,8 +218,17 @@ export default function AdminLayout({
         <NotificationButton />
 
         <button
+          type="button"
+          onClick={() => setShowPasswordModal(true)}
+          className="flex items-center gap-2 px-3 py-2 text-xs font-sans font-semibold text-arena/80 hover:text-blanco hover:bg-blanco/5 rounded-xl transition-colors w-full border border-arena/10"
+        >
+          <KeyRound className="w-3.5 h-3.5 text-oro" />
+          <span>Cambiar mi Contraseña</span>
+        </button>
+
+        <button
           onClick={handleLogout}
-          className="flex items-center gap-2 px-3 py-2.5 text-sm font-sans font-semibold text-coral hover:bg-coral/10 rounded-xl transition-colors w-full mt-1"
+          className="flex items-center gap-2 px-3 py-2 text-xs font-sans font-semibold text-coral hover:bg-coral/10 rounded-xl transition-colors w-full"
         >
             <LogOut className="w-4 h-4" />
             <span>Cerrar Sesión</span>
@@ -228,6 +240,13 @@ export default function AdminLayout({
       <main className="flex-1 p-6 md:p-10 max-w-7xl mx-auto w-full">
         {children}
       </main>
+
+      {/* MODAL CAMBIAR CONTRASEÑA ADMIN */}
+      <CambiarPasswordAdminModal
+        isOpen={showPasswordModal}
+        onClose={() => setShowPasswordModal(false)}
+        userName={userName}
+      />
     </div>
   )
 }

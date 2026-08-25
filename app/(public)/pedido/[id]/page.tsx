@@ -6,7 +6,9 @@ import { createBrowserClient } from '@/lib/supabase/client'
 import { Pedido } from '@/lib/types/database'
 import { TicketImageDownload } from '@/components/menu/TicketImageDownload'
 import { ComprobanteUploader } from '@/components/menu/ComprobanteUploader'
+import { ReviewRatingWidget } from '@/components/pedidos/ReviewRatingWidget'
 import { ThemeToggle } from '@/components/ui/ThemeToggle'
+import { useWhatsAppSupport } from '@/lib/hooks/useWhatsAppSupport'
 import {
   Clock,
   Flame,
@@ -20,6 +22,9 @@ import {
   Sparkles,
   Gift,
   XCircle,
+  MessageCircle,
+  Bell,
+  Award,
 } from 'lucide-react'
 
 const PICOR_LABELS: Record<string, string> = {
@@ -37,8 +42,33 @@ export default function OrderStatusPage() {
   const [pedido, setPedido] = useState<any | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const { openWhatsApp } = useWhatsAppSupport()
 
   const supabase = createBrowserClient()
+
+  // Sonido de campana para cuando la orden está lista
+  const playReadyChime = () => {
+    try {
+      const audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)()
+      const osc = audioCtx.createOscillator()
+      const gain = audioCtx.createGain()
+
+      osc.type = 'sine'
+      osc.frequency.setValueAtTime(880, audioCtx.currentTime) // Nota La5
+      osc.frequency.exponentialRampToValueAtTime(1760, audioCtx.currentTime + 0.15)
+
+      gain.gain.setValueAtTime(0.3, audioCtx.currentTime)
+      gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.8)
+
+      osc.connect(gain)
+      gain.connect(audioCtx.destination)
+
+      osc.start()
+      osc.stop(audioCtx.currentTime + 0.8)
+    } catch (e) {
+      console.warn('Audio chime no soportado')
+    }
+  }
 
   const fetchPedidoDetail = async () => {
     try {
@@ -73,6 +103,13 @@ export default function OrderStatusPage() {
   useEffect(() => {
     fetchPedidoDetail()
 
+    // Solicitar permiso de notificaciones push de navegador si aún no está otorgado
+    if (typeof window !== 'undefined' && 'Notification' in window) {
+      if (Notification.permission === 'default') {
+        Notification.requestPermission().catch(() => {})
+      }
+    }
+
     const channel = supabase
       .channel(`realtime_pedido_${pedidoId}`)
       .on(
@@ -80,6 +117,26 @@ export default function OrderStatusPage() {
         { event: 'UPDATE', schema: 'public', table: 'pedidos', filter: `id=eq.${pedidoId}` },
         (payload) => {
           const updated = payload.new as Pedido
+          if (updated.estado === 'listo') {
+            playReadyChime()
+            
+            // 1. Notificación Push de Sistema Operativo (suena y vibra aunque no esté en la pestaña)
+            if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted') {
+              try {
+                new Notification('🔔 ¡Tu pedido de Marea Negra está LISTO! 🦐', {
+                  body: `Folio #${pedidoId}: Tu orden ya salió de cocina y está fresca. ¡Pasa a recogerla!`,
+                  icon: '/icon.png',
+                })
+              } catch (notifErr) {
+                console.warn('Error al mostrar Web Notification:', notifErr)
+              }
+            }
+
+            // 2. Título parpadeante en la pestaña del navegador
+            if (typeof document !== 'undefined') {
+              document.title = '🔔 ¡PEDIDO LISTO! — Marea Negra'
+            }
+          }
           setPedido((prev: any) => (prev ? { ...prev, ...updated } : updated))
         }
       )
@@ -396,6 +453,41 @@ export default function OrderStatusPage() {
                   <span className="font-display text-4xl text-oro">${orderTotal.toFixed(0)} MXN</span>
                 </div>
               </div>
+            </div>
+
+            {/* WIDGET DE CALIFICACIÓN Y RESEÑAS (GOOGLE MAPS BOOSTER / WHATSAPP QUEJAS) */}
+            {(pedido.estado === 'entregado' || pedido.estado === 'listo') && (
+              <ReviewRatingWidget
+                pedidoId={pedido.id}
+                clienteNombre={pedido.cliente_nombre}
+                clienteTelefono={pedido.cliente_telefono || ''}
+                folioPedido={`#${pedido.id}`}
+              />
+            )}
+
+            {/* BOTÓN DE ASISTENCIA DIRECTA POR WHATSAPP (SEGURO) */}
+            <div className="flex flex-col sm:flex-row gap-3">
+              <button
+                type="button"
+                onClick={() =>
+                  openWhatsApp(
+                    `Hola Marea Negra, tengo una duda sobre mi Pedido Folio #${pedido.id} a nombre de ${pedido.cliente_nombre}.`
+                  )
+                }
+                className="flex-1 bg-[#111111] hover:bg-black border border-arena/30 hover:border-turquesa text-arena hover:text-blanco font-sans font-bold text-xs py-3.5 px-4 rounded-2xl transition-all flex items-center justify-center gap-2 shadow-md"
+              >
+                <MessageCircle className="w-4 h-4 text-turquesa" />
+                <span>¿DUDAS CON TU PEDIDO? CHATEAR POR WHATSAPP</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => router.push('/micuenta')}
+                className="bg-oro text-negro hover:bg-blanco font-sans font-bold text-xs py-3.5 px-5 rounded-2xl transition-all flex items-center justify-center gap-2 shadow-md"
+              >
+                <Award className="w-4 h-4" />
+                <span>VER MIS SELLOS VIP</span>
+              </button>
             </div>
           </>
         )}

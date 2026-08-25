@@ -5,6 +5,8 @@ import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea
 import { createBrowserClient } from '@/lib/supabase/client'
 import { Pedido, Platillo, EstadoPedido, MetodoPago } from '@/lib/types/database'
 import { updatePedidoEstado, createNuevoPedido } from '@/lib/actions/pedidos'
+import { descontarInventarioPorPedido } from '@/lib/actions/recetas'
+import { notificarPedidoListoCliente } from '@/lib/actions/whatsappNotification'
 import {
   Plus,
   Clock,
@@ -28,6 +30,8 @@ import {
 
 import { getMazatlanDateString } from '@/lib/utils/date'
 import { TicketPrintModal } from '@/components/pedidos/TicketPrintModal'
+import { PosThermalTicketModal } from '@/components/pedidos/PosThermalTicketModal'
+import { Receipt } from 'lucide-react'
 
 interface KanbanBoardProps {
   initialPedidos: Pedido[]
@@ -49,6 +53,7 @@ export function KanbanBoard({
   const [showModal, setShowModal] = useState(false)
   const [previewPedido, setPreviewPedido] = useState<Pedido | null>(null)
   const [showPrintModal, setShowPrintModal] = useState(false)
+  const [thermalTicketPedido, setThermalTicketPedido] = useState<Pedido | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [pedidoToReject, setPedidoToReject] = useState<Pedido | null>(null)
 
@@ -142,6 +147,25 @@ export function KanbanBoard({
 
     try {
       await updatePedidoEstado(pedidoId, nuevoEstado)
+      
+      if (nuevoEstado === 'preparando' || nuevoEstado === 'listo') {
+        descontarInventarioPorPedido(pedidoId).catch((e) => console.warn('Stock discount error:', e))
+      }
+
+      if (nuevoEstado === 'listo') {
+        notificarPedidoListoCliente(pedidoId).then((res) => {
+          if (res.success && !res.sentViaApi && res.waUrl && typeof window !== 'undefined') {
+            window.open(res.waUrl, '_blank', 'noopener,noreferrer')
+          }
+        }).catch((e) => console.warn('WA error:', e))
+      }
+
+      if (nuevoEstado === 'entregado') {
+        const ped = pedidos.find((p) => p.id === pedidoId)
+        if (ped) {
+          setThermalTicketPedido(ped)
+        }
+      }
     } catch (err) {
       console.error('Error al actualizar estado:', err)
       setPedidos(initialPedidos)
@@ -157,6 +181,16 @@ export function KanbanBoard({
     }
     try {
       await updatePedidoEstado(pedidoId, nuevoEstado)
+      if (nuevoEstado === 'preparando' || nuevoEstado === 'listo') {
+        descontarInventarioPorPedido(pedidoId).catch((e) => console.warn('Stock discount error:', e))
+      }
+      if (nuevoEstado === 'listo') {
+        notificarPedidoListoCliente(pedidoId).then((res) => {
+          if (res.success && !res.sentViaApi && res.waUrl && typeof window !== 'undefined') {
+            window.open(res.waUrl, '_blank', 'noopener,noreferrer')
+          }
+        }).catch((e) => console.warn('WA error:', e))
+      }
     } catch (err) {
       console.error('Error al actualizar estado:', err)
     }
@@ -672,11 +706,21 @@ export function KanbanBoard({
 
               <button
                 type="button"
+                onClick={() => setThermalTicketPedido(previewPedido)}
+                className="bg-carbon hover:bg-black text-oro border border-oro/30 font-sans font-bold text-xs py-3.5 px-4 rounded-xl transition-all flex items-center justify-center gap-1.5 shadow-lg"
+                title="Generar Imagen de Ticket POS para WhatsApp"
+              >
+                <Receipt className="w-4 h-4 text-oro" />
+                <span>🖼️ TICKET DIGITAL</span>
+              </button>
+
+              <button
+                type="button"
                 onClick={() => setShowPrintModal(true)}
                 className="bg-oro text-negro font-sans font-bold text-xs py-3.5 px-4 rounded-xl hover:bg-blanco transition-all flex items-center justify-center gap-2 shadow-lg"
               >
                 <Printer className="w-4 h-4" />
-                <span>🖨️ TICKET (80MM)</span>
+                <span>🖨️ IMPRIMIR</span>
               </button>
 
               <button
@@ -695,6 +739,31 @@ export function KanbanBoard({
         <TicketPrintModal
           pedido={previewPedido}
           onClose={() => setShowPrintModal(false)}
+        />
+      )}
+
+      {/* MODAL IMAGEN TICKET TÉRMICO REAL (80MM) PARA WHATSAPP */}
+      {thermalTicketPedido && (
+        <PosThermalTicketModal
+          isOpen={!!thermalTicketPedido}
+          onClose={() => setThermalTicketPedido(null)}
+          data={{
+            folio: thermalTicketPedido.id,
+            clienteNombre: thermalTicketPedido.cliente_nombre,
+            clienteTelefono: thermalTicketPedido.cliente_telefono,
+            tipoEntrega: thermalTicketPedido.tipo_entrega,
+            mesa: thermalTicketPedido.mesa_nombre,
+            metodoPago: thermalTicketPedido.metodo_pago,
+            total: thermalTicketPedido.total || 0,
+            subtotal: thermalTicketPedido.total || 0,
+            notas: thermalTicketPedido.notas,
+            items: (thermalTicketPedido.pedido_items || []).map((item) => ({
+              nombre: item.nombre_platillo || 'Platillo',
+              cantidad: item.cantidad || 1,
+              precioUnitario: item.precio_unitario || 0,
+              detalle: item.notas_item || null,
+            })),
+          }}
         />
       )}
 

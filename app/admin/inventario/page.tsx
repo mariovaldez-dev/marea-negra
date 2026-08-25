@@ -1,7 +1,8 @@
 import React from 'react'
 import { createServerClient } from '@/lib/supabase/server'
 import { InventoryManager } from '@/components/inventario/InventoryManager'
-import { Insumo, MovimientoInventario } from '@/lib/types/database'
+import { Insumo, MovimientoInventario, Platillo, PlatilloIngrediente } from '@/lib/types/database'
+import { getRecetas } from '@/lib/actions/recetas'
 
 export const revalidate = 0
 
@@ -22,19 +23,25 @@ export default async function InventarioAdminPage() {
 
   let insumos: Insumo[] = FALLBACK_INSUMOS
   let historial: MovimientoInventario[] = []
+  let platillos: Platillo[] = []
+  let recetas: PlatilloIngrediente[] = []
 
   try {
-    const [insRes, movRes] = await Promise.all([
+    const [insRes, movRes, platRes, recData] = await Promise.all([
       supabase.from('insumos').select('*').order('id', { ascending: true }),
       supabase
         .from('movimientos_inventario')
         .select('*, insumo:insumos(*)')
         .order('created_at', { ascending: false })
-        .limit(10),
+        .limit(15),
+      supabase.from('platillos').select('*').order('id', { ascending: true }),
+      getRecetas(),
     ])
 
     if (insRes.data && insRes.data.length > 0) insumos = insRes.data
     if (movRes.data && movRes.data.length > 0) historial = movRes.data
+    if (platRes.data && platRes.data.length > 0) platillos = platRes.data
+    if (recData && recData.length > 0) recetas = recData
   } catch (err) {
     console.warn('Error al cargar inventario:', err)
   }
@@ -43,6 +50,8 @@ export default async function InventarioAdminPage() {
     <InventoryManager
       initialInsumos={insumos}
       historialMovimientos={historial}
+      initialPlatillos={platillos}
+      initialRecetas={recetas}
     />
   )
 }

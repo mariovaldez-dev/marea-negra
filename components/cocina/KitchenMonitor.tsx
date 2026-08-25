@@ -4,6 +4,8 @@ import React, { useState, useEffect, useRef } from 'react'
 import { createBrowserClient } from '@/lib/supabase/client'
 import { Pedido, EstadoPedido } from '@/lib/types/database'
 import { updatePedidoEstado } from '@/lib/actions/pedidos'
+import { descontarInventarioPorPedido } from '@/lib/actions/recetas'
+import { notificarPedidoListoCliente } from '@/lib/actions/whatsappNotification'
 import { useWebNotifications } from '@/lib/hooks/useWebNotifications'
 import {
   Volume2,
@@ -17,6 +19,8 @@ import {
   Megaphone,
   X,
   Printer,
+  MessageCircle,
+  Send,
 } from 'lucide-react'
 import dynamic from 'next/dynamic'
 
@@ -140,6 +144,27 @@ export function KitchenMonitor({ initialPedidos }: KitchenMonitorProps) {
 
     try {
       await updatePedidoEstado(pedidoId, nextEstado)
+      
+      // 1. Descuento automático de inventario por receta
+      if (nextEstado === 'preparando' || nextEstado === 'listo') {
+        descontarInventarioPorPedido(pedidoId).catch((e) =>
+          console.warn('Auto stock discount error:', e)
+        )
+      }
+
+      // 2. Notificación automática por WhatsApp al cliente cuando el pedido esté LISTO
+      if (nextEstado === 'listo') {
+        notificarPedidoListoCliente(pedidoId).then((res) => {
+          if (res.success) {
+            if (res.sentViaApi) {
+              setLastNotification(`✅ WhatsApp enviado automáticamente a ${pedidos.find((p) => p.id === pedidoId)?.cliente_nombre || 'cliente'}`)
+            } else if (res.waUrl && typeof window !== 'undefined') {
+              // Si no hay API de Meta configurada, abre WhatsApp con la plantilla pre-armada
+              window.open(res.waUrl, '_blank', 'noopener,noreferrer')
+            }
+          }
+        }).catch((e) => console.warn('Error enviando WhatsApp automático:', e))
+      }
     } catch (err) {
       console.error('Error al avanzar estado:', err)
     }

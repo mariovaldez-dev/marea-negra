@@ -1,5 +1,5 @@
 import { initializeApp, getApps, getApp } from 'firebase/app'
-import { getMessaging, isSupported } from 'firebase/messaging'
+import { getAuth, Auth } from 'firebase/auth'
 
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -11,13 +11,15 @@ const firebaseConfig = {
 }
 
 // Validar que existan las credenciales mínimas antes de inicializar
-const isConfigured = !!firebaseConfig.projectId && !!firebaseConfig.appId
+const isConfigured = !!firebaseConfig.projectId && !!firebaseConfig.appId && !!firebaseConfig.apiKey
 
 let app: any = null
+let auth: Auth | null = null
 
 if (isConfigured) {
   try {
     app = !getApps().length ? initializeApp(firebaseConfig) : getApp()
+    auth = getAuth(app)
   } catch (err) {
     console.error('Error inicializando Firebase:', err)
   }
@@ -25,4 +27,4 @@ if (isConfigured) {
   console.warn('Firebase no inicializado: Faltan variables de entorno NEXT_PUBLIC_FIREBASE_*')
 }
 
-export { app }
+export { app, auth }

@@ -5,6 +5,7 @@ import dynamic from 'next/dynamic'
 import { ClienteAdminSummary, deleteClienteClub } from '@/lib/actions/clientesAdmin'
 import { generarCopysMarketing, checkGeminiStatus, CopyGenerado, GenerarCopyOptions } from '@/lib/actions/aiMarketing'
 import { LuxuryCard } from '@/components/ui/LuxuryCard'
+import { AdminRestablecerPasswordClienteModal } from '@/components/admin/AdminRestablecerPasswordClienteModal'
 
 const CustomerQrScannerModal = dynamic(
   () => import('@/components/admin/CustomerQrScannerModal').then((mod) => mod.CustomerQrScannerModal),
@@ -17,6 +18,7 @@ import {
   Phone,
   MessageCircle,
   Sparkles,
+  KeyRound,
   Calendar,
   Trash2,
   Loader2,
@@ -49,6 +51,11 @@ export function ClientesManager({ initialClientes }: ClientesManagerProps) {
   const [searchTerm, setSearchTerm] = useState('')
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [feedbackMsg, setFeedbackMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
+  const [selectedClientForPassword, setSelectedClientForPassword] = useState<{
+    id: string
+    nombre: string
+    telefono: string
+  } | null>(null)
 
   // Estados de WhatsApp Marketing + IA
   const [geminiStatus, setGeminiStatus] = useState<{ connected: boolean; mensaje: string } | null>(null)
@@ -360,16 +367,35 @@ export function ClientesManager({ initialClientes }: ClientesManagerProps) {
                   </div>
                 </div>
 
-                <div className="flex items-center justify-between border-t border-arena/20 pt-3">
-                  <a
-                    href={buildPersonalizedWhatsAppUrl(cliente)}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="bg-[#25D366] text-white hover:bg-[#1EBE5D] text-xs font-sans font-bold px-3 py-2 rounded-xl transition-all flex items-center gap-1.5 shadow-sm"
-                  >
-                    <MessageCircle className="w-3.5 h-3.5 fill-current" />
-                    <span>WhatsApp</span>
-                  </a>
+                <div className="flex items-center justify-between border-t border-arena/20 pt-3 gap-2">
+                  <div className="flex items-center gap-1.5">
+                    <a
+                      href={buildPersonalizedWhatsAppUrl(cliente)}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="bg-[#25D366] text-white hover:bg-[#1EBE5D] text-xs font-sans font-bold px-3 py-2 rounded-xl transition-all flex items-center gap-1.5 shadow-sm"
+                      title="Chatear por WhatsApp"
+                    >
+                      <MessageCircle className="w-3.5 h-3.5 fill-current" />
+                      <span>WhatsApp</span>
+                    </a>
+
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setSelectedClientForPassword({
+                          id: cliente.id,
+                          nombre: cliente.nombre,
+                          telefono: cliente.telefono,
+                        })
+                      }
+                      className="bg-carbon hover:bg-black text-arena hover:text-oro border border-arena/20 hover:border-oro/40 text-xs font-sans font-bold px-2.5 py-2 rounded-xl transition-all flex items-center gap-1 shadow-sm"
+                      title="Restablecer o Asignar Contraseña"
+                    >
+                      <KeyRound className="w-3.5 h-3.5 text-oro" />
+                      <span className="hidden sm:inline">Clave</span>
+                    </button>
+                  </div>
 
                   <button
                     type="button"
@@ -745,6 +771,13 @@ export function ClientesManager({ initialClientes }: ClientesManagerProps) {
           onClose={() => setShowScannerModal(false)}
         />
       )}
+
+      {/* MODAL RESTABLECER CONTRASEÑA DE CLIENTE */}
+      <AdminRestablecerPasswordClienteModal
+        isOpen={!!selectedClientForPassword}
+        onClose={() => setSelectedClientForPassword(null)}
+        cliente={selectedClientForPassword}
+      />
     </div>
   )
 }

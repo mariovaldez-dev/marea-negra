@@ -1,6 +1,18 @@
-# Marea Negra - Aguachiles & Cocteles 🦐🌶️
+# Marea Negra - Aguachiles 🦐🌶️
 
-Aplicación web monolítica full-stack diseñada para la administración integral y menú público del negocio de mariscos **Marea Negra**, ubicado en Sinaloa, México.
+Aplicación web monolítica full-stack diseñada para la administración integral y menú público del negocio de mariscos **Marea Negra - Aguachiles**, ubicado en Sinaloa, México.
+
+---
+
+## 📚 Documentación Modular
+
+Para facilitar el mantenimiento y evitar saturación en el README principal, consulta las guías específicas en la carpeta [`/docs`](docs/):
+
+- 🔐 [**Autenticación, Seguridad y Recuperación de Contraseñas (OTP SMS)**](docs/AUTH_AND_SECURITY.md): Flujo de verificación SMS de Google Firebase (10,000 gratis/mes), hashing PBKDF2/SHA-512 y recuperación.
+- 📲 [**Notificaciones, Rastreo en Vivo y WhatsApp**](docs/WHATSAPP_AND_NOTIFICATIONS.md): Envío automático de comandas listas, pantalla en vivo `/pedido/[id]`, campana acústica y Web Push.
+- ⭐ [**Sistema Inteligente de Reseñas & Google Maps Booster**](docs/REVIEWS_AND_FEEDBACK.md): Calificación con 5 camarones dorados, desvío automático a Google Maps y protección contra quejas públicas.
+- ⚙️ [**Guía de Configuración: Meta WhatsApp Cloud API**](docs/META_WHATSAPP_SETUP.md): Paso a paso para obtener tus 1,000 mensajes gratis al mes en Meta for Developers.
+- 🤖 [**Integración de Inteligencia Artificial (Gemini AI)**](IA_INTEGRATION.MD): Campañas de WhatsApp, fidelización y reseñas de Google Maps.
 
 ---
 

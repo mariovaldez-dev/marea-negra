@@ -6,6 +6,9 @@ import Link from 'next/link'
 import { ThemeToggle } from '@/components/ui/ThemeToggle'
 import { ClubBenefitsModal } from '@/components/menu/ClubBenefitsModal'
 import { LoyaltyCardPass } from '@/components/loyalty/LoyaltyCardPass'
+import { CambiarPasswordModal } from '@/components/auth/CambiarPasswordModal'
+import { RecuperarPasswordSmsModal } from '@/components/auth/RecuperarPasswordSmsModal'
+import { useWhatsAppSupport } from '@/lib/hooks/useWhatsAppSupport'
 import {
   getClienteCuentaByTelefono,
   ClientePerfilStats,
@@ -33,14 +36,23 @@ import {
   Cake,
   Heart,
   Share2,
+  KeyRound,
+  Lock,
+  MessageSquare,
 } from 'lucide-react'
+
+// Feature Flag: Mantiene la recuperación de contraseña por SMS/OTP apagada por defecto (true/false)
+const ENABLE_SMS_RECOVERY = process.env.NEXT_PUBLIC_ENABLE_SMS_RECOVERY === 'true'
 
 export default function MiCuentaPage() {
   const router = useRouter()
+  const { openWhatsApp } = useWhatsAppSupport()
   const [telefonoInput, setTelefonoInput] = useState('')
   const [passwordInput, setPasswordInput] = useState('')
   const [errorMsg, setErrorMsg] = useState('')
   const [loading, setLoading] = useState(false)
+  const [showPasswordModal, setShowPasswordModal] = useState(false)
+  const [showSmsRecoveryModal, setShowSmsRecoveryModal] = useState(false)
   const [perfil, setPerfil] = useState<ClientePerfilStats | null>(null)
   const [initialLoadDone, setInitialLoadDone] = useState(false)
   const [isModalOpen, setIsModalOpen] = useState(false)
@@ -240,9 +252,34 @@ export default function MiCuentaPage() {
               </div>
 
               <div className="flex flex-col gap-1.5">
-                <label className="text-xs font-sans font-bold text-negro/70 dark:text-arena/70 uppercase tracking-wider">
-                  Contraseña
-                </label>
+                <div className="flex justify-between items-center">
+                  <label className="text-xs font-sans font-bold text-negro/70 dark:text-arena/70 uppercase tracking-wider">
+                    Contraseña
+                  </label>
+                  {ENABLE_SMS_RECOVERY ? (
+                    <button
+                      type="button"
+                      onClick={() => setShowSmsRecoveryModal(true)}
+                      className="text-[11px] font-sans text-turquesa hover:text-coral transition-colors flex items-center gap-1"
+                    >
+                      <MessageSquare className="w-3 h-3" />
+                      <span>¿Olvidaste tu contraseña?</span>
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() =>
+                        openWhatsApp(
+                          'Hola Marea Negra, olvidé la contraseña de mi cuenta del Club VIP y necesito ayuda para ingresar.'
+                        )
+                      }
+                      className="text-[11px] font-sans text-turquesa hover:text-coral transition-colors flex items-center gap-1"
+                    >
+                      <MessageSquare className="w-3 h-3" />
+                      <span>¿Olvidaste tu contraseña?</span>
+                    </button>
+                  )}
+                </div>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                     <ShieldCheck className="w-5 h-5 text-negro/40 dark:text-arena/40" />
@@ -344,6 +381,17 @@ export default function MiCuentaPage() {
                       <span className="font-display text-xl text-oro tracking-wider">{perfil.nivelLealtad}</span>
                     </div>
                   </div>
+
+                  {/* Botón Cambiar Contraseña */}
+                  <button
+                    type="button"
+                    onClick={() => setShowPasswordModal(true)}
+                    className="p-3 bg-[#F4F0E8] dark:bg-carbon border border-arena/30 dark:border-arena/20 text-negro/80 dark:text-arena hover:text-turquesa hover:border-turquesa rounded-2xl transition-all shadow-md flex items-center gap-1.5"
+                    title="Cambiar mi contraseña de acceso"
+                  >
+                    <KeyRound className="w-4 h-4 text-turquesa" />
+                    <span className="hidden sm:inline text-xs font-sans font-bold">Cambiar Clave</span>
+                  </button>
 
                   {/* Botón Cerrar Sesión */}
                   <button
@@ -605,6 +653,23 @@ export default function MiCuentaPage() {
       <ClubBenefitsModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
+      />
+
+      {/* MODAL PARA CAMBIAR CONTRASEÑA */}
+      {perfil && (
+        <CambiarPasswordModal
+          isOpen={showPasswordModal}
+          onClose={() => setShowPasswordModal(false)}
+          telefono={perfil.telefono}
+          nombreCliente={perfil.nombreCliente}
+        />
+      )}
+
+      {/* MODAL PARA RECUPERAR CONTRASEÑA POR SMS FIREBASE */}
+      <RecuperarPasswordSmsModal
+        isOpen={showSmsRecoveryModal}
+        onClose={() => setShowSmsRecoveryModal(false)}
+        initialPhone={telefonoInput}
       />
     </div>
   )

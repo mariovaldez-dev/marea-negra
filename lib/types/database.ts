@@ -169,3 +169,13 @@ export interface ConfiguredCartItem {
   nivelPicor: NivelPicor
   notasItem: string
 }
+
+export interface PlatilloIngrediente {
+  id: number
+  platillo_id: number
+  insumo_id: number
+  cantidad_por_porcion: number
+  created_at?: string
+  platillo?: Platillo
+  insumo?: Insumo
+}

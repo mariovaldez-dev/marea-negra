@@ -17,6 +17,8 @@ import { getMazatlanDateString } from '@/lib/utils/date'
 import { Pedido, Insumo } from '@/lib/types/database'
 import { NotificationPermissionBanner } from '@/components/admin/NotificationPermissionBanner'
 import { PwaOnboardingCard } from '@/components/admin/PwaOnboardingCard'
+import { MensajeriaMetricsCard } from '@/components/admin/MensajeriaMetricsCard'
+import { ResenasMetricsCard } from '@/components/admin/ResenasMetricsCard'
 
 export const revalidate = 0 // Server component siempre fresco
 
@@ -135,6 +137,12 @@ export default async function DashboardPage() {
           icon={<AlertTriangle className="w-5 h-5 text-oro" />}
         />
       </div>
+
+      {/* MONITOR Y CONTADOR DE MENSAJES (WHATSAPP & SMS) */}
+      <MensajeriaMetricsCard />
+
+      {/* MONITOR DE SATISFACCIÓN Y RESEÑAS GOOGLE MAPS BOOSTER */}
+      <ResenasMetricsCard />
 
       {/* ACCESOS RÁPIDOS A MÓDULOS */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">

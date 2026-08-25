@@ -177,6 +177,239 @@ export async function loginClienteConPassword(telefonoInput: string, passwordInp
   }
 }
 
+export async function cambiarPasswordCliente(
+  telefonoInput: string,
+  passwordActualInput: string,
+  nuevaPasswordInput: string
+) {
+  const cleanPhone = telefonoInput.replace(/\D/g, '')
+
+  if (!cleanPhone || cleanPhone.length < 7) {
+    return { success: false, error: 'Número celular inválido.' }
+  }
+
+  const adminSupabase = createAdminClient()
+  const { data: cliente, error: searchErr } = await adminSupabase
+    .from('clientes_club')
+    .select('id, password_hash')
+    .eq('telefono', cleanPhone)
+    .single()
+
+  if (!cliente || !cliente.password_hash || searchErr) {
+    return { success: false, error: 'No se encontró la cuenta del cliente.' }
+  }
+
+  // 1. Validar contraseña actual
+  const isMatch = verifyPassword(passwordActualInput, cliente.password_hash)
+  if (!isMatch) {
+    return { success: false, error: 'Tu contraseña actual es incorrecta. Por favor verifícala.' }
+  }
+
+  // 2. Validar fortaleza de la nueva contraseña
+  const strength = validatePasswordStrength(nuevaPasswordInput)
+  if (!strength.isValid) {
+    return {
+      success: false,
+      error: 'La nueva contraseña debe cumplir con los 4 requisitos: mínimo 8 caracteres, 1 mayúscula, 1 minúscula y 1 número.',
+    }
+  }
+
+  // 3. Encriptar y guardar
+  const encryptedHash = hashPassword(nuevaPasswordInput)
+  const { error: updateErr } = await adminSupabase
+    .from('clientes_club')
+    .update({ password_hash: encryptedHash })
+    .eq('telefono', cleanPhone)
+
+  if (updateErr) {
+    return { success: false, error: `Error al actualizar contraseña: ${updateErr.message}` }
+  }
+
+  return { success: true, message: '¡Tu contraseña ha sido actualizada con éxito!' }
+}
+
+export async function solicitarOtpRecuperacionGratis(telefonoInput: string) {
+  const cleanPhone = telefonoInput.replace(/\D/g, '')
+  if (!cleanPhone || cleanPhone.length < 10) {
+    return { success: false, error: 'Ingresa un número celular válido de 10 dígitos.' }
+  }
+
+  const adminSupabase = createAdminClient()
+
+  // 1. Verificar que el cliente exista
+  const { data: cliente, error: clientErr } = await adminSupabase
+    .from('clientes_club')
+    .select('id, nombre')
+    .eq('telefono', cleanPhone)
+    .single()
+
+  if (clientErr || !cliente) {
+    return {
+      success: false,
+      error: 'No encontramos ninguna cuenta registrada con este número de celular.',
+    }
+  }
+
+  // 2. Generar código aleatorio de 6 dígitos
+  const codigo = Math.floor(100000 + Math.random() * 900000).toString()
+  const expiraAt = new Date(Date.now() + 15 * 60 * 1000).toISOString()
+
+  // 3. Guardar en base de datos
+  const { error: insertErr } = await adminSupabase.from('codigos_recuperacion').insert({
+    telefono: cleanPhone,
+    codigo,
+    expira_at: expiraAt,
+    utilizado: false,
+  })
+
+  if (insertErr) {
+    console.warn('Error al registrar OTP:', insertErr.message)
+  }
+
+  const waMensaje = `🌊 *CÓDIGO DE SEGURIDAD MAREA NEGRA* 🦐
+Hola *${cliente.nombre}*, tu código para restablecer tu contraseña es:
+
+🔑 *${codigo}*
+
+(Válido durante 15 minutos). No compartas este código con nadie.`
+
+  return {
+    success: true,
+    codigo,
+    nombre: cliente.nombre,
+    waMensaje,
+  }
+}
+
+export async function verificarOtpYCambiarPasswordGratis(
+  telefonoInput: string,
+  codigoInput: string,
+  nuevaPasswordInput: string
+) {
+  const cleanPhone = telefonoInput.replace(/\D/g, '')
+  const cleanCode = codigoInput.trim().replace(/\D/g, '')
+
+  if (!cleanPhone || cleanPhone.length < 10) {
+    return { success: false, error: 'Número celular inválido.' }
+  }
+
+  if (cleanCode.length !== 6) {
+    return { success: false, error: 'El código debe tener exactamente 6 dígitos.' }
+  }
+
+  const strength = validatePasswordStrength(nuevaPasswordInput)
+  if (!strength.isValid) {
+    return {
+      success: false,
+      error: 'La nueva contraseña debe tener al menos 8 caracteres, 1 mayúscula, 1 minúscula y 1 número.',
+    }
+  }
+
+  const adminSupabase = createAdminClient()
+
+  // 1. Validar código OTP en la base de datos
+  const { data: otpReg, error: otpErr } = await adminSupabase
+    .from('codigos_recuperacion')
+    .select('id, expira_at')
+    .eq('telefono', cleanPhone)
+    .eq('codigo', cleanCode)
+    .eq('utilizado', false)
+    .gte('expira_at', new Date().toISOString())
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle()
+
+  if (otpErr || !otpReg) {
+    return {
+      success: false,
+      error: 'El código de seguridad es incorrecto o ha expirado. Por favor solicita uno nuevo.',
+    }
+  }
+
+  // 2. Marcar código como utilizado
+  await adminSupabase
+    .from('codigos_recuperacion')
+    .update({ utilizado: true })
+    .eq('id', otpReg.id)
+
+  // 3. Encriptar y actualizar la contraseña del cliente
+  const encryptedHash = hashPassword(nuevaPasswordInput)
+  const { error: updateErr } = await adminSupabase
+    .from('clientes_club')
+    .update({ password_hash: encryptedHash })
+    .eq('telefono', cleanPhone)
+
+  if (updateErr) {
+    return { success: false, error: `Error al actualizar: ${updateErr.message}` }
+  }
+
+  return { success: true, message: '¡Contraseña restablecida exitosamente!' }
+}
+
+export async function verificarCumpleanosYCambiarPassword(
+  telefonoInput: string,
+  fechaNacimientoInput: string,
+  nuevaPasswordInput: string
+) {
+  const cleanPhone = telefonoInput.replace(/\D/g, '')
+
+  if (!cleanPhone || cleanPhone.length < 10) {
+    return { success: false, error: 'Número celular inválido.' }
+  }
+
+  if (!fechaNacimientoInput) {
+    return { success: false, error: 'Ingresa tu fecha de cumpleaños registrada.' }
+  }
+
+  const strength = validatePasswordStrength(nuevaPasswordInput)
+  if (!strength.isValid) {
+    return {
+      success: false,
+      error: 'La nueva contraseña debe tener al menos 8 caracteres, 1 mayúscula, 1 minúscula y 1 número.',
+    }
+  }
+
+  const adminSupabase = createAdminClient()
+
+  // 1. Buscar cliente y validar fecha de nacimiento
+  const { data: cliente, error: searchErr } = await adminSupabase
+    .from('clientes_club')
+    .select('id, borndate')
+    .eq('telefono', cleanPhone)
+    .single()
+
+  if (searchErr || !cliente) {
+    return { success: false, error: 'No se encontró la cuenta con este número celular.' }
+  }
+
+  if (!cliente.borndate) {
+    return {
+      success: false,
+      error: 'Esta cuenta no tiene fecha de cumpleaños configurada. Por favor utiliza la opción de WhatsApp.',
+    }
+  }
+
+  if (cliente.borndate !== fechaNacimientoInput) {
+    return {
+      success: false,
+      error: 'La fecha de cumpleaños no coincide con la registrada en tu cuenta.',
+    }
+  }
+
+  // 2. Encriptar y actualizar
+  const encryptedHash = hashPassword(nuevaPasswordInput)
+  const { error: updateErr } = await adminSupabase
+    .from('clientes_club')
+    .update({ password_hash: encryptedHash })
+    .eq('telefono', cleanPhone)
+
+  if (updateErr) {
+    return { success: false, error: `Error al actualizar: ${updateErr.message}` }
+  }
+
+  return { success: true, message: '¡Identidad verificada y contraseña actualizada con éxito!' }
+}
+
 export async function restablecerPasswordCliente(telefonoInput: string, nuevaPasswordInput: string) {
   const cleanPhone = telefonoInput.replace(/\D/g, '')
 
