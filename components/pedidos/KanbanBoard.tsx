@@ -514,6 +514,36 @@ export function KanbanBoard({
                                     📝 "{pedido.notas}"
                                   </div>
                                 )}
+
+                                {/* BOTONES RÁPIDOS DE ACCIÓN (TICKET DIGITAL & WHATSAPP) */}
+                                <div className="flex items-center justify-between gap-2 pt-2 border-t border-arena/10 mt-1">
+                                  <button
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.stopPropagation()
+                                      setThermalTicketPedido(pedido)
+                                    }}
+                                    className="flex-1 bg-carbon hover:bg-black text-oro hover:text-blanco border border-oro/30 hover:border-oro text-[11px] font-sans font-bold py-2 px-2.5 rounded-xl transition-all flex items-center justify-center gap-1 shadow-sm"
+                                    title="Generar y Enviar Ticket Digital por WhatsApp"
+                                  >
+                                    <Receipt className="w-3.5 h-3.5 text-oro" />
+                                    <span>🖼️ TICKET</span>
+                                  </button>
+
+                                  {pedido.cliente_telefono && (
+                                    <a
+                                      href={`https://wa.me/52${pedido.cliente_telefono.replace(/\D/g, '')}?text=Hola%20${encodeURIComponent(pedido.cliente_nombre)},%20te%20contactamos%20de%20*Marea%20Negra*%20sobre%20tu%20pedido%20%23${pedido.id}.`}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      onClick={(e) => e.stopPropagation()}
+                                      className="bg-[#25D366] text-white hover:bg-[#1EBE5D] text-[11px] font-sans font-bold py-2 px-3 rounded-xl transition-all flex items-center gap-1 shadow-sm"
+                                      title="Abrir WhatsApp con el Cliente"
+                                    >
+                                      <Phone className="w-3.5 h-3.5 fill-current" />
+                                      <span>WA</span>
+                                    </a>
+                                  )}
+                                </div>
                               </div>
                             </div>
                           )}
