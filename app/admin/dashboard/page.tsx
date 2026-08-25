@@ -13,6 +13,7 @@ import {
   Package,
   CircleDollarSign,
 } from 'lucide-react'
+import { getMazatlanDateString } from '@/lib/utils/date'
 import { Pedido, Insumo } from '@/lib/types/database'
 import { NotificationPermissionBanner } from '@/components/admin/NotificationPermissionBanner'
 import { PwaOnboardingCard } from '@/components/admin/PwaOnboardingCard'
@@ -30,7 +31,7 @@ export default async function DashboardPage() {
   let insumosBajos: Insumo[] = []
 
   try {
-    const hoyStr = new Date().toISOString().split('T')[0]
+    const hoyStr = getMazatlanDateString()
 
     // 1. Pedidos del día
     const { data: pedidos } = await supabase
@@ -41,13 +42,13 @@ export default async function DashboardPage() {
     if (pedidos) {
       ultimosPedidos = pedidos.slice(0, 5)
 
-      // Suma ventas entregadas de hoy
+      // Suma ventas entregadas de hoy en horario local de Sinaloa
       ventasHoy = pedidos
         .filter(
           (p) =>
             p.estado === 'entregado' &&
             p.created_at &&
-            p.created_at.startsWith(hoyStr)
+            getMazatlanDateString(p.created_at) === hoyStr
         )
         .reduce((sum, p) => sum + (p.total || 0), 0)
 

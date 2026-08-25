@@ -16,7 +16,14 @@ import {
   RefreshCw,
   Megaphone,
   X,
+  Printer,
 } from 'lucide-react'
+import dynamic from 'next/dynamic'
+
+const TicketTermicoModal = dynamic(
+  () => import('@/components/print/TicketTermicoModal').then((mod) => mod.TicketTermicoModal),
+  { ssr: false }
+)
 
 interface KitchenMonitorProps {
   initialPedidos: Pedido[]
@@ -33,6 +40,7 @@ export function KitchenMonitor({ initialPedidos }: KitchenMonitorProps) {
   const [pedidos, setPedidos] = useState<Pedido[]>(initialPedidos)
   const [currentTime, setCurrentTime] = useState(new Date())
   const [pedidoToReject, setPedidoToReject] = useState<Pedido | null>(null)
+  const [selectedTicket, setSelectedTicket] = useState<Pedido | null>(null)
   const [soundEnabled, setSoundEnabled] = useState(false)
   const [lastNotification, setLastNotification] = useState<string | null>(null)
   const [isRefreshing, setIsRefreshing] = useState(false)
@@ -231,22 +239,41 @@ export function KitchenMonitor({ initialPedidos }: KitchenMonitorProps) {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 flex-1">
         {pedidosActivos.map((pedido) => {
           const isNuevo = pedido.estado === 'nuevo'
+          const diffMs = currentTime.getTime() - new Date(pedido.created_at || Date.now()).getTime()
+          const minutosEspera = Math.max(0, Math.floor(diffMs / 60000))
+
+          // Semáforo de tiempos: Verde < 7min, Amarillo 7-12min, Rojo > 12min
+          let timerColor = 'text-emerald-400 border-emerald-500/30 bg-emerald-950/30'
+          let timerBadge = '🟢 A TIEMPO'
+          let cardBorder = isNuevo ? 'border-coral shadow-[0_0_30px_rgba(232,67,10,0.25)]' : 'border-oro/30'
+
+          if (minutosEspera >= 13) {
+            timerColor = 'text-red-400 border-red-500/50 bg-red-950/50 animate-pulse'
+            timerBadge = '🔴 ¡RETRASO! +12 MIN'
+            cardBorder = 'border-red-500 ring-2 ring-red-500/40 shadow-[0_0_30px_rgba(239,68,68,0.4)]'
+          } else if (minutosEspera >= 7) {
+            timerColor = 'text-amber-400 border-amber-500/40 bg-amber-950/40'
+            timerBadge = '🟡 ATENCIÓN (7-12 MIN)'
+            cardBorder = 'border-amber-500/60'
+          }
 
           return (
             <div
               key={pedido.id}
-              className={`bg-[#050404] bg-dots-pattern border rounded-2xl p-6 flex flex-col justify-between gold-border-corner transition-all ${isNuevo
-                  ? 'border-coral shadow-[0_0_30px_rgba(232,67,10,0.25)] animate-pulse'
-                  : 'border-oro/30'
-                }`}
+              className={`bg-[#050404] bg-dots-pattern border rounded-2xl p-6 flex flex-col justify-between gold-border-corner transition-all ${cardBorder}`}
             >
               <div>
-                {/* Folio y Hora */}
+                {/* Folio, Semáforo y Hora */}
                 <div className="flex justify-between items-start border-b border-arena/10 pb-3 mb-4">
                   <div>
-                    <span className="text-[10px] font-sans text-turquesa font-bold uppercase tracking-widest block">
-                      {isNuevo ? '🚨 NUEVO PEDIDO' : '🔥 EN PREPARACIÓN'}
-                    </span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-[10px] font-sans text-turquesa font-bold uppercase tracking-widest block">
+                        {isNuevo ? '🚨 NUEVO PEDIDO' : '🔥 EN PREPARACIÓN'}
+                      </span>
+                      <span className={`text-[10px] font-mono font-bold px-2 py-0.5 rounded-full border ${timerColor}`}>
+                        {timerBadge} · {minutosEspera} min
+                      </span>
+                    </div>
                     <h2 className="font-display text-4xl text-blanco leading-none mt-1">
                       FOLIO #{pedido.id}
                     </h2>
@@ -260,11 +287,23 @@ export function KitchenMonitor({ initialPedidos }: KitchenMonitorProps) {
                   </div>
                 </div>
 
-                {/* Cliente */}
-                <div className="mb-4">
-                  <h3 className="font-sans font-bold text-lg text-blanco">
-                    👤 {pedido.cliente_nombre}
-                  </h3>
+                {/* Cliente y Tipo de Entrega / Mesa */}
+                <div className="mb-4 flex flex-col gap-1">
+                  <div className="flex items-center justify-between gap-2">
+                    <h3 className="font-sans font-bold text-lg text-blanco truncate">
+                      👤 {pedido.cliente_nombre}
+                    </h3>
+                    {(pedido.mesa_nombre || pedido.tipo_entrega === 'mesa') && (
+                      <span className="bg-coral text-blanco border border-coral text-xs font-mono font-bold px-2.5 py-1 rounded-lg uppercase tracking-wider shrink-0 shadow-md">
+                        🍽️ {pedido.mesa_nombre || 'MESA'}
+                      </span>
+                    )}
+                    {pedido.tipo_entrega === 'didi' && (
+                      <span className="bg-oro text-negro text-xs font-mono font-bold px-2.5 py-1 rounded-lg uppercase tracking-wider shrink-0">
+                        🛵 DIDI / UBER
+                      </span>
+                    )}
+                  </div>
                   {pedido.cliente_telefono && (
                     <span className="text-xs font-sans text-arena/60">
                       📞 {pedido.cliente_telefono}
@@ -338,13 +377,25 @@ export function KitchenMonitor({ initialPedidos }: KitchenMonitorProps) {
                   </button>
                 )}
 
-                {/* Botón secundario para rechazar comanda */}
-                <button
-                  onClick={() => setPedidoToReject(pedido)}
-                  className="w-full bg-carbon border border-red-900/50 text-red-500/70 hover:bg-red-900/20 hover:text-red-400 font-sans font-bold text-[10px] tracking-wider py-2 rounded-xl transition-all"
-                >
-                  RECHAZAR COMANDA 🚫
-                </button>
+                {/* Botón para imprimir ticket térmico 80mm de comanda */}
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setSelectedTicket(pedido)}
+                    className="bg-carbon border border-arena/20 text-arena hover:text-blanco hover:border-oro font-sans font-bold text-[11px] tracking-wider py-2.5 rounded-xl transition-all flex items-center justify-center gap-1.5"
+                  >
+                    <Printer className="w-3.5 h-3.5" />
+                    <span>TICKET 🖨️</span>
+                  </button>
+
+                  {/* Botón secundario para rechazar comanda */}
+                  <button
+                    onClick={() => setPedidoToReject(pedido)}
+                    className="bg-carbon border border-red-900/50 text-red-500/70 hover:bg-red-900/20 hover:text-red-400 font-sans font-bold text-[11px] tracking-wider py-2.5 rounded-xl transition-all"
+                  >
+                    RECHAZAR 🚫
+                  </button>
+                </div>
               </div>
             </div>
           )
@@ -363,6 +414,15 @@ export function KitchenMonitor({ initialPedidos }: KitchenMonitorProps) {
         </div>
       )}
 
+      {/* MODAL DE TICKET TÉRMICO (80MM) */}
+      {selectedTicket && (
+        <TicketTermicoModal
+          pedido={selectedTicket}
+          tipo="comanda_cocina"
+          onClose={() => setSelectedTicket(null)}
+        />
+      )}
+
       {/* MODAL PARA RECHAZAR PEDIDO EN COCINA */}
       {pedidoToReject && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/90 backdrop-blur-md">
@@ -374,8 +434,8 @@ export function KitchenMonitor({ initialPedidos }: KitchenMonitorProps) {
               <h3 className="font-display text-3xl text-white mb-2 text-center">
                 ¿Rechazar Comanda <span className="text-coral">#{pedidoToReject.id}</span>?
               </h3>
-              <p className="text-arena/70 font-sans text-base mb-8 text-center leading-relaxed">
-                Vas a cancelar la orden de <strong>{pedidoToReject.cliente_nombre}</strong>. Esta acción se reflejará en todo el sistema.
+              <p className="font-sans text-xs text-arena/60 text-center mb-6">
+                El pedido pasará a estado cancelado y se notificará en tiempo real.
               </p>
               
               <div className="flex flex-col gap-3">

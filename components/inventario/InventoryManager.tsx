@@ -9,7 +9,23 @@ import {
   editarInsumo,
   eliminarInsumo,
 } from '@/lib/actions/inventario'
-import { Plus, Minus, AlertTriangle, History, X, Check, Loader2, Edit2, Trash2 } from 'lucide-react'
+import {
+  Plus,
+  Minus,
+  AlertTriangle,
+  History,
+  X,
+  Check,
+  Loader2,
+  Edit2,
+  Trash2,
+  TrendingUp,
+  Calendar,
+  Copy,
+  Sparkles,
+  PackageCheck,
+  Truck,
+} from 'lucide-react'
 
 interface InventoryManagerProps {
   initialInsumos: Insumo[]
@@ -20,22 +36,24 @@ export function InventoryManager({
   initialInsumos,
   historialMovimientos,
 }: InventoryManagerProps) {
+  const [activeTab, setActiveTab] = useState<'stock' | 'proyeccion'>('stock')
   const [insumos, setInsumos] = useState<Insumo[]>(initialInsumos)
   const [movimientos, setMovimientos] = useState<MovimientoInventario[]>(historialMovimientos)
+  const [copiedOrder, setCopiedOrder] = useState(false)
 
   // Modales
   const [activeModal, setActiveModal] = useState<'movimiento' | 'nuevo' | 'editar' | null>(null)
   const [selectedInsumo, setSelectedInsumo] = useState<Insumo | null>(null)
   const [tipoMov, setTipoMov] = useState<TipoMovimiento>('entrada')
-  const [cantidad, setCantidad] = useState<number>(0.5)
+  const [cantidad, setCantidad] = useState<string | number>(1)
   const [motivo, setMotivo] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   // Formulario Crear / Editar Insumo
   const [formNombre, setFormNombre] = useState('')
   const [formUnidad, setFormUnidad] = useState('kg')
-  const [formStockActual, setFormStockActual] = useState(5)
-  const [formStockMinimo, setFormStockMinimo] = useState(2)
+  const [formStockActual, setFormStockActual] = useState<string | number>(5)
+  const [formStockMinimo, setFormStockMinimo] = useState<string | number>(2)
 
   const handleOpenMovModal = (insumo: Insumo, tipo: TipoMovimiento) => {
     setSelectedInsumo(insumo)
@@ -64,14 +82,18 @@ export function InventoryManager({
 
   const handleMovSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!selectedInsumo || cantidad <= 0) return
+    const numCantidad = parseFloat(String(cantidad))
+    if (!selectedInsumo || isNaN(numCantidad) || numCantidad <= 0) {
+      alert('Por favor ingresa una cantidad válida mayor a 0.')
+      return
+    }
 
     setIsSubmitting(true)
     try {
       const res = await registrarMovimientoInventario({
         insumo_id: selectedInsumo.id,
         tipo: tipoMov,
-        cantidad,
+        cantidad: numCantidad,
         motivo,
       })
 
@@ -89,7 +111,7 @@ export function InventoryManager({
         id: Date.now(),
         insumo_id: selectedInsumo.id,
         tipo: tipoMov,
-        cantidad,
+        cantidad: numCantidad,
         motivo,
         created_by: null,
         created_at: new Date().toISOString(),
@@ -110,13 +132,16 @@ export function InventoryManager({
     e.preventDefault()
     if (!formNombre.trim()) return
 
+    const stockAct = parseFloat(String(formStockActual)) || 0
+    const stockMin = parseFloat(String(formStockMinimo)) || 0
+
     setIsSubmitting(true)
     try {
       const res = await crearInsumo({
         nombre: formNombre,
         unidad: formUnidad,
-        stock_actual: formStockActual,
-        stock_minimo: formStockMinimo,
+        stock_actual: stockAct,
+        stock_minimo: stockMin,
       })
 
       if (res.data) {
@@ -135,13 +160,16 @@ export function InventoryManager({
     e.preventDefault()
     if (!selectedInsumo || !formNombre.trim()) return
 
+    const stockAct = parseFloat(String(formStockActual)) || 0
+    const stockMin = parseFloat(String(formStockMinimo)) || 0
+
     setIsSubmitting(true)
     try {
       const res = await editarInsumo(selectedInsumo.id, {
         nombre: formNombre,
         unidad: formUnidad,
-        stock_actual: formStockActual,
-        stock_minimo: formStockMinimo,
+        stock_actual: stockAct,
+        stock_minimo: stockMin,
       })
 
       if (res.data) {
@@ -170,8 +198,22 @@ export function InventoryManager({
     }
   }
 
+  const handleCopyShoppingList = () => {
+    const listLines = insumos.map((i) => {
+      const demandaEstimada = Number(i.stock_minimo) * 1.8
+      const sugerido = Math.max(0, Math.ceil(demandaEstimada + Number(i.stock_minimo) - Number(i.stock_actual)))
+      return `• ${i.nombre}: Pedir ${sugerido} ${i.unidad} (Stock actual: ${i.stock_actual} ${i.unidad})`
+    })
+
+    const textToCopy = `🦐 PEDIDO DE INSUMOS - MAREA NEGRA 🌊\nFecha: ${new Date().toLocaleDateString('es-MX')}\n\n${listLines.join('\n')}\n\nFavor de confirmar entrega y horario de llegada. ¡Muchas gracias!`
+
+    navigator.clipboard.writeText(textToCopy)
+    setCopiedOrder(true)
+    setTimeout(() => setCopiedOrder(false), 3000)
+  }
+
   return (
-    <div className="flex flex-col gap-8">
+    <div className="flex flex-col gap-6">
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-arena/10 pb-4">
         <div>
@@ -179,7 +221,7 @@ export function InventoryManager({
             CONTROL DE INGREDIENTES Y MERMA
           </span>
           <h1 className="font-display text-4xl text-blanco tracking-wide">
-            INVENTARIO DE INSUMOS
+            INVENTARIO & PROYECCIÓN DE COMPRAS
           </h1>
         </div>
 
@@ -192,14 +234,44 @@ export function InventoryManager({
         </button>
       </div>
 
-      {/* Grid de Insumos con barra de progreso y acciones editar/eliminar */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {insumos.map((insumo) => {
-          const isLow = insumo.stock_actual <= insumo.stock_minimo
-          const percentage = Math.min(
-            100,
-            Math.round((insumo.stock_actual / (insumo.stock_minimo * 2.5)) * 100)
-          )
+      {/* PESTAÑAS: STOCK ACTUAL VS PROYECCIÓN FIN DE SEMANA */}
+      <div className="grid grid-cols-2 gap-3 bg-carbon p-1.5 rounded-2xl border border-arena/20">
+        <button
+          type="button"
+          onClick={() => setActiveTab('stock')}
+          className={`py-3 px-4 rounded-xl text-xs sm:text-sm font-sans font-bold transition-all flex items-center justify-center gap-2 ${
+            activeTab === 'stock'
+              ? 'bg-turquesa text-negro shadow-md'
+              : 'text-arena/70 hover:text-blanco'
+          }`}
+        >
+          <PackageCheck className="w-4 h-4" />
+          <span>STOCK ACTUAL & MOVIMIENTOS ({insumos.length})</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setActiveTab('proyeccion')}
+          className={`py-3 px-4 rounded-xl text-xs sm:text-sm font-sans font-bold transition-all flex items-center justify-center gap-2 ${
+            activeTab === 'proyeccion'
+              ? 'bg-gradient-to-r from-oro to-amber-600 text-negro shadow-md'
+              : 'text-arena/70 hover:text-blanco'
+          }`}
+        >
+          <TrendingUp className="w-4 h-4" />
+          <span>📊 PROYECCIÓN FIN DE SEMANA (VIE - DOM)</span>
+        </button>
+      </div>
+
+      {/* VISTA 1: STOCK ACTUAL */}
+      {activeTab === 'stock' && (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {insumos.map((insumo) => {
+            const isLow = insumo.stock_actual <= insumo.stock_minimo
+            const percentage = Math.min(
+              100,
+              Math.round((insumo.stock_actual / (insumo.stock_minimo * 2.5)) * 100)
+            )
 
           return (
             <div
@@ -298,43 +370,157 @@ export function InventoryManager({
           )
         })}
       </div>
+      )}
 
-      {/* BITÁCORA DE MOVIMIENTOS RECIENTES */}
-      <div className="flex flex-col gap-4 mt-6">
-        <div className="flex items-center gap-2 border-b border-arena/10 pb-3">
-          <History className="w-5 h-5 text-oro" />
-          <h3 className="font-display text-2xl text-blanco tracking-wide">
-            HISTORIAL DE MOVIMIENTOS Y MERMA
-          </h3>
+      {/* VISTA 2: PROYECCIÓN PREDICTIVA DE COMPRAS PARA FIN DE SEMANA */}
+      {activeTab === 'proyeccion' && (
+        <div className="flex flex-col gap-6 animate-in fade-in zoom-in-95 duration-200">
+          {/* BANNER EXPLICATIVO */}
+          <div className="bg-white dark:bg-[#050404] bg-dots-pattern border border-arena/30 dark:border-oro/30 rounded-3xl p-6 shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <div className="p-3 bg-oro/20 text-oro rounded-2xl border border-oro/30">
+                <Truck className="w-6 h-6 text-oro" />
+              </div>
+              <div>
+                <h3 className="font-display text-2xl text-negro dark:text-blanco">
+                  PROYECCIÓN INTELIGENTE DE COMPRAS (VIE - DOM)
+                </h3>
+                <p className="text-xs text-negro/70 dark:text-arena/70">
+                  Cálculo automático de demanda para asegurar stock en horas pico sin generar merma innecesaria.
+                </p>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={handleCopyShoppingList}
+              className="bg-oro text-negro hover:bg-blanco font-sans font-bold text-xs py-3 px-5 rounded-2xl shadow-lg transition-all flex items-center gap-2 border border-oro/40 shrink-0"
+            >
+              {copiedOrder ? (
+                <>
+                  <Check className="w-4 h-4 text-negro" />
+                  <span>¡LISTA COPIADA!</span>
+                </>
+              ) : (
+                <>
+                  <Copy className="w-4 h-4" />
+                  <span>📋 COPIAR LISTA PARA PROVEEDOR</span>
+                </>
+              )}
+            </button>
+          </div>
+
+          {/* TABLA DE INSUMOS CON SEMÁFORO DE COMPRA */}
+          <div className="bg-white dark:bg-[#050404] bg-dots-pattern border border-arena/30 dark:border-oro/30 rounded-3xl p-6 shadow-xl flex flex-col gap-4">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs font-sans">
+                <thead>
+                  <tr className="border-b border-arena/20 text-arena uppercase text-[10px] tracking-wider">
+                    <th className="pb-3">Insumo</th>
+                    <th className="pb-3 text-center">Stock Actual</th>
+                    <th className="pb-3 text-center">Consumo Estimado (Fin de Semana)</th>
+                    <th className="pb-3 text-center">Stock Mínimo</th>
+                    <th className="pb-3 text-center">Sugerencia de Compra</th>
+                    <th className="pb-3 text-right">Estado / Urgencia</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-arena/10">
+                  {insumos.map((insumo) => {
+                    const demandaEstimada = Number(insumo.stock_minimo) * 1.8
+                    const sugerido = Math.max(
+                      0,
+                      Math.ceil(demandaEstimada + Number(insumo.stock_minimo) - Number(insumo.stock_actual))
+                    )
+                    const isLow = insumo.stock_actual <= insumo.stock_minimo
+
+                    return (
+                      <tr key={insumo.id} className="hover:bg-arena/5 transition-colors">
+                        <td className="py-4 font-bold text-sm text-negro dark:text-blanco">
+                          {insumo.nombre}
+                        </td>
+                        <td className="py-4 text-center font-mono font-bold text-turquesa">
+                          {insumo.stock_actual} {insumo.unidad}
+                        </td>
+                        <td className="py-4 text-center font-mono text-arena/80">
+                          ~{demandaEstimada.toFixed(1)} {insumo.unidad}
+                        </td>
+                        <td className="py-4 text-center font-mono text-arena/60">
+                          {insumo.stock_minimo} {insumo.unidad}
+                        </td>
+                        <td className="py-4 text-center">
+                          {sugerido > 0 ? (
+                            <span className="font-display text-lg text-coral font-bold bg-coral/10 px-3 py-1 rounded-xl border border-coral/30">
+                              Pedir +{sugerido} {insumo.unidad}
+                            </span>
+                          ) : (
+                            <span className="text-emerald-400 font-mono font-bold bg-emerald-950/40 px-3 py-1 rounded-xl border border-emerald-500/30">
+                              Cubierto ✅
+                            </span>
+                          )}
+                        </td>
+                        <td className="py-4 text-right">
+                          {isLow ? (
+                            <span className="text-[10px] font-bold text-coral bg-coral/20 border border-coral/40 px-2.5 py-1 rounded-full uppercase animate-pulse">
+                              🔴 Crítico / Urgente
+                            </span>
+                          ) : sugerido > 0 ? (
+                            <span className="text-[10px] font-bold text-amber-400 bg-amber-950/40 border border-amber-500/30 px-2.5 py-1 rounded-full uppercase">
+                              🟡 Comprar p/ Fin de Semana
+                            </span>
+                          ) : (
+                            <span className="text-[10px] font-bold text-emerald-400 bg-emerald-950/30 border border-emerald-500/20 px-2.5 py-1 rounded-full uppercase">
+                              🟢 Stock Óptimo
+                            </span>
+                          )}
+                        </td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
         </div>
+      )}
 
-        {movimientos.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {movimientos.map((mov) => {
-              const insumoNombre = mov.insumo?.nombre || `Insumo #${mov.insumo_id}`
-              const isEntrada = mov.tipo === 'entrada'
+      {/* BITÁCORA DE MOVIMIENTOS RECIENTES (SOLO EN TAB STOCK) */}
+      {activeTab === 'stock' && (
+        <div className="flex flex-col gap-4 mt-6">
+          <div className="flex items-center gap-2 border-b border-arena/10 pb-3">
+            <History className="w-5 h-5 text-oro" />
+            <h3 className="font-display text-2xl text-blanco tracking-wide">
+              HISTORIAL DE MOVIMIENTOS Y MERMA
+            </h3>
+          </div>
 
-              return (
-                <NarrativeCard
-                  key={mov.id}
-                  urgent={!isEntrada}
-                  title={`${isEntrada ? '➕ Entrada' : '➖ Salida'}: ${insumoNombre}`}
-                  badgeText={`${isEntrada ? '+' : '-'}${mov.cantidad} ${mov.insumo?.unidad || ''}`}
-                  timestamp={mov.created_at ? new Date(mov.created_at).toLocaleString('es-MX', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: 'short' }) : 'Hoy'}
-                  narrativeText={mov.motivo || 'Movimiento de inventario operativo.'}
-                  author={mov.created_by ? 'Administración' : 'Sistema Marea Negra'}
-                />
-              )
-            })}
-          </div>
-        ) : (
-          <div className="p-8 text-center bg-carbon/40 rounded-xl border border-arena/5">
-            <p className="font-serif italic text-sm text-arena/60">
-              No hay movimientos de inventario registrados en la bitácora.
-            </p>
-          </div>
-        )}
-      </div>
+          {movimientos.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {movimientos.map((mov) => {
+                const insumoNombre = mov.insumo?.nombre || `Insumo #${mov.insumo_id}`
+                const isEntrada = mov.tipo === 'entrada'
+
+                return (
+                  <NarrativeCard
+                    key={mov.id}
+                    urgent={!isEntrada}
+                    title={`${isEntrada ? '➕ Entrada' : '➖ Salida'}: ${insumoNombre}`}
+                    badgeText={`${isEntrada ? '+' : '-'}${mov.cantidad} ${mov.insumo?.unidad || ''}`}
+                    timestamp={mov.created_at ? new Date(mov.created_at).toLocaleString('es-MX', { timeZone: 'America/Mazatlan', hour: '2-digit', minute: '2-digit', day: '2-digit', month: 'short' }) : 'Hoy'}
+                    narrativeText={mov.motivo || 'Movimiento de inventario operativo.'}
+                    author={mov.created_by ? 'Administración' : 'Sistema Marea Negra'}
+                  />
+                )
+              })}
+            </div>
+          ) : (
+            <div className="p-8 text-center bg-carbon/40 rounded-xl border border-arena/5">
+              <p className="font-serif italic text-sm text-arena/60">
+                No hay movimientos de inventario registrados en la bitácora.
+              </p>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* MODAL REGISTRAR MOVIMIENTO (ENTRADA / SALIDA CON SOPORTE PARA FRACCIONES 0.5, 1.5, ENTEROS) */}
       {activeModal === 'movimiento' && selectedInsumo && (
@@ -387,15 +573,15 @@ export function InventoryManager({
                 <input
                   type="number"
                   required
-                  step="0.05"
+                  step="any"
                   min="0.001"
-                  placeholder="Ej. 0.5 o 1.5"
+                  placeholder="Ej. 1, 0.5 o 2.5"
                   value={cantidad}
-                  onChange={(e) => setCantidad(parseFloat(e.target.value) || 0)}
+                  onChange={(e) => setCantidad(e.target.value)}
                   className="bg-carbon border border-arena/20 rounded-lg px-4 py-3 text-base text-blanco font-bold focus:border-turquesa focus:outline-none"
                 />
                 <span className="text-[11px] font-serif italic text-arena/60">
-                  Puedes escribir números enteros (ej. 2) o fracciones decimales (ej. 0.5, 1.5, 0.25).
+                  Puedes escribir números enteros (ej. 1, 2) o decimales (ej. 0.5, 1.5, 0.25).
                 </span>
               </div>
 
@@ -429,7 +615,7 @@ export function InventoryManager({
                 ) : (
                   <>
                     <Check className="w-4 h-4 stroke-[3]" />
-                    <span>CONFIRMAR {tipoMov.toUpperCase()} ({cantidad} {selectedInsumo.unidad})</span>
+                    <span>CONFIRMAR {tipoMov.toUpperCase()} ({cantidad || 0} {selectedInsumo.unidad})</span>
                   </>
                 )}
               </button>
@@ -496,9 +682,11 @@ export function InventoryManager({
                   <label className="text-xs font-sans text-arena uppercase">Stock Actual</label>
                   <input
                     type="number"
-                    step="0.05"
+                    step="any"
+                    min="0"
+                    placeholder="0"
                     value={formStockActual}
-                    onChange={(e) => setFormStockActual(parseFloat(e.target.value) || 0)}
+                    onChange={(e) => setFormStockActual(e.target.value)}
                     className="bg-carbon border border-arena/20 rounded-lg px-3 py-2.5 text-xs text-blanco focus:border-turquesa focus:outline-none"
                   />
                 </div>
@@ -507,9 +695,11 @@ export function InventoryManager({
                   <label className="text-xs font-sans text-arena uppercase">Stock Mínimo</label>
                   <input
                     type="number"
-                    step="0.05"
+                    step="any"
+                    min="0"
+                    placeholder="0"
                     value={formStockMinimo}
-                    onChange={(e) => setFormStockMinimo(parseFloat(e.target.value) || 0)}
+                    onChange={(e) => setFormStockMinimo(e.target.value)}
                     className="bg-carbon border border-arena/20 rounded-lg px-3 py-2.5 text-xs text-blanco focus:border-turquesa focus:outline-none"
                   />
                 </div>

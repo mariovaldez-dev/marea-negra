@@ -35,23 +35,20 @@ export function TraditionalMenuBoard({
     <div className="min-h-screen bg-[#F4F0E8] text-negro dark:bg-[#080808] dark:text-blanco p-4 sm:p-8 flex flex-col items-center selection:bg-coral transition-colors">
       {/* BARRA DE HERRAMIENTAS SUPERIOR */}
       <div className="w-full max-w-4xl flex items-center justify-between gap-4 mb-8 safe-header">
-        {onBackToInteractive ? (
-          <button
-            onClick={onBackToInteractive}
-            className="text-xs font-sans font-bold text-turquesa hover:text-coral flex items-center gap-1.5 bg-turquesa/10 border border-turquesa/30 px-4 py-2 rounded-full transition-all"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            <span>Volver a Vista Interactiva</span>
-          </button>
-        ) : (
-          <Link
-            href="/"
-            className="text-xs font-sans font-bold text-turquesa hover:text-coral flex items-center gap-1.5 bg-turquesa/10 border border-turquesa/30 px-4 py-2 rounded-full transition-all"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            <span>Ir al Menú Interactivo</span>
-          </Link>
-        )}
+        <Link
+          href="/"
+          className="text-xs font-sans font-bold text-turquesa hover:text-coral flex items-center gap-1.5 bg-turquesa/10 border border-turquesa/30 px-4 py-2.5 rounded-full transition-all shadow-sm"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          <span>Inicio / Menú Interactivo</span>
+        </Link>
+
+        <Link
+          href="/pedir"
+          className="text-xs font-sans font-bold bg-coral text-blanco hover:bg-coral/90 px-5 py-2.5 rounded-full transition-all flex items-center gap-2 shadow-md"
+        >
+          <span>🛒 PEDIR EN LÍNEA</span>
+        </Link>
       </div>
 
       {/* CARTA DE MENÚ TRADICIONAL */}

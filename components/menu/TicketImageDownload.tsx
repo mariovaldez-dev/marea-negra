@@ -143,7 +143,7 @@ export function TicketImageDownload({
 
     ctx.fillStyle = '#2ABFBF' // Turquesa
     ctx.font = 'bold 13px system-ui, sans-serif'
-    ctx.fillText('AGUACHILES & COCTELES · SINALOA', width / 2, currentY + 54)
+    ctx.fillText('AGUACHILES · SINALOA', width / 2, currentY + 54)
 
     ctx.fillStyle = '#D4C5A9'
     ctx.font = 'italic 11px system-ui, sans-serif'

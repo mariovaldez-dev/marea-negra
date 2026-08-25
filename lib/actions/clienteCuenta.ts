@@ -17,9 +17,14 @@ export interface ClientePerfilStats {
   codigoReferido: string | null
   puntos: number
   fechaRegistro: string | null
+  borndate: string | null
+  esMesCumpleanos: boolean
   nivelLealtad: 'Miembro Nuevo' | 'Socio Marea' | 'Capitán Aguachile' | 'Leyenda Marea Negra'
   proximaRecompensa: string | null
   pedidosFaltantesParaRecompensa: number | null
+  canjesDisponibles: number
+  totalCanjesRealizados: number
+  historialCanjes: Array<{ id: number; recompensa: string; created_at: string }>
   pedidosHistorial: Pedido[]
   lealtadConfig: LealtadConfig | null
 }
@@ -283,6 +288,34 @@ export async function getClienteCuentaByTelefono(telefonoInput: string): Promise
     nivelLealtad = 'Socio Marea'
   }
 
+  // Consultar historial de canjes de lealtad
+  const { data: canjes } = await supabase
+    .from('canjes_lealtad')
+    .select('*')
+    .eq('telefono', cleanPhone)
+    .order('created_at', { ascending: false })
+
+  const historialCanjes = canjes || []
+  const totalCanjesRealizados = historialCanjes.length
+
+  const pedidosPorMeta = configLealtad?.meta1_pedidos || 6
+  const recompensasGanadas = Math.floor(pedidosEntregados / pedidosPorMeta)
+  const canjesDisponibles = Math.max(0, recompensasGanadas - totalCanjesRealizados)
+
+  const borndate = perfilClub?.borndate || null
+  let esMesCumpleanos = false
+
+  if (borndate) {
+    try {
+      const hoy = new Date()
+      const mesActual = hoy.getMonth() + 1 // 1 a 12
+      const [_, mesCumple] = borndate.split('-')
+      if (parseInt(mesCumple, 10) === mesActual) {
+        esMesCumpleanos = true
+      }
+    } catch (e) {}
+  }
+
   return {
     telefono: cleanPhone,
     nombreCliente,
@@ -290,13 +323,42 @@ export async function getClienteCuentaByTelefono(telefonoInput: string): Promise
     codigoReferido,
     puntos,
     fechaRegistro,
+    borndate,
+    esMesCumpleanos,
     totalPedidos,
     pedidosEntregados,
     totalInvertido,
     nivelLealtad,
     proximaRecompensa,
     pedidosFaltantesParaRecompensa,
+    canjesDisponibles,
+    totalCanjesRealizados,
+    historialCanjes: historialCanjes.map((c) => ({
+      id: c.id,
+      recompensa: c.recompensa,
+      created_at: c.created_at,
+    })),
     pedidosHistorial,
     lealtadConfig: configLealtad,
+  }
+}
+
+export async function actualizarCumpleanosCliente(telefono: string, fechaCumpleanos: string) {
+  try {
+    const adminSupabase = createAdminClient()
+    const cleanPhone = telefono.replace(/\D/g, '')
+
+    const { error } = await adminSupabase
+      .from('clientes_club')
+      .update({ borndate: fechaCumpleanos })
+      .eq('telefono', cleanPhone)
+
+    if (error) {
+      return { success: false, error: error.message }
+    }
+
+    return { success: true }
+  } catch (err: any) {
+    return { success: false, error: err?.message || 'Error al guardar fecha de cumpleaños.' }
   }
 }

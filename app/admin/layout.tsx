@@ -23,6 +23,7 @@ import {
   X,
   Users,
   Clock,
+  LayoutGrid,
 } from 'lucide-react'
 
 export default function AdminLayout({
@@ -72,6 +73,12 @@ export default function AdminLayout({
       name: 'Pantalla Cocina',
       href: '/admin/pantalla',
       icon: Monitor,
+      roles: ['admin', 'empleado'],
+    },
+    {
+      name: 'Mesas & Salón',
+      href: '/admin/mesas',
+      icon: LayoutGrid,
       roles: ['admin', 'empleado'],
     },
     {

@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
+import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { Gift, Sparkles, X, CheckCircle2, ArrowRight, ShieldCheck } from 'lucide-react'
 
@@ -146,10 +147,19 @@ export function ClubBenefitsModal({
           </button>
         </div>
 
-        {/* Footer Garantía */}
-        <div className="flex items-center justify-center gap-1 text-[9px] sm:text-[10px] font-sans text-negro/50 dark:text-arena/40 pt-0.5 border-t border-arena/20 dark:border-arena/10">
-          <ShieldCheck className="w-3 h-3 text-turquesa shrink-0" />
-          <span>Sin costo · Registro instantáneo</span>
+        {/* Footer Garantía & Privacidad */}
+        <div className="flex flex-col items-center justify-center gap-1 text-[9px] font-sans text-negro/50 dark:text-arena/50 pt-1 border-t border-arena/20 dark:border-arena/10 text-center">
+          <div className="flex items-center gap-1">
+            <ShieldCheck className="w-3 h-3 text-turquesa shrink-0" />
+            <span>Tus datos están protegidos conforme a la LFPDPPP</span>
+          </div>
+          <Link
+            href="/privacidad"
+            target="_blank"
+            className="text-turquesa hover:underline"
+          >
+            Ver Aviso de Privacidad Integral
+          </Link>
         </div>
       </div>
     </div>

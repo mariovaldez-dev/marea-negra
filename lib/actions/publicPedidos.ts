@@ -9,7 +9,9 @@ export async function createPublicPedido(formData: {
   cliente_nombre: string
   cliente_telefono: string
   metodo_pago: MetodoPago
-  tipo_entrega?: 'local' | 'didi'
+  tipo_entrega?: 'local' | 'didi' | 'mesa'
+  mesa_id?: number
+  mesa_nombre?: string
   hora_recogida?: string
   notas?: string
   subtotal?: number
@@ -47,6 +49,8 @@ export async function createPublicPedido(formData: {
       estado: 'nuevo',
       metodo_pago: formData.metodo_pago,
       tipo_entrega: formData.tipo_entrega || 'local',
+      mesa_id: formData.mesa_id || null,
+      mesa_nombre: formData.mesa_nombre || null,
       hora_recogida: formData.hora_recogida || null,
       subtotal: rawSubtotal,
       descuento: discountAmount,
@@ -87,6 +91,21 @@ export async function createPublicPedido(formData: {
     throw new Error(`Error al registrar items del pedido: ${itemsErr.message}`)
   }
 
+  // 4.5. Si es pedido en mesa, actualizar estado de la mesa a 'ocupada'
+  if (formData.tipo_entrega === 'mesa' && (formData.mesa_id || formData.mesa_nombre)) {
+    if (formData.mesa_id) {
+      await supabase
+        .from('mesas')
+        .update({ estado: 'ocupada', pedido_activo_id: pedido.id })
+        .eq('id', formData.mesa_id)
+    } else if (formData.mesa_nombre) {
+      await supabase
+        .from('mesas')
+        .update({ estado: 'ocupada', pedido_activo_id: pedido.id })
+        .ilike('nombre', formData.mesa_nombre)
+    }
+  }
+
   // 5. Disparar notificación push FCM a administradores y empleados
   const { data: tokens } = await supabase.from('fcm_tokens').select('token')
   if (tokens && tokens.length > 0) {
@@ -107,6 +126,7 @@ export async function createPublicPedido(formData: {
   revalidatePath('/admin/pedidos')
   revalidatePath('/admin/dashboard')
   revalidatePath('/admin/pantalla')
+  revalidatePath('/admin/mesas')
 
   return { success: true, pedidoId: pedido.id }
 }

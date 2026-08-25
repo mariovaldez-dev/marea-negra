@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react'
 import Image from 'next/image'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { Platillo, Categoria, ConfiguredCartItem, NivelPicor, MetodoPago } from '@/lib/types/database'
 import { createPublicPedido } from '@/lib/actions/publicPedidos'
 import { validateCuponAction, getAvailableCuponesPublic } from '@/lib/actions/cupones'
@@ -169,9 +169,15 @@ export function OrderStepper({
   const [itemPicor, setItemPicor] = useState<NivelPicor>('medio')
   const [itemNotas, setItemNotas] = useState<string>('')
 
+  const searchParams = useSearchParams()
+  const urlMesaNombre = searchParams?.get('mesa') || ''
+  const urlMesaId = searchParams?.get('mesa_id') ? parseInt(searchParams.get('mesa_id')!, 10) : undefined
+
   const [clienteNombre, setClienteNombre] = useState('')
   const [clienteTelefono, setClienteTelefono] = useState('')
-  const [tipoEntrega, setTipoEntrega] = useState<'local' | 'didi'>('local')
+  const [tipoEntrega, setTipoEntrega] = useState<'local' | 'didi' | 'mesa'>(() => (urlMesaNombre ? 'mesa' : 'local'))
+  const [mesaNombre, setMesaNombre] = useState(urlMesaNombre)
+  const [mesaId, setMesaId] = useState<number | undefined>(urlMesaId)
   const [metodoPago, setMetodoPago] = useState<MetodoPago>('efectivo')
   const [horaRecogida, setHoraRecogida] = useState('lo_antes_posible')
   const [notasGenerales, setNotasGenerales] = useState('')
@@ -492,9 +498,11 @@ export function OrderStepper({
         cliente_nombre: clienteNombre,
         cliente_telefono: clienteTelefono,
         tipo_entrega: tipoEntrega,
+        mesa_id: tipoEntrega === 'mesa' ? mesaId : undefined,
+        mesa_nombre: tipoEntrega === 'mesa' ? (mesaNombre || 'Mesa Salón') : undefined,
         metodo_pago: metodoPago,
         hora_recogida: horaRecogida === 'lo_antes_posible' ? undefined : (horaRecogida || undefined),
-        notas: `${notasGenerales ? `${notasGenerales} ` : ''}${appliedCoupon ? `[Cupón: ${appliedCoupon} -${discountPercent}%]` : ''}`.trim(),
+        notas: `${tipoEntrega === 'mesa' ? `[Mesa: ${mesaNombre || 'Salón'}] ` : ''}${notasGenerales ? `${notasGenerales} ` : ''}${appliedCoupon ? `[Cupón: ${appliedCoupon} -${discountPercent}%]` : ''}`.trim(),
         subtotal: rawSubtotal,
         descuento: discountAmount,
         cupon_codigo: appliedCoupon || undefined,
@@ -1034,7 +1042,25 @@ export function OrderStepper({
                   <ShoppingBag className="w-4 h-4 text-turquesa" />
                   <span>Método de Entrega</span>
                 </label>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className={`grid gap-3 ${urlMesaNombre || tipoEntrega === 'mesa' ? 'grid-cols-1 sm:grid-cols-3' : 'grid-cols-1 sm:grid-cols-2'}`}>
+                  {(urlMesaNombre || tipoEntrega === 'mesa') && (
+                    <div
+                      onClick={() => setTipoEntrega('mesa')}
+                      className={`flex flex-col items-center justify-center p-4 rounded-2xl border-2 transition-all cursor-pointer ${tipoEntrega === 'mesa'
+                        ? 'border-coral bg-coral/10 dark:bg-coral/10 shadow-[0_0_15px_rgba(232,67,10,0.2)]'
+                        : 'border-arena/30 dark:border-arena/20 bg-[#F4F0E8] dark:bg-carbon hover:border-coral/50'
+                        }`}
+                    >
+                      <span className="text-3xl mb-1">🍽️</span>
+                      <span className={`font-sans font-bold text-sm tracking-wide ${tipoEntrega === 'mesa' ? 'text-coral' : 'text-negro dark:text-blanco'}`}>
+                        {mesaNombre ? `COMER EN ${mesaNombre.toUpperCase()}` : 'COMER EN MESA'}
+                      </span>
+                      <span className="text-[10px] font-sans text-center text-negro/60 dark:text-arena/60 mt-1">
+                        Servicio directo a tu mesa en el local
+                      </span>
+                    </div>
+                  )}
+
                   <div
                     onClick={() => setTipoEntrega('local')}
                     className={`flex flex-col items-center justify-center p-4 rounded-2xl border-2 transition-all cursor-pointer ${tipoEntrega === 'local'
@@ -1063,7 +1089,7 @@ export function OrderStepper({
                       ENVÍO POR DIDI/UBER
                     </span>
                     <span className="text-[10px] font-sans text-center text-negro/60 dark:text-arena/60 mt-1">
-                      Mandamos tu pedido (Tú le pagas el viaje al repartidor)
+                      Mandamos tu pedido (Pagas viaje al chofer)
                     </span>
                   </div>
                 </div>
@@ -1073,6 +1099,19 @@ export function OrderStepper({
                     <span className="text-[11px] font-sans text-negro dark:text-arena/90 leading-relaxed">
                       <strong>Nota importante:</strong> Por favor especifica tu dirección exacta en las <b>Notas Generales</b> abajo para poder enviarte el repartidor. El costo del viaje no está incluido y deberás pagarlo en efectivo al conductor.
                     </span>
+                  </div>
+                )}
+                {tipoEntrega === 'mesa' && (
+                  <div className="bg-coral/10 border border-coral/30 rounded-xl p-3 flex items-start gap-2 mt-1">
+                    <Sparkles className="w-4 h-4 text-coral shrink-0 mt-0.5" />
+                    <div className="flex flex-col gap-1 text-xs">
+                      <span className="font-bold text-coral uppercase tracking-wider">
+                        📍 Pedido para {mesaNombre || 'Mesa en Salón'}
+                      </span>
+                      <p className="text-[11px] text-negro dark:text-arena/80">
+                        Los mariscos se prepararán al momento y se llevarán directo a tu mesa.
+                      </p>
+                    </div>
                   </div>
                 )}
               </div>

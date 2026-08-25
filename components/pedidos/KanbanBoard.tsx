@@ -26,6 +26,7 @@ import {
   Filter,
 } from 'lucide-react'
 
+import { getMazatlanDateString } from '@/lib/utils/date'
 import { TicketPrintModal } from '@/components/pedidos/TicketPrintModal'
 
 interface KanbanBoardProps {
@@ -40,21 +41,6 @@ const COLUMNS: { id: EstadoPedido; label: string; dot: 'coral' | 'oro' | 'turque
   { id: 'entregado', label: 'ENTREGADO', dot: 'neutral' },
 ]
 
-function getMazatlanTodayDateString(): string {
-  try {
-    const options: Intl.DateTimeFormatOptions = {
-      timeZone: 'America/Mazatlan',
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-    }
-    const formatter = new Intl.DateTimeFormat('en-CA', options)
-    return formatter.format(new Date())
-  } catch (e) {
-    return new Date().toISOString().slice(0, 10)
-  }
-}
-
 export function KanbanBoard({
   initialPedidos,
   platillosDisponibles,
@@ -67,7 +53,7 @@ export function KanbanBoard({
   const [pedidoToReject, setPedidoToReject] = useState<Pedido | null>(null)
 
   // Filtros de fecha (por defecto HOY en horario Mazatlán)
-  const todayStr = getMazatlanTodayDateString()
+  const todayStr = getMazatlanDateString()
   const [filterMode, setFilterMode] = useState<'hoy' | 'activos' | 'fecha' | 'todos'>('hoy')
   const [selectedDate, setSelectedDate] = useState<string>(todayStr)
 
@@ -120,7 +106,7 @@ export function KanbanBoard({
   // Filtrado de pedidos según fecha de HOY (Mazatlán) o modo seleccionado
   const displayedPedidos = pedidos.filter((p) => {
     if (!p.created_at) return true
-    const orderDateStr = p.created_at.slice(0, 10)
+    const orderDateStr = getMazatlanDateString(p.created_at)
 
     if (filterMode === 'hoy') {
       // Mostrar todos los pedidos creados HOY + cualquier pedido activo (nuevo, preparando, listo) sin importar fecha
@@ -437,10 +423,15 @@ export function KanbanBoard({
                                   </span>
                                 </div>
 
-                                {/* Badge de Envío */}
+                                {/* Badge de Envío / Mesa */}
                                 {pedido.tipo_entrega === 'didi' && (
                                   <div className="bg-oro/20 border border-oro text-oro font-sans font-bold text-[10px] px-2 py-1 rounded-md uppercase tracking-wider flex items-center justify-center gap-1.5 shadow-sm -mt-1 mb-1">
                                     <span>🛵 ENVÍO POR DIDI (COBRAR ENVÍO)</span>
+                                  </div>
+                                )}
+                                {(pedido.mesa_nombre || pedido.tipo_entrega === 'mesa') && (
+                                  <div className="bg-coral/20 border border-coral text-coral font-sans font-bold text-[10px] px-2 py-1 rounded-md uppercase tracking-wider flex items-center justify-center gap-1.5 shadow-sm -mt-1 mb-1">
+                                    <span>🍽️ {pedido.mesa_nombre || 'CONSUMO EN MESA'}</span>
                                   </div>
                                 )}
 

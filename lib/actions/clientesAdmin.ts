@@ -9,8 +9,14 @@ export interface ClienteAdminSummary {
   email?: string | null
   codigo_referido: string
   created_at: string
+  borndate?: string | null
+  es_mes_cumpleanos?: boolean
   total_pedidos: number
   total_gastado: number
+  ultimo_pedido?: string | null
+  dias_sin_pedir?: number
+  sellos_actuales: number
+  canjes_disponibles: number
   nivel_lealtad: 'Socio Marea' | 'Capitán Aguachile' | 'Leyenda Marea Negra'
 }
 
@@ -29,49 +35,30 @@ export async function getClientesClubAdmin(): Promise<ClienteAdminSummary[]> {
   // 2. Obtener clientes de clientes_club
   const { data: clientes, error: clientesErr } = await supabase
     .from('clientes_club')
-    .select('id, nombre, telefono, email, codigo_referido, created_at')
+    .select('id, nombre, telefono, email, codigo_referido, created_at, borndate')
     .order('created_at', { ascending: false })
 
   // 3. Obtener todos los pedidos para cruzar estadísticas por celular
   const { data: pedidos } = await supabase
     .from('pedidos')
-    .select('cliente_telefono, total, estado')
+    .select('cliente_telefono, total, estado, created_at')
+    .order('created_at', { ascending: false })
+
+  // 4. Obtener canjes
+  const { data: canjes } = await supabase
+    .from('canjes_lealtad')
+    .select('telefono')
+
+  const canjesMap = new Map<string, number>()
+  ;(canjes || []).forEach((c) => {
+    const p = (c.telefono || '').replace(/\D/g, '')
+    canjesMap.set(p, (canjesMap.get(p) || 0) + 1)
+  })
+
+  const hoy = new Date()
+  const mesActual = hoy.getMonth() + 1
 
   if (clientesErr || !clientes) {
-    if (pedidos && pedidos.length > 0) {
-      const mapa = new Map<string, { count: number; total: number }>()
-      pedidos.forEach((p) => {
-        const phone = p.cliente_telefono?.replace(/\D/g, '') || '6670000000'
-        const actual = mapa.get(phone) || { count: 0, total: 0 }
-        mapa.set(phone, {
-          count: actual.count + 1,
-          total: actual.total + Number(p.total || 0),
-        })
-      })
-
-      const resultado: ClienteAdminSummary[] = []
-      let idx = 1
-      mapa.forEach((val, phone) => {
-        let nivel: 'Socio Marea' | 'Capitán Aguachile' | 'Leyenda Marea Negra' = 'Socio Marea'
-        if (val.count >= 10) nivel = 'Leyenda Marea Negra'
-        else if (val.count >= 5) nivel = 'Capitán Aguachile'
-
-        resultado.push({
-          id: `cliente_${idx++}`,
-          nombre: `Cliente ${phone.slice(-4)}`,
-          telefono: phone,
-          email: null,
-          codigo_referido: `MAREA-SOCIO-${phone.slice(-4)}`,
-          created_at: new Date().toISOString(),
-          total_pedidos: val.count,
-          total_gastado: val.total,
-          nivel_lealtad: nivel,
-        })
-      })
-
-      return resultado
-    }
-
     return []
   }
 
@@ -84,7 +71,29 @@ export async function getClientesClubAdmin(): Promise<ClienteAdminSummary[]> {
     })
 
     const count = clientePedidos.length
+    const pedidosEntregados = clientePedidos.filter((p) => p.estado === 'entregado').length
     const gastado = clientePedidos.reduce((acc, p) => acc + Number(p.total || 0), 0)
+
+    const ultimoPedido = clientePedidos[0]?.created_at || null
+    let diasSinPedir = 0
+    if (ultimoPedido) {
+      const diffTime = Math.abs(hoy.getTime() - new Date(ultimoPedido).getTime())
+      diasSinPedir = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+    }
+
+    const canjesRealizados = canjesMap.get(cleanP) || 0
+    const canjesDisponibles = Math.max(0, Math.floor(pedidosEntregados / 6) - canjesRealizados)
+    const sellosActuales = pedidosEntregados % 6
+
+    let esMesCumple = false
+    if (c.borndate) {
+      try {
+        const [_, mes] = c.borndate.split('-')
+        if (parseInt(mes, 10) === mesActual) {
+          esMesCumple = true
+        }
+      } catch (e) {}
+    }
 
     let nivel: 'Socio Marea' | 'Capitán Aguachile' | 'Leyenda Marea Negra' = 'Socio Marea'
     if (count >= 10) nivel = 'Leyenda Marea Negra'
@@ -97,8 +106,14 @@ export async function getClientesClubAdmin(): Promise<ClienteAdminSummary[]> {
       email: c.email,
       codigo_referido: c.codigo_referido,
       created_at: c.created_at,
+      borndate: c.borndate || null,
+      es_mes_cumpleanos: esMesCumple,
       total_pedidos: count,
       total_gastado: gastado,
+      ultimo_pedido: ultimoPedido,
+      dias_sin_pedir: diasSinPedir,
+      sellos_actuales: sellosActuales,
+      canjes_disponibles: canjesDisponibles,
       nivel_lealtad: nivel,
     }
   })

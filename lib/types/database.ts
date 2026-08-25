@@ -4,11 +4,17 @@ export type EstadoPedido = 'nuevo' | 'preparando' | 'listo' | 'entregado' | 'can
 
 export type MetodoPago = 'efectivo' | 'transferencia' | 'oxxo'
 
-export type TipoEntrega = 'local' | 'didi'
+export type TipoEntrega = 'local' | 'didi' | 'mesa'
 
 export type TipoMovimiento = 'entrada' | 'salida'
 
 export type NivelPicor = 'suave' | 'medio' | 'bravo' | 'sin_chile'
+
+export type FormaMesa = 'cuadrada' | 'redonda' | 'rectangular' | 'barra'
+
+export type EstadoMesa = 'libre' | 'ocupada' | 'cuenta_pedida'
+
+export type CategoriaGasto = 'insumos_urgentes' | 'proveedores' | 'servicios' | 'personal' | 'otros'
 
 export interface Profile {
   id: string
@@ -57,6 +63,8 @@ export interface Pedido {
   estado: EstadoPedido
   metodo_pago: MetodoPago | null
   tipo_entrega?: TipoEntrega
+  mesa_id?: number | null
+  mesa_nombre?: string | null
   hora_recogida: string | null
   subtotal?: number | null
   descuento?: number | null
@@ -66,6 +74,48 @@ export interface Pedido {
   comprobante_url?: string | null
   created_at: string
   pedido_items?: PedidoItem[]
+}
+
+export interface Mesa {
+  id: number
+  nombre: string
+  capacidad: number
+  forma: FormaMesa
+  pos_x: number
+  pos_y: number
+  estado: EstadoMesa
+  pedido_activo_id?: number | null
+  activo: boolean
+  created_at?: string
+  pedido_activo?: Pedido | null
+}
+
+export interface GastoCaja {
+  id: number
+  fecha: string
+  concepto: string
+  categoria: CategoriaGasto
+  monto: number
+  metodo_pago: 'efectivo' | 'transferencia'
+  comprobante_url?: string | null
+  registrado_por?: string | null
+  created_at: string
+  profile?: Profile
+}
+
+export interface DesgloseBilletes {
+  b1000?: number
+  b500?: number
+  b200?: number
+  b100?: number
+  b50?: number
+  b20?: number
+  m20?: number
+  m10?: number
+  m5?: number
+  m2?: number
+  m1?: number
+  m050?: number
 }
 
 export interface Insumo {
@@ -95,6 +145,9 @@ export interface CierreCaja {
   total_efectivo: number
   total_transferencia: number
   total_oxxo: number
+  fondo_inicial?: number | null
+  total_gastos?: number | null
+  desglose_billetes?: DesgloseBilletes | null
   total_sistema: number
   total_real: number
   diferencia: number

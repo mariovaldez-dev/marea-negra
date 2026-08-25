@@ -51,7 +51,6 @@ export default function PublicMenuPage() {
   const [activeCategory, setActiveCategory] = useState<number | 'all' | 'promos'>('all')
   const [mobileNavOpen, setMobileNavOpen] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
-  const [viewMode, setViewMode] = useState<'interactive' | 'carta'>('interactive')
   const [isScrolled, setIsScrolled] = useState(false)
   const [waLoading, setWaLoading] = useState(false)
 
@@ -151,16 +150,6 @@ export default function PublicMenuPage() {
     }
   }, [mobileNavOpen])
 
-  if (viewMode === 'carta') {
-    return (
-      <TraditionalMenuBoard
-        categorias={categorias}
-        platillos={platillos}
-        onBackToInteractive={() => setViewMode('interactive')}
-      />
-    )
-  }
-
   return (
     <div className="min-h-screen bg-[#F4F0E8] dark:bg-negro text-negro dark:text-blanco flex flex-col justify-between selection:bg-coral transition-colors duration-300">
       {/* 1. HEADER CON BLUR AL SCROLL Y LOGO ADAPTABLE */}
@@ -185,13 +174,13 @@ export default function PublicMenuPage() {
               <span>Menú</span>
             </a>
 
-            <button
-              onClick={() => setViewMode('carta')}
+            <Link
+              href="/carta"
               className="bg-oro/20 dark:bg-oro/15 border border-oro/40 dark:border-oro/30 text-negro dark:text-oro hover:bg-oro hover:text-negro dark:hover:bg-oro dark:hover:text-negro font-bold px-3.5 py-1.5 rounded-full transition-all flex items-center gap-1.5 shadow-sm"
             >
               <FileText className="w-3.5 h-3.5" />
               <span>Carta Tradicional</span>
-            </button>
+            </Link>
 
             <Link
               href="/micuenta"
@@ -245,11 +234,9 @@ export default function PublicMenuPage() {
               </div>
 
               <nav className="flex flex-col gap-3 font-sans text-base">
-                <button
-                  onClick={() => {
-                    setViewMode('carta')
-                    setMobileNavOpen(false)
-                  }}
+                <Link
+                  href="/carta"
+                  onClick={() => setMobileNavOpen(false)}
                   className="p-3.5 rounded-2xl bg-[#F4F0E8] dark:bg-carbon/80 border border-oro/40 dark:border-oro/30 text-negro dark:text-oro font-bold flex items-center justify-between transition-all"
                 >
                   <span className="flex items-center gap-2.5">
@@ -257,7 +244,7 @@ export default function PublicMenuPage() {
                     <span>Carta Tradicional</span>
                   </span>
                   <ChevronRight className="w-4 h-4 text-oro" />
-                </button>
+                </Link>
 
                 <Link
                   href="/micuenta"
@@ -370,7 +357,7 @@ export default function PublicMenuPage() {
             </RippleButton>
 
             <RippleButton
-              onClick={() => setViewMode('carta')}
+              onClick={() => router.push('/carta')}
               className="bg-oro text-negro hover:bg-oro/90 dark:hover:bg-oro/80 font-sans font-bold text-sm tracking-wider px-6 py-4 rounded-full border border-oro/30 transition-colors flex items-center gap-2 shadow-lg"
             >
               <FileText className="w-4 h-4 text-negro" />
@@ -662,7 +649,13 @@ export default function PublicMenuPage() {
 
         <div className="max-w-7xl mx-auto border-t border-arena/30 dark:border-arena/10 mt-10 pt-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs font-sans text-negro/50 dark:text-arena/40">
           <span>&copy; {new Date().getFullYear()} Marea Negra. Todos los derechos reservados.</span>
-          <span>Sinaloa, México.</span>
+          <div className="flex items-center gap-4">
+            <Link href="/privacidad" className="hover:text-coral transition-colors underline underline-offset-4">
+              Aviso de Privacidad (LFPDPPP)
+            </Link>
+            <span>·</span>
+            <span>Sinaloa, México.</span>
+          </div>
         </div>
       </footer>
 

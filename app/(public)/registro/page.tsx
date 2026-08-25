@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useState } from 'react'
+import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { registrarClienteClub } from '@/lib/actions/clienteCuenta'
 import { validatePasswordStrength } from '@/lib/security/passwordHash'
@@ -13,6 +14,7 @@ export default function RegisterClubPage() {
   const [telefono, setTelefono] = useState('')
   const [password, setPassword] = useState('')
   const [email, setEmail] = useState('')
+  const [aceptoPrivacidad, setAceptoPrivacidad] = useState(true)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [submitted, setSubmitted] = useState(false)
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
@@ -42,6 +44,10 @@ export default function RegisterClubPage() {
       errors.password = 'La contraseña debe cumplir con los 4 requisitos de seguridad.'
     }
 
+    if (!aceptoPrivacidad) {
+      errors.privacidad = 'Debes aceptar el Aviso de Privacidad para unirte al Club.'
+    }
+
     if (Object.keys(errors).length > 0) {
       setFieldErrors(errors)
       return
@@ -64,7 +70,7 @@ export default function RegisterClubPage() {
         return
       }
 
-      const userCouponCode = resReg.welcomeCouponCode || `BIENVENIDO-${nombre.slice(0,4).toUpperCase()}`
+      const userCouponCode = resReg.welcomeCouponCode || `BIENVENIDO-${nombre.slice(0, 4).toUpperCase()}`
       const refCode = resReg.codigoReferido
 
       if (typeof window !== 'undefined') {
@@ -164,9 +170,8 @@ export default function RegisterClubPage() {
                   setNombre(e.target.value)
                   if (fieldErrors.nombre) setFieldErrors({ ...fieldErrors, nombre: '' })
                 }}
-                className={`bg-[#F4F0E8] dark:bg-carbon border rounded-xl px-4 py-3 text-base text-negro dark:text-blanco focus:outline-none ${
-                  fieldErrors.nombre ? 'border-coral ring-2 ring-coral/20' : 'border-arena/30 dark:border-arena/20 focus:border-turquesa'
-                }`}
+                className={`bg-[#F4F0E8] dark:bg-carbon border rounded-xl px-4 py-3 text-base text-negro dark:text-blanco focus:outline-none ${fieldErrors.nombre ? 'border-coral ring-2 ring-coral/20' : 'border-arena/30 dark:border-arena/20 focus:border-turquesa'
+                  }`}
               />
               {fieldErrors.nombre && (
                 <span className="text-[11px] font-sans font-bold text-coral flex items-center gap-1 mt-0.5">
@@ -192,9 +197,8 @@ export default function RegisterClubPage() {
                   setTelefono(e.target.value)
                   if (fieldErrors.telefono) setFieldErrors({ ...fieldErrors, telefono: '' })
                 }}
-                className={`bg-[#F4F0E8] dark:bg-carbon border rounded-xl px-4 py-3 text-base text-negro dark:text-blanco focus:outline-none ${
-                  fieldErrors.telefono ? 'border-coral ring-2 ring-coral/20' : 'border-arena/30 dark:border-arena/20 focus:border-turquesa'
-                }`}
+                className={`bg-[#F4F0E8] dark:bg-carbon border rounded-xl px-4 py-3 text-base text-negro dark:text-blanco focus:outline-none ${fieldErrors.telefono ? 'border-coral ring-2 ring-coral/20' : 'border-arena/30 dark:border-arena/20 focus:border-turquesa'
+                  }`}
               />
               {fieldErrors.telefono && (
                 <span className="text-[11px] font-sans font-bold text-coral flex items-center gap-1 mt-0.5">
@@ -219,9 +223,8 @@ export default function RegisterClubPage() {
                   setPassword(e.target.value)
                   if (fieldErrors.password) setFieldErrors({ ...fieldErrors, password: '' })
                 }}
-                className={`bg-[#F4F0E8] dark:bg-carbon border rounded-xl px-4 py-3 text-base text-negro dark:text-blanco focus:outline-none ${
-                  fieldErrors.password ? 'border-coral ring-2 ring-coral/20' : 'border-arena/30 dark:border-arena/20 focus:border-turquesa'
-                }`}
+                className={`bg-[#F4F0E8] dark:bg-carbon border rounded-xl px-4 py-3 text-base text-negro dark:text-blanco focus:outline-none ${fieldErrors.password ? 'border-coral ring-2 ring-coral/20' : 'border-arena/30 dark:border-arena/20 focus:border-turquesa'
+                  }`}
               />
 
               {fieldErrors.password && (
@@ -239,32 +242,30 @@ export default function RegisterClubPage() {
                     <span>Requisitos de Contraseña Segura:</span>
                   </span>
                   <span
-                    className={`${
-                      passwordStrength.score === 4
+                    className={`${passwordStrength.score === 4
                         ? 'text-emerald-700 dark:text-limon font-bold'
                         : password.length > 0
-                        ? 'text-coral font-bold'
-                        : 'text-negro/60 dark:text-arena/60 font-semibold'
-                    }`}
+                          ? 'text-coral font-bold'
+                          : 'text-negro/60 dark:text-arena/60 font-semibold'
+                      }`}
                   >
                     {password.length === 0
                       ? 'Requerida'
                       : passwordStrength.score === 4
-                      ? '¡Excelente y Fuerte! ✓'
-                      : 'Incompleta'}
+                        ? '¡Excelente y Fuerte! ✓'
+                        : 'Incompleta'}
                   </span>
                 </div>
 
                 {/* Barra de progreso de alto contraste */}
                 <div className="w-full h-2 bg-arena/30 dark:bg-negro rounded-full overflow-hidden border border-arena/20 dark:border-arena/10">
                   <div
-                    className={`h-full transition-all duration-300 ${
-                      passwordStrength.score === 4
+                    className={`h-full transition-all duration-300 ${passwordStrength.score === 4
                         ? 'bg-emerald-600 dark:bg-limon shadow-sm'
                         : password.length > 0
-                        ? 'bg-coral'
-                        : 'bg-transparent'
-                    }`}
+                          ? 'bg-coral'
+                          : 'bg-transparent'
+                      }`}
                     style={{ width: `${(passwordStrength.score / 4) * 100}%` }}
                   />
                 </div>
@@ -272,44 +273,40 @@ export default function RegisterClubPage() {
                 {/* Lista de 4 Requisitos claros de alto contraste en ambos temas */}
                 <div className="grid grid-cols-2 gap-2 text-[11px] font-sans pt-1">
                   <div
-                    className={`flex items-center gap-1.5 p-2 rounded-xl border transition-all ${
-                      passwordStrength.hasMinLength
+                    className={`flex items-center gap-1.5 p-2 rounded-xl border transition-all ${passwordStrength.hasMinLength
                         ? 'bg-emerald-100 text-emerald-900 border-emerald-300 dark:bg-turquesa/15 dark:border-turquesa/40 dark:text-turquesa font-bold shadow-sm'
                         : 'bg-white/80 dark:bg-carbon/40 border-arena/30 dark:border-arena/10 text-negro/70 dark:text-arena/60'
-                    }`}
+                      }`}
                   >
                     {passwordStrength.hasMinLength ? <Check className="w-3.5 h-3.5 text-emerald-700 dark:text-turquesa stroke-[3]" /> : <span className="w-3.5 text-center text-negro/40 dark:text-arena/40">●</span>}
                     <span>Mínimo 8 caracteres</span>
                   </div>
 
                   <div
-                    className={`flex items-center gap-1.5 p-2 rounded-xl border transition-all ${
-                      passwordStrength.hasUppercase
+                    className={`flex items-center gap-1.5 p-2 rounded-xl border transition-all ${passwordStrength.hasUppercase
                         ? 'bg-emerald-100 text-emerald-900 border-emerald-300 dark:bg-turquesa/15 dark:border-turquesa/40 dark:text-turquesa font-bold shadow-sm'
                         : 'bg-white/80 dark:bg-carbon/40 border-arena/30 dark:border-arena/10 text-negro/70 dark:text-arena/60'
-                    }`}
+                      }`}
                   >
                     {passwordStrength.hasUppercase ? <Check className="w-3.5 h-3.5 text-emerald-700 dark:text-turquesa stroke-[3]" /> : <span className="w-3.5 text-center text-negro/40 dark:text-arena/40">●</span>}
                     <span>1 Mayúscula (A-Z)</span>
                   </div>
 
                   <div
-                    className={`flex items-center gap-1.5 p-2 rounded-xl border transition-all ${
-                      passwordStrength.hasLowercase
+                    className={`flex items-center gap-1.5 p-2 rounded-xl border transition-all ${passwordStrength.hasLowercase
                         ? 'bg-emerald-100 text-emerald-900 border-emerald-300 dark:bg-turquesa/15 dark:border-turquesa/40 dark:text-turquesa font-bold shadow-sm'
                         : 'bg-white/80 dark:bg-carbon/40 border-arena/30 dark:border-arena/10 text-negro/70 dark:text-arena/60'
-                    }`}
+                      }`}
                   >
                     {passwordStrength.hasLowercase ? <Check className="w-3.5 h-3.5 text-emerald-700 dark:text-turquesa stroke-[3]" /> : <span className="w-3.5 text-center text-negro/40 dark:text-arena/40">●</span>}
                     <span>1 Minúscula (a-z)</span>
                   </div>
 
                   <div
-                    className={`flex items-center gap-1.5 p-2 rounded-xl border transition-all ${
-                      passwordStrength.hasNumber
+                    className={`flex items-center gap-1.5 p-2 rounded-xl border transition-all ${passwordStrength.hasNumber
                         ? 'bg-emerald-100 text-emerald-900 border-emerald-300 dark:bg-turquesa/15 dark:border-turquesa/40 dark:text-turquesa font-bold shadow-sm'
                         : 'bg-white/80 dark:bg-carbon/40 border-arena/30 dark:border-arena/10 text-negro/70 dark:text-arena/60'
-                    }`}
+                      }`}
                   >
                     {passwordStrength.hasNumber ? <Check className="w-3.5 h-3.5 text-emerald-700 dark:text-turquesa stroke-[3]" /> : <span className="w-3.5 text-center text-negro/40 dark:text-arena/40">●</span>}
                     <span>1 Número (0-9)</span>
@@ -331,6 +328,39 @@ export default function RegisterClubPage() {
                 className="bg-[#F4F0E8] dark:bg-carbon border border-arena/30 dark:border-arena/20 rounded-xl px-4 py-3 text-base text-negro dark:text-blanco focus:border-turquesa focus:outline-none"
               />
             </div>
+            {/* ACEPTACIÓN DE AVISO DE PRIVACIDAD */}
+            <div className="flex flex-col gap-1.5 pt-1">
+              <label className="flex items-start gap-2.5 cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={aceptoPrivacidad}
+                  onChange={(e) => {
+                    setAceptoPrivacidad(e.target.checked)
+                    if (fieldErrors.privacidad) {
+                      setFieldErrors({ ...fieldErrors, privacidad: '' })
+                    }
+                  }}
+                  className="mt-0.5 w-4 h-4 rounded border-arena/40 text-turquesa focus:ring-turquesa cursor-pointer"
+                />
+                <span className="text-xs font-sans text-negro/80 dark:text-arena/90 leading-snug">
+                  He leído y acepto el{' '}
+                  <Link
+                    href="/privacidad"
+                    target="_blank"
+                    className="text-turquesa font-bold hover:underline"
+                  >
+                    Aviso de Privacidad (LFPDPPP)
+                  </Link>{' '}
+                  de Marea Negra - Aguachiles.
+                </span>
+              </label>
+              {fieldErrors.privacidad && (
+                <span className="text-[11px] font-sans font-bold text-coral flex items-center gap-1">
+                  <AlertCircle className="w-3.5 h-3.5 text-coral shrink-0" />
+                  <span>{fieldErrors.privacidad}</span>
+                </span>
+              )}
+            </div>
 
             {errorMsg && (
               <div className="bg-coral/10 border border-coral/30 text-coral p-3 rounded-xl text-xs font-sans font-bold flex items-center gap-2">
@@ -341,13 +371,13 @@ export default function RegisterClubPage() {
 
             <button
               type="submit"
-              disabled={isSubmitting || !passwordStrength.isValid}
+              disabled={isSubmitting || !passwordStrength.isValid || !aceptoPrivacidad}
               className="mt-2 bg-turquesa text-negro font-sans font-bold text-xs tracking-wider py-4 rounded-xl shadow-[0_0_20px_rgba(42,191,191,0.4)] hover:bg-negro hover:text-blanco dark:hover:bg-blanco dark:hover:text-negro transition-all flex items-center justify-center gap-2 disabled:opacity-40"
             >
               {isSubmitting ? (
                 <>
                   <Loader2 className="w-4 h-4 animate-spin text-negro" />
-                  <span>ENCRIPTANDO Y REGISTRANDO...</span>
+                  <span>REGISTRANDO</span>
                 </>
               ) : (
                 <>

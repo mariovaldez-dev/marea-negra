@@ -870,7 +870,7 @@ export function InstagramStoryModal({ platillo, onClose }: InstagramStoryModalPr
         ctx.fillStyle = '#E8430A'
         ctx.font = `bold 34px ${fonts.display}`
         ctx.letterSpacing = '10px'
-        ctx.fillText('AGUACHILES & COCTELES', midX, 255)
+        ctx.fillText('AGUACHILES', midX, 255)
         ctx.letterSpacing = '0px'
 
         // Foto Circular Central con Halo Turquesa

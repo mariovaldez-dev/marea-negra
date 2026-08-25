@@ -8,6 +8,8 @@ const bebasNeue = Bebas_Neue({
   weight: '400',
   subsets: ['latin'],
   variable: '--font-bebas',
+  display: 'swap',
+  preload: true,
 })
 
 const cormorantGaramond = Cormorant_Garamond({
@@ -15,16 +17,66 @@ const cormorantGaramond = Cormorant_Garamond({
   style: ['normal', 'italic'],
   subsets: ['latin'],
   variable: '--font-cormorant',
+  display: 'swap',
+  preload: true,
 })
 
 const spaceGrotesk = Space_Grotesk({
   subsets: ['latin'],
   variable: '--font-space',
+  display: 'swap',
+  preload: true,
 })
 
+import { RestaurantJsonLd } from '@/components/seo/RestaurantJsonLd'
+
+const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://marea-negra.com'
+
 export const metadata: Metadata = {
-  title: 'Marea Negra - Aguachiles',
-  description: 'Sinaloa Auténtico · Mariscos del Día · Pedidos en Línea Directos en Sinaloa, México',
+  metadataBase: new URL(baseUrl),
+  title: {
+    default: 'Marea Negra | Aguachiles · Sinaloa',
+    template: '%s | Marea Negra',
+  },
+  description: 'Los mejores aguachiles negros y mariscos frescos de Sinaloa. Pide en línea, consulta la carta y acumula sellos en tu tarjeta VIP.',
+  keywords: [
+    'aguachile negro',
+    'aguachiles sinaloa',
+    'mariscos sinaloa',
+    'ceviche de camaron',
+    'coctel de mariscos',
+    'tostadas de callo',
+    'marisqueria culiacan',
+    'mariscos a domicilio',
+    'marea negra',
+  ],
+  authors: [{ name: 'Marea Negra' }],
+  publisher: 'Marea Negra',
+  alternates: {
+    canonical: '/',
+  },
+  openGraph: {
+    title: 'Marea Negra | Aguachiles · Sinaloa',
+    description: 'Sinaloa Auténtico · Mariscos del Día · Pedidos en Línea y Tarjeta VIP en Sinaloa, México.',
+    url: baseUrl,
+    siteName: 'Marea Negra - Aguachiles',
+    locale: 'es_MX',
+    type: 'website',
+    images: [
+      {
+        url: '/apple-icon.png',
+        width: 512,
+        height: 512,
+        alt: 'Marea Negra - Aguachiles',
+      },
+    ],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Marea Negra | Aguachiles · Sinaloa',
+    description: 'Los mejores aguachiles y mariscos de Sinaloa. Pide en línea y disfruta de mariscos frescos del día.',
+    images: ['/apple-icon.png'],
+  },
   manifest: '/manifest.json',
   appleWebApp: {
     capable: true,
@@ -33,6 +85,8 @@ export const metadata: Metadata = {
   },
   other: {
     'mobile-web-app-capable': 'yes',
+    'geo.region': 'MX-SIN',
+    'geo.placename': 'Sinaloa, México',
   },
 }
 
@@ -61,6 +115,7 @@ export default function RootLayout({
     >
       <head>
         <meta name="mobile-web-app-capable" content="yes" />
+        <RestaurantJsonLd />
         {/* SCRIPT BLOQUEANTE ANTI-DESTELLO (FOUC): EVALÚA EL TEMA ANTES DE RENDERIZAR */}
         <script
           dangerouslySetInnerHTML={{

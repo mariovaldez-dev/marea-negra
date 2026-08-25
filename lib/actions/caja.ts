@@ -8,6 +8,9 @@ export async function guardarCierreCaja(formData: {
   total_efectivo: number
   total_transferencia: number
   total_oxxo: number
+  fondo_inicial?: number
+  total_gastos?: number
+  desglose_billetes?: any
   total_sistema: number
   total_real: number
   diferencia: number
@@ -28,6 +31,9 @@ export async function guardarCierreCaja(formData: {
         total_efectivo: formData.total_efectivo,
         total_transferencia: formData.total_transferencia,
         total_oxxo: formData.total_oxxo,
+        fondo_inicial: formData.fondo_inicial || 0,
+        total_gastos: formData.total_gastos || 0,
+        desglose_billetes: formData.desglose_billetes || null,
         total_sistema: formData.total_sistema,
         total_real: formData.total_real,
         diferencia: formData.diferencia,
