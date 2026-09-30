@@ -39,10 +39,10 @@ interface TicketImageDownloadProps {
 }
 
 const PICOR_LABELS: Record<string, string> = {
-  suave: 'Suave (Leve chile fresco)',
+  suave: 'Suave (Leve chile)',
   medio: 'Medio (Tradicional Sinaloa)',
   bravo: 'BRAVO (Chiltepín Fuego)',
-  sin_chile: 'Sin Chile (Al natural con limón)',
+  sin_chile: 'Sin Chile (Limón y sal)',
 }
 
 export function TicketImageDownload({
@@ -94,7 +94,7 @@ export function TicketImageDownload({
   const calculatedDiscount = Math.max(0, numSubtotal - numTotal)
   const numDiscount = propDescuento && Number(propDescuento) > 0 ? Number(propDescuento) : calculatedDiscount
 
-  // Genera el comprobante en estilo TICKET TÉRMICO REAL (Papel blanco de comanda)
+  // Genera el ticket térmico en alta definición con proporciones profesionales de 80mm
   const generatePreview = () => {
     setDownloading(true)
 
@@ -107,23 +107,23 @@ export function TicketImageDownload({
       }
 
       const scale = 2
-      const width = 480
-      const padding = 32
-      let currentY = padding
+      const width = 400
+      const padding = 22
+      let currentY = 24
 
-      // Calcular altura exacta requerida
-      let itemsBlockHeight = 0
+      // Calcular altura exacta compacta
+      let itemsHeight = 0
       items.forEach((item) => {
-        itemsBlockHeight += 38
-        if (getItemDesc(item)) itemsBlockHeight += 16
-        if (getItemPicor(item)) itemsBlockHeight += 16
-        if (getItemNotas(item)) itemsBlockHeight += 18
-        itemsBlockHeight += 10
+        itemsHeight += 38
+        if (getItemDesc(item)) itemsHeight += 16
+        if (getItemPicor(item)) itemsHeight += 16
+        if (getItemNotas(item)) itemsHeight += 18
+        itemsHeight += 6
       })
 
-      const notesExtraHeight = effectiveNotas ? 55 : 0
-      const discountExtraHeight = numDiscount > 0 ? 26 : 0
-      const totalHeight = Math.max(560, 240 + itemsBlockHeight + notesExtraHeight + discountExtraHeight + 170)
+      const notesHeight = effectiveNotas ? 52 : 0
+      const discountHeight = numDiscount > 0 ? 36 : 0
+      const totalHeight = 150 + itemsHeight + notesHeight + discountHeight + 175
 
       canvas.width = width * scale
       canvas.height = totalHeight * scale
@@ -133,63 +133,63 @@ export function TicketImageDownload({
       ctx.fillStyle = '#FFFFFF'
       ctx.fillRect(0, 0, width, totalHeight)
 
-      // Borde exterior suave del ticket
-      ctx.strokeStyle = '#E0E0E0'
+      // Borde exterior del ticket
+      ctx.strokeStyle = '#D4D4D4'
       ctx.lineWidth = 1
-      ctx.strokeRect(8, 8, width - 16, totalHeight - 16)
+      ctx.strokeRect(4, 4, width - 8, totalHeight - 8)
 
       // ── 2. ENCABEZADO DE COMANDA TÉRMICA ─────────────────────────────────────
       ctx.textAlign = 'center'
       ctx.fillStyle = '#000000'
-      ctx.font = '900 24px "Courier New", Courier, monospace, system-ui'
-      ctx.fillText('MAREA NEGRA', width / 2, currentY + 20)
+      ctx.font = '900 24px system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
+      ctx.fillText('MAREA NEGRA', width / 2, currentY + 16)
 
-      ctx.fillStyle = '#444444'
-      ctx.font = 'bold 11px "Courier New", Courier, monospace, system-ui'
-      ctx.fillText('AGUACHILES & COCTELES · SINALOA', width / 2, currentY + 38)
+      ctx.fillStyle = '#404040'
+      ctx.font = 'bold 11px system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
+      ctx.fillText('AGUACHILES & COCTELES · SINALOA', width / 2, currentY + 34)
 
-      ctx.font = '10px "Courier New", Courier, monospace, system-ui'
-      ctx.fillStyle = '#666666'
-      ctx.fillText('Mariscos Frescos del Día · Receta Sinaloense', width / 2, currentY + 52)
+      ctx.font = '10px system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
+      ctx.fillStyle = '#737373'
+      ctx.fillText('Mariscos Frescos del Día · Comprobante Digital', width / 2, currentY + 48)
 
-      // Línea doble de ticket
+      // Doble línea de ticket térmico
       ctx.strokeStyle = '#000000'
       ctx.lineWidth = 1.5
       ctx.beginPath()
-      ctx.moveTo(padding, currentY + 66)
-      ctx.lineTo(width - padding, currentY + 66)
+      ctx.moveTo(padding, currentY + 60)
+      ctx.lineTo(width - padding, currentY + 60)
       ctx.stroke()
 
       ctx.beginPath()
-      ctx.moveTo(padding, currentY + 69)
-      ctx.lineTo(width - padding, currentY + 69)
+      ctx.moveTo(padding, currentY + 63)
+      ctx.lineTo(width - padding, currentY + 63)
       ctx.stroke()
 
-      currentY += 86
+      currentY += 80
 
-      // ── 3. FOLIO, FECHA Y DATOS DE ENTREGA ───────────────────────────────────
+      // ── 3. FOLIO, FECHA Y CLIENTE ────────────────────────────────────────────
       ctx.textAlign = 'left'
       ctx.fillStyle = '#000000'
-      ctx.font = 'bold 18px "Courier New", Courier, monospace, system-ui'
-      ctx.fillText(`FOLIO: #${pedidoId}`, padding, currentY)
+      ctx.font = '900 18px system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
+      ctx.fillText(`FOLIO #${pedidoId}`, padding, currentY)
 
       ctx.textAlign = 'right'
-      ctx.font = '11px "Courier New", Courier, monospace, system-ui'
-      ctx.fillStyle = '#444444'
+      ctx.font = '11px system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
+      ctx.fillStyle = '#525252'
       ctx.fillText(formattedFecha, width - padding, currentY)
 
-      currentY += 22
+      currentY += 20
 
-      // Cliente
+      // Datos Cliente
       ctx.textAlign = 'left'
-      ctx.font = 'bold 13px "Courier New", Courier, monospace, system-ui'
-      ctx.fillStyle = '#000000'
+      ctx.font = 'bold 13px system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
+      ctx.fillStyle = '#171717'
       ctx.fillText(`CLIENTE: ${clienteNombre.toUpperCase()}`, padding, currentY)
 
       if (clienteTelefono) {
         ctx.textAlign = 'right'
-        ctx.font = '11px "Courier New", Courier, monospace, system-ui'
-        ctx.fillStyle = '#333333'
+        ctx.font = '12px system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
+        ctx.fillStyle = '#525252'
         ctx.fillText(`TEL: ${clienteTelefono}`, width - padding, currentY)
       }
 
@@ -197,8 +197,8 @@ export function TicketImageDownload({
 
       // Método de Pago y Horario
       ctx.textAlign = 'left'
-      ctx.font = '11px "Courier New", Courier, monospace, system-ui'
-      ctx.fillStyle = '#444444'
+      ctx.font = '11px system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
+      ctx.fillStyle = '#525252'
       ctx.fillText(`PAGO: ${(metodoPago || 'Efectivo').toUpperCase()}`, padding, currentY)
 
       const entregaTxt = horaRecogida && horaRecogida !== 'lo_antes_posible'
@@ -207,11 +207,11 @@ export function TicketImageDownload({
       ctx.textAlign = 'right'
       ctx.fillText(entregaTxt, width - padding, currentY)
 
-      currentY += 18
+      currentY += 16
 
       // Línea punteada divisoria
       ctx.setLineDash([4, 4])
-      ctx.strokeStyle = '#888888'
+      ctx.strokeStyle = '#A3A3A3'
       ctx.beginPath()
       ctx.moveTo(padding, currentY)
       ctx.lineTo(width - padding, currentY)
@@ -220,11 +220,11 @@ export function TicketImageDownload({
 
       currentY += 16
 
-      // ── 4. ENCABEZADO DE TABLA DE PLATILLOS ───────────────────────────────────
+      // ── 4. ENCABEZADO DE TABLA ───────────────────────────────────────────────
       ctx.textAlign = 'left'
       ctx.fillStyle = '#000000'
-      ctx.font = 'bold 11px "Courier New", Courier, monospace, system-ui'
-      ctx.fillText('CANT  DESCRIPCIÓN', padding, currentY)
+      ctx.font = '900 11px system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
+      ctx.fillText('CANT   PLATILLO', padding, currentY)
 
       ctx.textAlign = 'right'
       ctx.fillText('IMPORTE', width - padding, currentY)
@@ -251,59 +251,62 @@ export function TicketImageDownload({
 
         ctx.textAlign = 'left'
         ctx.fillStyle = '#000000'
-        ctx.font = 'bold 13px "Courier New", Courier, monospace, system-ui'
+        ctx.font = '900 14px system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
         ctx.fillText(`${qty}x   ${name.toUpperCase()}`, padding, currentY)
 
         ctx.textAlign = 'right'
-        ctx.font = 'bold 13px "Courier New", Courier, monospace, system-ui'
+        ctx.font = '900 14px system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
         ctx.fillText(`$${(price * qty).toFixed(0)}`, width - padding, currentY)
 
-        currentY += 15
+        currentY += 16
 
         if (desc) {
           ctx.textAlign = 'left'
-          ctx.fillStyle = '#555555'
-          ctx.font = '10px "Courier New", Courier, monospace, system-ui'
-          const shortDesc = desc.length > 48 ? desc.slice(0, 45) + '...' : desc
-          ctx.fillText(`     (${shortDesc})`, padding, currentY)
-          currentY += 13
+          ctx.fillStyle = '#666666'
+          ctx.font = '10px system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
+          const shortDesc = desc.length > 44 ? desc.slice(0, 41) + '...' : desc
+          ctx.fillText(`      (${shortDesc})`, padding, currentY)
+          currentY += 14
         }
 
         if (picor) {
           ctx.textAlign = 'left'
-          ctx.fillStyle = '#111111'
-          ctx.font = 'bold 10px "Courier New", Courier, monospace, system-ui'
-          ctx.fillText(`     • Picor: ${PICOR_LABELS[picor] || picor}`, padding, currentY)
-          currentY += 13
+          ctx.fillStyle = '#171717'
+          ctx.font = 'bold 11px system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
+          ctx.fillText(`      • Picor: ${PICOR_LABELS[picor] || picor}`, padding, currentY)
+          currentY += 14
         }
 
         if (itemNotes) {
           ctx.textAlign = 'left'
-          ctx.fillStyle = '#000000'
-          ctx.font = 'italic 10px "Courier New", Courier, monospace, system-ui'
-          ctx.fillText(`     • NOTA: "${itemNotes}"`, padding, currentY)
-          currentY += 14
+          ctx.fillStyle = '#E8430A'
+          ctx.font = 'italic 11px system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
+          ctx.fillText(`      • NOTA: "${itemNotes}"`, padding, currentY)
+          currentY += 15
         }
 
-        currentY += 6
+        currentY += 4
       })
 
       // ── 6. NOTAS GENERALES ───────────────────────────────────────────────────
       if (effectiveNotas) {
         currentY += 6
-        ctx.strokeStyle = '#444444'
+        ctx.fillStyle = '#FAFAFA'
+        ctx.fillRect(padding, currentY, width - padding * 2, 40)
+        ctx.strokeStyle = '#525252'
         ctx.lineWidth = 1
         ctx.setLineDash([3, 3])
-        ctx.strokeRect(padding, currentY, width - padding * 2, 38)
+        ctx.strokeRect(padding, currentY, width - padding * 2, 40)
         ctx.setLineDash([])
 
         ctx.textAlign = 'left'
         ctx.fillStyle = '#000000'
-        ctx.font = 'bold 10px "Courier New", Courier, monospace, system-ui'
-        ctx.fillText('NOTAS GENERALES DEL PEDIDO:', padding + 8, currentY + 14)
+        ctx.font = '900 10px system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
+        ctx.fillText('NOTAS GENERALES DEL PEDIDO:', padding + 8, currentY + 15)
 
-        ctx.font = '11px "Courier New", Courier, monospace, system-ui'
-        ctx.fillText(`"${effectiveNotas}"`, padding + 8, currentY + 28)
+        ctx.font = '11px system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
+        ctx.fillStyle = '#262626'
+        ctx.fillText(`"${effectiveNotas}"`, padding + 8, currentY + 30)
 
         currentY += 48
       } else {
@@ -319,13 +322,13 @@ export function TicketImageDownload({
       ctx.stroke()
       ctx.setLineDash([])
 
-      currentY += 18
+      currentY += 16
 
       // ── 7. TOTALES Y DESGLOSE ────────────────────────────────────────────────
       if (numDiscount > 0) {
         ctx.textAlign = 'left'
-        ctx.fillStyle = '#444444'
-        ctx.font = '11px "Courier New", Courier, monospace, system-ui'
+        ctx.fillStyle = '#525252'
+        ctx.font = '11px system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
         ctx.fillText('SUBTOTAL:', padding, currentY)
 
         ctx.textAlign = 'right'
@@ -342,48 +345,45 @@ export function TicketImageDownload({
         currentY += 18
       }
 
-      // TOTAL GRANDE ENMARCADO TÉRMICO
-      ctx.fillStyle = '#F5F5F5'
-      ctx.fillRect(padding, currentY, width - padding * 2, 36)
-      ctx.strokeStyle = '#000000'
-      ctx.lineWidth = 1.5
-      ctx.strokeRect(padding, currentY, width - padding * 2, 36)
+      // TOTAL GRANDE ENMARCADO TÉRMICO (CAJA DESTACADA)
+      ctx.fillStyle = '#171717'
+      ctx.fillRect(padding, currentY, width - padding * 2, 42)
 
       ctx.textAlign = 'left'
-      ctx.fillStyle = '#000000'
-      ctx.font = '900 16px "Courier New", Courier, monospace, system-ui'
-      ctx.fillText('TOTAL:', padding + 10, currentY + 23)
+      ctx.fillStyle = '#FFFFFF'
+      ctx.font = '900 15px system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
+      ctx.fillText('TOTAL A PAGAR:', padding + 12, currentY + 26)
 
       ctx.textAlign = 'right'
-      ctx.font = '900 20px "Courier New", Courier, monospace, system-ui'
-      ctx.fillText(`$${numTotal.toFixed(0)} MXN`, width - padding - 10, currentY + 24)
+      ctx.font = '900 22px system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
+      ctx.fillText(`$${numTotal.toFixed(0)} MXN`, width - padding - 12, currentY + 27)
 
-      currentY += 56
+      currentY += 60
 
       // ── 8. PIE DE TICKET TÉRMICO ─────────────────────────────────────────────
       ctx.textAlign = 'center'
       ctx.fillStyle = '#000000'
-      ctx.font = 'bold 11px "Courier New", Courier, monospace, system-ui'
+      ctx.font = 'bold 12px system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
       ctx.fillText('¡GRACIAS POR SU PREFERENCIA!', width / 2, currentY)
 
-      ctx.fillStyle = '#666666'
-      ctx.font = '10px "Courier New", Courier, monospace, system-ui'
-      ctx.fillText('Muestra este ticket en barra para recoger', width / 2, currentY + 16)
+      ctx.fillStyle = '#737373'
+      ctx.font = '10px system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
+      ctx.fillText('Muestra este comprobante en barra · Sinaloa, México', width / 2, currentY + 16)
 
-      // Simulación de código de barras de comanda al pie
-      currentY += 32
-      const barCount = 42
+      // Simulación de código de barras compacto
+      currentY += 28
+      const barCount = 38
       const barWidth = 4
       const startX = (width - barCount * (barWidth + 2)) / 2
       ctx.fillStyle = '#000000'
       for (let b = 0; b < barCount; b++) {
-        const h = (b % 3 === 0 || b % 5 === 0) ? 22 : 16
+        const h = (b % 3 === 0 || b % 5 === 0) ? 20 : 14
         ctx.fillRect(startX + b * (barWidth + 2), currentY, barWidth, h)
       }
 
-      ctx.font = '9px "Courier New", Courier, monospace, system-ui'
-      ctx.fillStyle = '#888888'
-      ctx.fillText(`* MN-${pedidoId}-ORDER *`, width / 2, currentY + 34)
+      ctx.font = 'bold 9px system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
+      ctx.fillStyle = '#737373'
+      ctx.fillText(`* MN-${pedidoId}-ORDER *`, width / 2, currentY + 32)
 
       const imageUrl = canvas.toDataURL('image/png')
       setModalImageUrl(imageUrl)
@@ -442,7 +442,7 @@ export function TicketImageDownload({
       {/* MODAL DE VISTA PREVIA DEL TICKET TÉRMICO */}
       {modalImageUrl && (
         <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200">
-          <div className="bg-white dark:bg-[#111317] border border-black/10 dark:border-white/10 rounded-3xl w-full max-w-md p-5 sm:p-6 shadow-2xl relative flex flex-col items-center gap-4 text-center max-h-[92vh] overflow-y-auto">
+          <div className="bg-white dark:bg-[#111317] border border-black/10 dark:border-white/10 rounded-3xl w-full max-w-sm sm:max-w-md p-5 sm:p-6 shadow-2xl relative flex flex-col items-center gap-4 text-center max-h-[92vh] overflow-y-auto">
             {/* Botón Cerrar */}
             <button
               onClick={() => setModalImageUrl(null)}
@@ -461,16 +461,16 @@ export function TicketImageDownload({
                 FOLIO #{pedidoId}
               </h3>
               <p className="font-sans text-xs text-neutral-500 dark:text-neutral-400">
-                Ticket térmico oficial de barra listo para guardar como imagen o imprimir.
+                Comprobante térmico listo para guardar en fotos o imprimir.
               </p>
             </div>
 
-            {/* Contenedor del Ticket Térmico con sombra de papel real */}
-            <div className="rounded-xl overflow-hidden border border-neutral-300 dark:border-neutral-700 shadow-2xl max-w-full bg-[#E5E5E5] p-3 flex justify-center">
+            {/* Contenedor del Ticket Térmico sin márgenes excesivos */}
+            <div className="w-full flex justify-center py-1">
               <img
                 src={modalImageUrl}
                 alt={`Ticket Pedido ${pedidoId}`}
-                className="w-full h-auto object-contain max-h-[52vh] rounded shadow-md"
+                className="w-full max-w-[340px] h-auto object-contain rounded-xl border border-black/10 dark:border-white/15 shadow-2xl"
               />
             </div>
 
