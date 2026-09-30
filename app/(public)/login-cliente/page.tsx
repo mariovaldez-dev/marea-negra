@@ -4,6 +4,7 @@ import React, { useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { ThemeToggle } from '@/components/ui/ThemeToggle'
+import { BrandLogo } from '@/components/ui/BrandLogo'
 import { loginClienteConPassword, restablecerPasswordCliente } from '@/lib/actions/clienteCuenta'
 import { Phone, Lock, ChevronLeft, Sparkles, ShieldCheck, ArrowRight, Loader2, User, KeyRound, CheckCircle2 } from 'lucide-react'
 
@@ -100,37 +101,36 @@ export default function LoginClientePage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#F4F0E8] dark:bg-negro text-negro dark:text-blanco flex flex-col justify-between selection:bg-coral transition-colors duration-300">
+    <div className="min-h-screen w-full max-w-full overflow-x-hidden bg-[#F8F6F0] dark:bg-[#080808] text-neutral-900 dark:text-neutral-100 flex flex-col justify-between selection:bg-coral selection:text-white transition-colors duration-300">
       {/* HEADER */}
-      <header className="sticky top-0 z-40 bg-[#F4F0E8] dark:bg-negro border-b border-arena/30 dark:border-arena/10 px-6 py-3 safe-header transition-colors">
-        <div className="max-w-4xl mx-auto flex items-center justify-between">
+      <header className="sticky top-0 z-40 bg-white/95 dark:bg-[#080808]/95 backdrop-blur-md border-b border-black/[0.08] dark:border-white/[0.08] px-4 sm:px-6 py-2.5 safe-header transition-colors">
+        <div className="max-w-4xl mx-auto flex items-center justify-between gap-3">
           <button
+            type="button"
             onClick={handleBack}
-            className="text-xs md:text-sm font-sans font-bold text-negro/70 dark:text-arena/70 hover:text-coral flex items-center gap-1 transition-colors"
+            className="text-xs font-sans font-bold text-neutral-700 dark:text-neutral-300 hover:text-coral flex items-center gap-1 py-1.5 px-3 rounded-xl bg-black/[0.03] dark:bg-white/[0.05] border border-black/5 dark:border-white/5 active:scale-95 transition-all"
           >
-            <ChevronLeft className="w-5 h-5" />
+            <ChevronLeft className="w-4 h-4" />
             <span>Volver</span>
           </button>
 
-          <h1 className="font-display text-2xl md:text-3xl text-coral tracking-wider">
-            MAREA NEGRA
-          </h1>
+          <BrandLogo size="sm" href="/" />
 
           <ThemeToggle />
         </div>
       </header>
 
       {/* CONTENIDO PRINCIPAL */}
-      <main className="max-w-md mx-auto px-4 md:px-6 py-12 w-full flex-1 flex flex-col justify-center gap-6">
+      <main className="max-w-md mx-auto px-4 sm:px-6 py-10 w-full flex-1 flex flex-col justify-center gap-6">
         <div className="text-center flex flex-col gap-2">
-          <span className="text-xs font-sans font-bold tracking-widest text-turquesa uppercase flex items-center justify-center gap-1.5">
-            <Sparkles className="w-4 h-4 text-turquesa" />
+          <span className="text-[11px] font-sans font-bold tracking-widest text-[#2ABFBF] uppercase flex items-center justify-center gap-1.5">
+            <Sparkles className="w-3.5 h-3.5 text-[#2ABFBF]" />
             <span>ACCESO AL CLUB & PEDIDOS</span>
           </span>
-          <h2 className="font-display text-4xl md:text-5xl text-negro dark:text-blanco tracking-wide">
+          <h1 className="font-display text-3xl sm:text-4xl text-neutral-900 dark:text-white tracking-wide">
             INICIAR SESIÓN
-          </h2>
-          <p className="font-sans italic text-base text-negro/70 dark:text-arena/80">
+          </h1>
+          <p className="font-sans text-xs sm:text-sm text-neutral-500 dark:text-neutral-400">
             Ingresa tu número celular y contraseña para acceder a tus beneficios.
           </p>
         </div>
@@ -138,16 +138,18 @@ export default function LoginClientePage() {
         <form
           noValidate
           onSubmit={handleLogin}
-          className="bg-white dark:bg-[#050404] bg-dots-pattern border border-oro/30 rounded-3xl p-6 md:p-8 gold-border-corner shadow-2xl flex flex-col gap-5"
+          className="bg-white dark:bg-[#111317] border border-black/[0.08] dark:border-white/[0.08] rounded-[32px] p-6 sm:p-8 shadow-sm flex flex-col gap-5"
         >
           {/* CAMPO TELEFONO CON MENSAJE DE ERROR INLINE */}
           <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-sans uppercase font-bold text-negro/80 dark:text-arena/90 flex items-center gap-1.5">
-              <Phone className="w-4 h-4 text-turquesa" />
+            <label className="text-xs font-sans font-bold text-neutral-700 dark:text-neutral-300 flex items-center gap-1.5">
+              <Phone className="w-3.5 h-3.5 text-[#2ABFBF]" />
               <span>Número Celular (10 dígitos) *</span>
             </label>
             <div className="relative">
-              <Phone className="w-5 h-5 text-arena/50 absolute left-4 top-3.5" />
+              <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
+                <Phone className="w-4 h-4 text-neutral-400" />
+              </div>
               <input
                 type="tel"
                 required
@@ -158,7 +160,7 @@ export default function LoginClientePage() {
                   setTelefono(e.target.value)
                   if (fieldErrors.telefono) setFieldErrors({ ...fieldErrors, telefono: '' })
                 }}
-                className={`w-full bg-[#F4F0E8] dark:bg-carbon border rounded-xl pl-12 pr-4 py-3.5 text-base text-negro dark:text-blanco font-sans font-bold focus:outline-none ${fieldErrors.telefono ? 'border-coral ring-2 ring-coral/20' : 'border-arena/30 dark:border-arena/20 focus:border-turquesa'
+                className={`w-full bg-black/[0.02] dark:bg-white/[0.04] border rounded-2xl pl-10 pr-4 py-3 text-base text-neutral-900 dark:text-white font-mono focus:outline-none ${fieldErrors.telefono ? 'border-coral ring-2 ring-coral/20' : 'border-black/10 dark:border-white/10 focus:border-[#2ABFBF]'
                   }`}
               />
             </div>
@@ -172,8 +174,8 @@ export default function LoginClientePage() {
           {/* CAMPO CONTRASEÑA CON MENSAJE DE ERROR INLINE */}
           <div className="flex flex-col gap-1.5">
             <div className="flex justify-between items-center">
-              <label className="text-xs font-sans uppercase font-bold text-negro/80 dark:text-arena/90 flex items-center gap-1.5">
-                <Lock className="w-4 h-4 text-turquesa" />
+              <label className="text-xs font-sans font-bold text-neutral-700 dark:text-neutral-300 flex items-center gap-1.5">
+                <Lock className="w-3.5 h-3.5 text-[#2ABFBF]" />
                 <span>Contraseña *</span>
               </label>
               <button
@@ -182,13 +184,15 @@ export default function LoginClientePage() {
                   setResetPhone(telefono)
                   setShowReset(true)
                 }}
-                className="text-[11px] font-sans font-semibold text-coral hover:underline"
+                className="text-[11px] font-sans font-semibold text-[#2ABFBF] hover:underline"
               >
                 ¿Olvidaste tu contraseña?
               </button>
             </div>
             <div className="relative">
-              <Lock className="w-5 h-5 text-arena/50 absolute left-4 top-3.5" />
+              <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
+                <Lock className="w-4 h-4 text-neutral-400" />
+              </div>
               <input
                 type="password"
                 required
@@ -198,7 +202,7 @@ export default function LoginClientePage() {
                   setPassword(e.target.value)
                   if (fieldErrors.password) setFieldErrors({ ...fieldErrors, password: '' })
                 }}
-                className={`w-full bg-[#F4F0E8] dark:bg-carbon border rounded-xl pl-12 pr-4 py-3.5 text-base text-negro dark:text-blanco font-sans font-bold focus:outline-none ${fieldErrors.password ? 'border-coral ring-2 ring-coral/20' : 'border-arena/30 dark:border-arena/20 focus:border-turquesa'
+                className={`w-full bg-black/[0.02] dark:bg-white/[0.04] border rounded-2xl pl-10 pr-4 py-3 text-base text-neutral-900 dark:text-white font-sans focus:outline-none ${fieldErrors.password ? 'border-coral ring-2 ring-coral/20' : 'border-black/10 dark:border-white/10 focus:border-[#2ABFBF]'
                   }`}
               />
             </div>
@@ -210,7 +214,7 @@ export default function LoginClientePage() {
           </div>
 
           {error && (
-            <div className="bg-coral/10 border border-coral/30 text-coral p-3 rounded-xl text-xs font-sans font-bold">
+            <div className="bg-coral/10 border border-coral/30 text-coral p-3 rounded-2xl text-xs font-sans font-bold text-center">
               ⚠️ {error}
             </div>
           )}
@@ -218,12 +222,12 @@ export default function LoginClientePage() {
           <button
             type="submit"
             disabled={loading}
-            className="mt-2 bg-turquesa text-negro font-sans font-bold text-xs tracking-wider py-4 rounded-xl shadow-[0_0_20px_rgba(42,191,191,0.4)] hover:bg-blanco transition-all flex items-center justify-center gap-2 disabled:opacity-50 group"
+            className="mt-2 bg-[#2ABFBF] text-black font-sans font-bold text-xs tracking-wider py-4 rounded-2xl shadow-lg hover:bg-white transition-all flex items-center justify-center gap-2 disabled:opacity-50 active:scale-95 group"
           >
             {loading ? (
               <>
-                <Loader2 className="w-4 h-4 animate-spin text-negro" />
-                <span>VERIFICANDO CREDANCIALES...</span>
+                <Loader2 className="w-4 h-4 animate-spin text-black" />
+                <span>VERIFICANDO CREDENCIALES...</span>
               </>
             ) : (
               <>
@@ -233,8 +237,8 @@ export default function LoginClientePage() {
             )}
           </button>
 
-          <div className="border-t border-arena/15 pt-4 flex flex-col items-center text-center gap-2">
-            <span className="text-xs font-sans italic text-negro/60 dark:text-arena/60">
+          <div className="border-t border-black/[0.06] dark:border-white/[0.06] pt-4 flex flex-col items-center text-center gap-2">
+            <span className="text-xs font-sans text-neutral-500">
               ¿Aún no tienes cuenta registrada?
             </span>
             <Link
@@ -250,35 +254,36 @@ export default function LoginClientePage() {
 
       {/* MODAL CAMBIAR / RESTABLECER CONTRASEÑA */}
       {showReset && (
-        <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4">
-          <div className="bg-[#050404] border border-oro/30 rounded-3xl w-full max-w-md p-6 gold-border-corner shadow-2xl relative text-blanco flex flex-col gap-4">
-            <div className="flex items-center justify-between border-b border-arena/10 pb-3">
+        <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4 animate-in fade-in duration-200">
+          <div className="bg-white dark:bg-[#111317] border border-black/[0.08] dark:border-white/[0.08] rounded-[32px] w-full max-w-md p-6 sm:p-8 shadow-2xl relative text-neutral-900 dark:text-white flex flex-col gap-5">
+            <div className="flex items-center justify-between border-b border-black/[0.06] dark:border-white/[0.06] pb-4">
               <span className="font-display text-2xl text-coral flex items-center gap-2">
                 <KeyRound className="w-5 h-5 text-coral" />
                 <span>CAMBIAR CONTRASEÑA</span>
               </span>
               <button
+                type="button"
                 onClick={() => setShowReset(false)}
-                className="text-arena/60 hover:text-blanco font-bold text-sm"
+                className="w-8 h-8 rounded-full bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 flex items-center justify-center text-neutral-500 hover:text-coral transition-colors font-bold text-sm"
               >
                 ✕
               </button>
             </div>
 
             {resetSuccess ? (
-              <div className="bg-turquesa/10 border border-turquesa/30 p-4 rounded-xl text-turquesa flex items-center gap-2 font-sans font-bold text-xs">
+              <div className="bg-emerald-500/10 border border-emerald-500/30 p-4 rounded-2xl text-emerald-600 dark:text-emerald-400 flex items-center gap-2 font-sans font-bold text-xs">
                 <CheckCircle2 className="w-5 h-5" />
                 <span>{resetSuccess}</span>
               </div>
             ) : (
               <form onSubmit={handleResetSubmit} className="flex flex-col gap-4">
                 {resetError && (
-                  <div className="bg-coral/10 border border-coral/30 text-coral p-3 rounded-xl text-xs font-sans font-bold">
+                  <div className="bg-coral/10 border border-coral/30 text-coral p-3 rounded-2xl text-xs font-sans font-bold text-center">
                     ⚠️ {resetError}
                   </div>
                 )}
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-xs font-sans uppercase font-bold text-arena">
+                  <label className="text-xs font-sans font-bold text-neutral-700 dark:text-neutral-300">
                     Tu Celular de Contacto *
                   </label>
                   <input
@@ -287,29 +292,29 @@ export default function LoginClientePage() {
                     maxLength={10}
                     value={resetPhone}
                     onChange={(e) => setResetPhone(e.target.value)}
-                    className="bg-carbon border border-arena/20 rounded-xl px-3.5 py-2.5 text-sm font-bold text-blanco focus:border-turquesa focus:outline-none"
+                    className="w-full bg-black/[0.02] dark:bg-white/[0.04] border border-black/10 dark:border-white/10 rounded-2xl px-4 py-3 text-sm font-mono text-neutral-900 dark:text-white focus:border-[#2ABFBF] focus:outline-none"
                   />
                 </div>
 
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-xs font-sans uppercase font-bold text-arena">
+                  <label className="text-xs font-sans font-bold text-neutral-700 dark:text-neutral-300">
                     Nueva Contraseña *
                   </label>
                   <input
                     type="password"
                     required
                     minLength={8}
-                    placeholder="Mínimo 8 caracteres (Mayúscula, Minúscula y Número)"
+                    placeholder="Mínimo 8 caracteres"
                     value={newPassword}
                     onChange={(e) => setNewPassword(e.target.value)}
-                    className="bg-carbon border border-arena/20 rounded-xl px-3.5 py-2.5 text-sm font-bold text-blanco focus:border-turquesa focus:outline-none"
+                    className="w-full bg-black/[0.02] dark:bg-white/[0.04] border border-black/10 dark:border-white/10 rounded-2xl px-4 py-3 text-sm font-sans text-neutral-900 dark:text-white focus:border-[#2ABFBF] focus:outline-none"
                   />
                 </div>
 
                 <button
                   type="submit"
                   disabled={loading}
-                  className="bg-coral text-blanco font-sans font-bold text-xs py-3.5 rounded-xl hover:bg-blanco hover:text-negro transition-all shadow-md mt-2"
+                  className="bg-coral text-white font-sans font-bold text-xs py-3.5 rounded-2xl hover:bg-neutral-900 dark:hover:bg-white dark:hover:text-black transition-all shadow-md mt-2 active:scale-95"
                 >
                   GUARDAR NUEVA CONTRASEÑA
                 </button>

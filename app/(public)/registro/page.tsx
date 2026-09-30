@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation'
 import { registrarClienteClub } from '@/lib/actions/clienteCuenta'
 import { validatePasswordStrength } from '@/lib/security/passwordHash'
 import { ThemeToggle } from '@/components/ui/ThemeToggle'
+import { BrandLogo } from '@/components/ui/BrandLogo'
 import { Gift, Sparkles, ChevronLeft, User, Phone, Mail, CheckCircle2, Copy, Loader2, Ticket, Lock, ShieldCheck, Check, AlertCircle } from 'lucide-react'
 
 export default function RegisterClubPage() {
@@ -114,38 +115,37 @@ export default function RegisterClubPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#F4F0E8] text-negro dark:bg-negro dark:text-blanco flex flex-col justify-between selection:bg-coral transition-colors duration-300">
+    <div className="min-h-screen w-full max-w-full overflow-x-hidden bg-[#F8F6F0] dark:bg-[#080808] text-neutral-900 dark:text-neutral-100 flex flex-col justify-between selection:bg-coral selection:text-white transition-colors duration-300">
       {/* HEADER ADAPTABLE */}
-      <header className="sticky top-0 z-40 bg-[#F4F0E8] dark:bg-negro border-b border-arena/30 dark:border-arena/10 px-6 py-3 safe-header transition-colors">
-        <div className="max-w-4xl mx-auto flex items-center justify-between">
+      <header className="sticky top-0 z-40 bg-white/95 dark:bg-[#080808]/95 backdrop-blur-md border-b border-black/[0.08] dark:border-white/[0.08] px-4 sm:px-6 py-2.5 safe-header transition-colors">
+        <div className="max-w-4xl mx-auto flex items-center justify-between gap-3">
           <button
+            type="button"
             onClick={handleBack}
-            className="text-xs md:text-sm font-sans font-bold text-negro/70 dark:text-arena/70 hover:text-coral flex items-center gap-1 transition-colors"
+            className="text-xs font-sans font-bold text-neutral-700 dark:text-neutral-300 hover:text-coral flex items-center gap-1 py-1.5 px-3 rounded-xl bg-black/[0.03] dark:bg-white/[0.05] border border-black/5 dark:border-white/5 active:scale-95 transition-all"
           >
-            <ChevronLeft className="w-5 h-5" />
+            <ChevronLeft className="w-4 h-4" />
             <span>Volver</span>
           </button>
 
-          <h1 className="font-display text-2xl md:text-3xl text-coral tracking-wider">
-            MAREA NEGRA
-          </h1>
+          <BrandLogo size="sm" href="/" />
 
           <ThemeToggle />
         </div>
       </header>
 
       {/* CONTENIDO */}
-      <main className="max-w-xl mx-auto px-4 md:px-6 py-10 w-full flex-1 flex flex-col gap-6">
+      <main className="max-w-xl mx-auto px-4 sm:px-6 py-10 w-full flex-1 flex flex-col gap-6">
         <div className="text-center flex flex-col gap-2">
-          <span className="text-xs font-sans font-bold tracking-widest text-turquesa uppercase flex items-center justify-center gap-1.5">
-            <Gift className="w-4 h-4 text-turquesa" />
+          <span className="text-[11px] font-sans font-bold tracking-widest text-[#2ABFBF] uppercase flex items-center justify-center gap-1.5">
+            <Gift className="w-3.5 h-3.5 text-[#2ABFBF]" />
             <span>CLUB DE LEALTAD & DESCUENTOS</span>
           </span>
-          <h2 className="font-display text-4xl md:text-5xl text-negro dark:text-blanco tracking-wide">
+          <h1 className="font-display text-3xl sm:text-5xl text-neutral-900 dark:text-white tracking-wide">
             ÚNETE AL CLUB MAREA NEGRA
-          </h2>
-          <p className="font-sans text-base text-negro/80 dark:text-arena/80">
-            Regístrate para recibir tu <span className="font-bold text-turquesa">CUPÓN PERSONAL ÚNICO (10% OFF)</span> de una sola vez y tu enlace exclusivo para invitar amigos.
+          </h1>
+          <p className="font-sans text-xs sm:text-sm text-neutral-600 dark:text-neutral-400">
+            Regístrate para recibir tu <span className="font-bold text-[#2ABFBF]">CUPÓN PERSONAL ÚNICO (10% OFF)</span> y tu tarjeta digital VIP.
           </p>
         </div>
 
@@ -153,12 +153,12 @@ export default function RegisterClubPage() {
           <form
             noValidate
             onSubmit={handleSubmit}
-            className="bg-white dark:bg-[#050404] bg-dots-pattern border border-arena/30 dark:border-oro/30 rounded-2xl p-6 shadow-2xl gold-border-corner flex flex-col gap-5 transition-colors"
+            className="bg-white dark:bg-[#111317] border border-black/[0.08] dark:border-white/[0.08] rounded-[32px] p-6 sm:p-8 shadow-sm flex flex-col gap-5 transition-colors"
           >
             {/* CAMPO NOMBRE */}
             <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-sans uppercase font-bold text-negro/80 dark:text-arena/90 flex items-center gap-1.5">
-                <User className="w-4 h-4 text-turquesa" />
+              <label className="text-xs font-sans font-bold text-neutral-700 dark:text-neutral-300 flex items-center gap-1.5">
+                <User className="w-3.5 h-3.5 text-[#2ABFBF]" />
                 <span>Nombre Completo *</span>
               </label>
               <input
@@ -170,7 +170,7 @@ export default function RegisterClubPage() {
                   setNombre(e.target.value)
                   if (fieldErrors.nombre) setFieldErrors({ ...fieldErrors, nombre: '' })
                 }}
-                className={`bg-[#F4F0E8] dark:bg-carbon border rounded-xl px-4 py-3 text-base text-negro dark:text-blanco focus:outline-none ${fieldErrors.nombre ? 'border-coral ring-2 ring-coral/20' : 'border-arena/30 dark:border-arena/20 focus:border-turquesa'
+                className={`w-full bg-black/[0.02] dark:bg-white/[0.04] border rounded-2xl px-4 py-3 text-base text-neutral-900 dark:text-white focus:outline-none ${fieldErrors.nombre ? 'border-coral ring-2 ring-coral/20' : 'border-black/10 dark:border-white/10 focus:border-[#2ABFBF]'
                   }`}
               />
               {fieldErrors.nombre && (
@@ -183,8 +183,8 @@ export default function RegisterClubPage() {
 
             {/* CAMPO TELEFONO */}
             <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-sans uppercase font-bold text-negro/80 dark:text-arena/90 flex items-center gap-1.5">
-                <Phone className="w-4 h-4 text-turquesa" />
+              <label className="text-xs font-sans font-bold text-neutral-700 dark:text-neutral-300 flex items-center gap-1.5">
+                <Phone className="w-3.5 h-3.5 text-[#2ABFBF]" />
                 <span>Teléfono Celular WhatsApp *</span>
               </label>
               <input
@@ -197,7 +197,7 @@ export default function RegisterClubPage() {
                   setTelefono(e.target.value)
                   if (fieldErrors.telefono) setFieldErrors({ ...fieldErrors, telefono: '' })
                 }}
-                className={`bg-[#F4F0E8] dark:bg-carbon border rounded-xl px-4 py-3 text-base text-negro dark:text-blanco focus:outline-none ${fieldErrors.telefono ? 'border-coral ring-2 ring-coral/20' : 'border-arena/30 dark:border-arena/20 focus:border-turquesa'
+                className={`w-full bg-black/[0.02] dark:bg-white/[0.04] border rounded-2xl px-4 py-3 text-base text-neutral-900 dark:text-white font-mono focus:outline-none ${fieldErrors.telefono ? 'border-coral ring-2 ring-coral/20' : 'border-black/10 dark:border-white/10 focus:border-[#2ABFBF]'
                   }`}
               />
               {fieldErrors.telefono && (
@@ -210,8 +210,8 @@ export default function RegisterClubPage() {
 
             {/* CAMPO CONTRASEÑA CON MEDIDOR Y MENSAJE DE ERROR INLINE */}
             <div className="flex flex-col gap-2">
-              <label className="text-xs font-sans uppercase font-bold text-negro/80 dark:text-arena/90 flex items-center gap-1.5">
-                <Lock className="w-4 h-4 text-turquesa" />
+              <label className="text-xs font-sans font-bold text-neutral-700 dark:text-neutral-300 flex items-center gap-1.5">
+                <Lock className="w-3.5 h-3.5 text-[#2ABFBF]" />
                 <span>Crea tu Contraseña Segura *</span>
               </label>
               <input
@@ -223,7 +223,7 @@ export default function RegisterClubPage() {
                   setPassword(e.target.value)
                   if (fieldErrors.password) setFieldErrors({ ...fieldErrors, password: '' })
                 }}
-                className={`bg-[#F4F0E8] dark:bg-carbon border rounded-xl px-4 py-3 text-base text-negro dark:text-blanco focus:outline-none ${fieldErrors.password ? 'border-coral ring-2 ring-coral/20' : 'border-arena/30 dark:border-arena/20 focus:border-turquesa'
+                className={`w-full bg-black/[0.02] dark:bg-white/[0.04] border rounded-2xl px-4 py-3 text-base text-neutral-900 dark:text-white font-sans focus:outline-none ${fieldErrors.password ? 'border-coral ring-2 ring-coral/20' : 'border-black/10 dark:border-white/10 focus:border-[#2ABFBF]'
                   }`}
               />
 
@@ -235,33 +235,33 @@ export default function RegisterClubPage() {
               )}
 
               {/* GUÍA DE REQUISITOS SIEMPRE VISIBLE Y MEDIDOR ADAPTABLE DE ALTO CONTRASTE */}
-              <div className="bg-[#F4F0E8] dark:bg-carbon/90 border border-arena/30 dark:border-arena/20 rounded-2xl p-4 flex flex-col gap-2.5 mt-1 shadow-sm">
+              <div className="bg-black/[0.02] dark:bg-white/[0.03] border border-black/5 dark:border-white/5 rounded-2xl p-4 flex flex-col gap-2.5 mt-1">
                 <div className="flex justify-between items-center text-xs font-sans font-bold">
-                  <span className="text-negro/80 dark:text-arena flex items-center gap-1.5">
-                    <ShieldCheck className="w-4 h-4 text-emerald-600 dark:text-turquesa" />
-                    <span>Requisitos de Contraseña Segura:</span>
+                  <span className="text-neutral-700 dark:text-neutral-300 flex items-center gap-1.5">
+                    <ShieldCheck className="w-4 h-4 text-[#2ABFBF]" />
+                    <span>Requisitos de Contraseña:</span>
                   </span>
                   <span
                     className={`${passwordStrength.score === 4
-                        ? 'text-emerald-700 dark:text-limon font-bold'
+                        ? 'text-emerald-600 dark:text-emerald-400 font-bold'
                         : password.length > 0
                           ? 'text-coral font-bold'
-                          : 'text-negro/60 dark:text-arena/60 font-semibold'
+                          : 'text-neutral-400 font-medium'
                       }`}
                   >
                     {password.length === 0
                       ? 'Requerida'
                       : passwordStrength.score === 4
-                        ? '¡Excelente y Fuerte! ✓'
+                        ? '¡Excelente! ✓'
                         : 'Incompleta'}
                   </span>
                 </div>
 
-                {/* Barra de progreso de alto contraste */}
-                <div className="w-full h-2 bg-arena/30 dark:bg-negro rounded-full overflow-hidden border border-arena/20 dark:border-arena/10">
+                {/* Barra de progreso */}
+                <div className="w-full h-1.5 bg-black/10 dark:bg-white/10 rounded-full overflow-hidden">
                   <div
                     className={`h-full transition-all duration-300 ${passwordStrength.score === 4
-                        ? 'bg-emerald-600 dark:bg-limon shadow-sm'
+                        ? 'bg-emerald-500'
                         : password.length > 0
                           ? 'bg-coral'
                           : 'bg-transparent'
@@ -270,45 +270,45 @@ export default function RegisterClubPage() {
                   />
                 </div>
 
-                {/* Lista de 4 Requisitos claros de alto contraste en ambos temas */}
+                {/* Lista de 4 Requisitos */}
                 <div className="grid grid-cols-2 gap-2 text-[11px] font-sans pt-1">
                   <div
                     className={`flex items-center gap-1.5 p-2 rounded-xl border transition-all ${passwordStrength.hasMinLength
-                        ? 'bg-emerald-100 text-emerald-900 border-emerald-300 dark:bg-turquesa/15 dark:border-turquesa/40 dark:text-turquesa font-bold shadow-sm'
-                        : 'bg-white/80 dark:bg-carbon/40 border-arena/30 dark:border-arena/10 text-negro/70 dark:text-arena/60'
+                        ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30 font-bold'
+                        : 'bg-black/[0.02] dark:bg-white/[0.02] border-black/5 dark:border-white/5 text-neutral-400'
                       }`}
                   >
-                    {passwordStrength.hasMinLength ? <Check className="w-3.5 h-3.5 text-emerald-700 dark:text-turquesa stroke-[3]" /> : <span className="w-3.5 text-center text-negro/40 dark:text-arena/40">●</span>}
+                    {passwordStrength.hasMinLength ? <Check className="w-3.5 h-3.5 text-emerald-500 stroke-[3]" /> : <span className="w-3.5 text-center text-neutral-400">●</span>}
                     <span>Mínimo 8 caracteres</span>
                   </div>
 
                   <div
                     className={`flex items-center gap-1.5 p-2 rounded-xl border transition-all ${passwordStrength.hasUppercase
-                        ? 'bg-emerald-100 text-emerald-900 border-emerald-300 dark:bg-turquesa/15 dark:border-turquesa/40 dark:text-turquesa font-bold shadow-sm'
-                        : 'bg-white/80 dark:bg-carbon/40 border-arena/30 dark:border-arena/10 text-negro/70 dark:text-arena/60'
+                        ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30 font-bold'
+                        : 'bg-black/[0.02] dark:bg-white/[0.02] border-black/5 dark:border-white/5 text-neutral-400'
                       }`}
                   >
-                    {passwordStrength.hasUppercase ? <Check className="w-3.5 h-3.5 text-emerald-700 dark:text-turquesa stroke-[3]" /> : <span className="w-3.5 text-center text-negro/40 dark:text-arena/40">●</span>}
+                    {passwordStrength.hasUppercase ? <Check className="w-3.5 h-3.5 text-emerald-500 stroke-[3]" /> : <span className="w-3.5 text-center text-neutral-400">●</span>}
                     <span>1 Mayúscula (A-Z)</span>
                   </div>
 
                   <div
                     className={`flex items-center gap-1.5 p-2 rounded-xl border transition-all ${passwordStrength.hasLowercase
-                        ? 'bg-emerald-100 text-emerald-900 border-emerald-300 dark:bg-turquesa/15 dark:border-turquesa/40 dark:text-turquesa font-bold shadow-sm'
-                        : 'bg-white/80 dark:bg-carbon/40 border-arena/30 dark:border-arena/10 text-negro/70 dark:text-arena/60'
+                        ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30 font-bold'
+                        : 'bg-black/[0.02] dark:bg-white/[0.02] border-black/5 dark:border-white/5 text-neutral-400'
                       }`}
                   >
-                    {passwordStrength.hasLowercase ? <Check className="w-3.5 h-3.5 text-emerald-700 dark:text-turquesa stroke-[3]" /> : <span className="w-3.5 text-center text-negro/40 dark:text-arena/40">●</span>}
+                    {passwordStrength.hasLowercase ? <Check className="w-3.5 h-3.5 text-emerald-500 stroke-[3]" /> : <span className="w-3.5 text-center text-neutral-400">●</span>}
                     <span>1 Minúscula (a-z)</span>
                   </div>
 
                   <div
                     className={`flex items-center gap-1.5 p-2 rounded-xl border transition-all ${passwordStrength.hasNumber
-                        ? 'bg-emerald-100 text-emerald-900 border-emerald-300 dark:bg-turquesa/15 dark:border-turquesa/40 dark:text-turquesa font-bold shadow-sm'
-                        : 'bg-white/80 dark:bg-carbon/40 border-arena/30 dark:border-arena/10 text-negro/70 dark:text-arena/60'
+                        ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30 font-bold'
+                        : 'bg-black/[0.02] dark:bg-white/[0.02] border-black/5 dark:border-white/5 text-neutral-400'
                       }`}
                   >
-                    {passwordStrength.hasNumber ? <Check className="w-3.5 h-3.5 text-emerald-700 dark:text-turquesa stroke-[3]" /> : <span className="w-3.5 text-center text-negro/40 dark:text-arena/40">●</span>}
+                    {passwordStrength.hasNumber ? <Check className="w-3.5 h-3.5 text-emerald-500 stroke-[3]" /> : <span className="w-3.5 text-center text-neutral-400">●</span>}
                     <span>1 Número (0-9)</span>
                   </div>
                 </div>
@@ -316,8 +316,8 @@ export default function RegisterClubPage() {
             </div>
 
             <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-sans uppercase font-bold text-negro/80 dark:text-arena/90 flex items-center gap-1.5">
-                <Mail className="w-4 h-4 text-turquesa" />
+              <label className="text-xs font-sans font-bold text-neutral-700 dark:text-neutral-300 flex items-center gap-1.5">
+                <Mail className="w-3.5 h-3.5 text-[#2ABFBF]" />
                 <span>Correo Electrónico (Opcional)</span>
               </label>
               <input
@@ -325,9 +325,10 @@ export default function RegisterClubPage() {
                 placeholder="mareanegra@ejemplo.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="bg-[#F4F0E8] dark:bg-carbon border border-arena/30 dark:border-arena/20 rounded-xl px-4 py-3 text-base text-negro dark:text-blanco focus:border-turquesa focus:outline-none"
+                className="w-full bg-black/[0.02] dark:bg-white/[0.04] border border-black/10 dark:border-white/10 rounded-2xl px-4 py-3 text-base text-neutral-900 dark:text-white focus:border-[#2ABFBF] focus:outline-none"
               />
             </div>
+
             {/* ACEPTACIÓN DE AVISO DE PRIVACIDAD */}
             <div className="flex flex-col gap-1.5 pt-1">
               <label className="flex items-start gap-2.5 cursor-pointer select-none">
@@ -340,14 +341,14 @@ export default function RegisterClubPage() {
                       setFieldErrors({ ...fieldErrors, privacidad: '' })
                     }
                   }}
-                  className="mt-0.5 w-4 h-4 rounded border-arena/40 text-turquesa focus:ring-turquesa cursor-pointer"
+                  className="mt-0.5 w-4 h-4 rounded border-black/20 dark:border-white/20 text-[#2ABFBF] focus:ring-[#2ABFBF] cursor-pointer"
                 />
-                <span className="text-xs font-sans text-negro/80 dark:text-arena/90 leading-snug">
+                <span className="text-xs font-sans text-neutral-600 dark:text-neutral-400 leading-snug">
                   He leído y acepto el{' '}
                   <Link
                     href="/privacidad"
                     target="_blank"
-                    className="text-turquesa font-bold hover:underline"
+                    className="text-[#2ABFBF] font-bold hover:underline"
                   >
                     Aviso de Privacidad (LFPDPPP)
                   </Link>{' '}
@@ -363,7 +364,7 @@ export default function RegisterClubPage() {
             </div>
 
             {errorMsg && (
-              <div className="bg-coral/10 border border-coral/30 text-coral p-3 rounded-xl text-xs font-sans font-bold flex items-center gap-2">
+              <div className="bg-coral/10 border border-coral/30 text-coral p-3 rounded-2xl text-xs font-sans font-bold flex items-center gap-2">
                 <AlertCircle className="w-4 h-4 shrink-0" />
                 <span>{errorMsg}</span>
               </div>
@@ -372,12 +373,12 @@ export default function RegisterClubPage() {
             <button
               type="submit"
               disabled={isSubmitting || !passwordStrength.isValid || !aceptoPrivacidad}
-              className="mt-2 bg-turquesa text-negro font-sans font-bold text-xs tracking-wider py-4 rounded-xl shadow-[0_0_20px_rgba(42,191,191,0.4)] hover:bg-negro hover:text-blanco dark:hover:bg-blanco dark:hover:text-negro transition-all flex items-center justify-center gap-2 disabled:opacity-40"
+              className="mt-2 bg-[#2ABFBF] text-black font-sans font-bold text-xs tracking-wider py-4 rounded-2xl shadow-lg hover:bg-white transition-all flex items-center justify-center gap-2 disabled:opacity-40 active:scale-95"
             >
               {isSubmitting ? (
                 <>
-                  <Loader2 className="w-4 h-4 animate-spin text-negro" />
-                  <span>REGISTRANDO</span>
+                  <Loader2 className="w-4 h-4 animate-spin text-black" />
+                  <span>REGISTRANDO...</span>
                 </>
               ) : (
                 <>
@@ -388,39 +389,40 @@ export default function RegisterClubPage() {
             </button>
           </form>
         ) : (
-          <div className="bg-white dark:bg-[#050404] bg-dots-pattern border border-turquesa/40 rounded-2xl p-6 shadow-2xl gold-border-corner flex flex-col items-center text-center gap-5 transition-colors">
-            <div className="w-16 h-16 rounded-full bg-turquesa/20 text-turquesa flex items-center justify-center border border-turquesa/40 animate-bounce">
-              <CheckCircle2 className="w-10 h-10" />
+          <div className="bg-white dark:bg-[#111317] border border-black/[0.08] dark:border-white/[0.08] rounded-[32px] p-6 sm:p-8 shadow-sm flex flex-col items-center text-center gap-6 transition-colors">
+            <div className="w-16 h-16 rounded-full bg-[#2ABFBF]/20 text-[#2ABFBF] flex items-center justify-center border border-[#2ABFBF]/40">
+              <CheckCircle2 className="w-8 h-8" />
             </div>
 
             <div className="flex flex-col gap-2 w-full">
-              <span className="text-xs font-sans font-bold text-turquesa uppercase tracking-widest">
+              <span className="text-xs font-sans font-bold text-[#2ABFBF] uppercase tracking-widest">
                 ¡REGISTRO EXITOSO! TU CUPÓN DE USO ÚNICO:
               </span>
 
               {/* CUPÓN PERSONAL ÚNICO DESTACADO */}
-              <div className="bg-[#111111] dark:bg-carbon border-2 border-dashed border-limon rounded-2xl p-5 flex flex-col items-center gap-1 shadow-[0_0_25px_rgba(222,253,111,0.25)]">
-                <span className="text-[10px] font-sans font-bold text-limon uppercase tracking-widest flex items-center gap-1">
-                  <Ticket className="w-3.5 h-3.5 text-limon" />
+              <div className="bg-black/[0.02] dark:bg-white/[0.03] border-2 border-dashed border-[#2ABFBF] rounded-2xl p-6 flex flex-col items-center gap-1.5">
+                <span className="text-[10px] font-sans font-bold text-[#2ABFBF] uppercase tracking-widest flex items-center gap-1">
+                  <Ticket className="w-3.5 h-3.5" />
                   <span>CUPÓN PERSONAL DE 1 SOLO USO</span>
                 </span>
-                <span className="font-mono text-3xl md:text-4xl font-bold text-limon tracking-wider my-1 drop-shadow-[0_0_10px_rgba(222,253,111,0.4)]">
+                <span className="font-mono text-3xl sm:text-4xl font-bold text-coral tracking-wider my-1">
                   {personalCoupon}
                 </span>
-                <span className="text-xs font-serif italic text-arena/80">
-                  Válido únicamente para 1 solo pedido. ¡Al canjearlo se desactivará automáticamente!
+                <span className="text-xs font-sans text-neutral-500">
+                  Válido para 1 solo pedido. ¡Al canjearlo se aplicará tu 10% OFF!
                 </span>
               </div>
             </div>
 
-            <div className="w-full bg-[#F4F0E8] dark:bg-carbon p-4 rounded-xl border border-arena/30 dark:border-arena/20 flex flex-col gap-2">
-              <span className="text-xs font-sans font-bold text-turquesa">Tu Enlace de Referidos para Amigos:</span>
-              <span className="font-mono text-xs text-turquesa font-bold bg-white/80 dark:bg-negro/50 p-2 rounded border border-arena/20 dark:border-transparent">
+            <div className="w-full bg-black/[0.02] dark:bg-white/[0.03] p-4 rounded-2xl border border-black/5 dark:border-white/5 flex flex-col gap-2">
+              <span className="text-xs font-sans font-bold text-neutral-700 dark:text-neutral-300">Tu Código de Invitación:</span>
+              <span className="font-mono text-xs font-bold text-[#2ABFBF] bg-white dark:bg-black p-2.5 rounded-xl border border-black/5 dark:border-white/5">
                 {referralCode}
               </span>
               <button
+                type="button"
                 onClick={copyReferralLink}
-                className="bg-turquesa text-negro font-sans font-bold text-xs py-2.5 px-4 rounded-lg flex items-center justify-center gap-2 hover:bg-negro hover:text-blanco dark:hover:bg-blanco dark:hover:text-negro transition-all mt-1"
+                className="bg-[#2ABFBF] text-black font-sans font-bold text-xs py-2.5 px-4 rounded-xl flex items-center justify-center gap-2 hover:bg-white transition-all mt-1 active:scale-95"
               >
                 <Copy className="w-4 h-4" />
                 <span>{copied ? '¡ENLACE COPIADO!' : 'COPIAR ENLACE DE INVITACIÓN'}</span>
@@ -428,10 +430,11 @@ export default function RegisterClubPage() {
             </div>
 
             <button
+              type="button"
               onClick={() => router.push('/pedir')}
-              className="w-full bg-coral text-blanco font-sans font-bold text-xs tracking-wider py-4 rounded-xl shadow-lg hover:bg-negro dark:hover:bg-blanco dark:hover:text-negro transition-all"
+              className="w-full bg-coral text-white font-sans font-bold text-xs tracking-wider py-4 rounded-2xl shadow-lg hover:bg-white hover:text-black transition-all active:scale-95"
             >
-              USAR MI CUPÓN ÚNICO Y ORDENAR AHORA
+              USAR MI CUPÓN Y ORDENAR AHORA
             </button>
           </div>
         )}
