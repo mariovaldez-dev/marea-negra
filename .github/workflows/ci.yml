@@ -168,12 +168,6 @@ jobs:
       - name: Ejecutar Auditoría Lighthouse
         uses: treosh/lighthouse-ci-action@v12
         with:
-          startServerCommand: npm run start
-          startServerReadyPattern: 'started server on'
-          startServerReadyTimeout: 30000
-          urls: |
-            http://localhost:3000/
-            http://localhost:3000/pedir
           uploadArtifacts: true
           temporaryPublicStorage: true
           configPath: './lighthouserc.json'
