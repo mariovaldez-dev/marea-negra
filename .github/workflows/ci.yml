@@ -1,4 +1,4 @@
-name: CI & Quality Pipeline
+name: CI & Enterprise Security Pipeline
 
 on:
   pull_request:
@@ -12,9 +12,9 @@ permissions:
   pull-requests: write
 
 jobs:
-  # ── FASE 1: SECRETOS Y DEPENDENCIAS (FAIL-FAST) ─────────────────────────────
-  security-and-dependencies:
-    name: 1. 🔒 Secretos y Dependencias (SCA)
+  # ── FASE 1: HARD STOPPER - SECRETOS (GITLEAKS) & SCA (TRIVY) ────────────────
+  secrets-and-sca:
+    name: 1. 🔒 Secretos & Vulnerabilidades SCA (Trivy + Gitleaks)
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Código
@@ -22,28 +22,26 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Gitleaks - Detección de Secretos Expuestos
+      # Gitleaks: Falla inmediatamente si detecta alguna clave secreta o token
+      - name: Gitleaks - Escaneo Estricto de Secretos
         uses: gitleaks/gitleaks-action@v2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      # Trivy (Aqua Security - Open Source SCA): Escanea vulnerabilidades críticas en dependencias
+      - name: Trivy - Escaneo de Seguridad de Dependencias (SCA)
+        uses: aquasecurity/trivy-action@master
         with:
-          node-version: 22
-          cache: 'npm'
+          scan-type: 'fs'
+          scan-ref: '.'
+          severity: 'CRITICAL,HIGH'
+          exit-code: '1'
+          ignore-unfixed: true
 
-      - name: Instalar Dependencias
-        run: npm ci
-
-      - name: NPM Audit (Dependencias)
-        run: npm audit --audit-level=high
-        continue-on-error: true
-
-  # ── FASE 2: SAST Y CALIDAD DE CÓDIGO (REQUIERE FASE 1) ──────────────────────
-  code-quality-sast:
-    name: 2. 🛡️ SAST & TypeCheck
-    needs: [security-and-dependencies]
+  # ── FASE 2: HARD STOPPER - CALIDAD, DUPLICACIÓN (JSCPD) & TYPECHECK ──────────
+  code-quality-gate:
+    name: 2. 🧹 Calidad, Duplicación & TypeScript
+    needs: [secrets-and-sca]
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Código
@@ -58,13 +56,46 @@ jobs:
       - name: Instalar Dependencias
         run: npm ci
 
-      - name: TypeScript TypeCheck
+      # TypeCheck estricto: Falla si hay algún error de tipos en TypeScript
+      - name: TypeScript Strict TypeCheck
         run: npx tsc --noEmit
 
-      - name: ESLint Check
+      # ESLint: Detección de malas prácticas y syntax errors
+      - name: ESLint Linter Check
         run: npm run lint
-        continue-on-error: true
 
+      # JSCPD (SonarQube-style Duplication): Falla si la duplicación de código supera el 8%
+      - name: JSCPD - Control de Duplicación de Código
+        run: |
+          npx jscpd app/ components/ lib/ --threshold 8 --reporters console,markdown > jscpd-report.md 2>&1
+          cat jscpd-report.md
+          echo "### 📋 Reporte de Duplicación de Código (JSCPD)" >> $GITHUB_STEP_SUMMARY
+          echo '```text' >> $GITHUB_STEP_SUMMARY
+          tail -n 20 jscpd-report.md >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+
+  # ── FASE 3: HARD STOPPER - DEEP SAST (GITHUB CODEQL + SEMGREP) ──────────────
+  deep-sast-scan:
+    name: 3. 🛡️ Deep SAST (CodeQL + Semgrep OWASP)
+    needs: [code-quality-gate]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Código
+        uses: actions/checkout@v4
+
+      # Inicializar CodeQL (El motor open-source de análisis de flujo de datos de GitHub)
+      - name: Inicializar GitHub CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: javascript-typescript
+          queries: security-extended,security-and-quality
+
+      - name: Ejecutar Análisis de Flujo de Datos CodeQL
+        uses: github/codeql-action/analyze@v3
+        with:
+          category: "/language:javascript-typescript"
+
+      # Semgrep: Escaneo complementario con reglas OWASP Top 10 y Next.js
       - name: Semgrep SAST Scan (OWASP & Next.js)
         uses: returntocorp/semgrep-action@v1
         with:
@@ -74,10 +105,10 @@ jobs:
             p/javascript
             p/typescript
 
-  # ── FASE 3: BUILD Y BUNDLE SIZE (REQUIERE FASE 2) ───────────────────────────
+  # ── FASE 4: HARD STOPPER - BUILD Y BUNDLE SIZE ───────────────────────────────
   build-and-bundle:
-    name: 3. 📦 Build & Bundle Analysis
-    needs: [code-quality-sast]
+    name: 4. 📦 Next.js Build & Bundle Analysis
+    needs: [deep-sast-scan]
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Código
@@ -104,9 +135,9 @@ jobs:
           grep -E "(Route \(app\)|┌|├|└|λ|○|●)" build-output.log || tail -n 25 build-output.log >> $GITHUB_STEP_SUMMARY
           echo '```' >> $GITHUB_STEP_SUMMARY
 
-  # ── FASE 4: E2E Y LIGHTHOUSE (REQUIERE FASE 3) ──────────────────────────────
+  # ── FASE 5: HARD STOPPER - E2E Y LIGHTHOUSE ─────────────────────────────────
   e2e-and-lighthouse:
-    name: 4. 🎭 Pruebas E2E & Lighthouse
+    name: 5. 🎭 Pruebas E2E & Lighthouse
     needs: [build-and-bundle]
     runs-on: ubuntu-latest
     steps:
