@@ -50,7 +50,7 @@ export async function registrarEnvioNotificacion(params: {
 }
 
 export async function getMetricasMensajeria(): Promise<MetricasMensajeria> {
-  const supabase = createServerClient()
+  const supabase = await createServerClient()
 
   // Calcular inicio del mes actual (Mazatlán / México)
   const now = new Date()

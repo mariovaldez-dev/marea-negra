@@ -6,7 +6,7 @@ import { registrarEnvioNotificacion } from '@/lib/actions/notificationMetrics'
 
 export async function notificarPedidoListoCliente(pedidoId: number): Promise<WhatsAppNotificationResult> {
   try {
-    const supabase = createServerClient()
+    const supabase = await createServerClient()
     const { data: pedido, error } = await supabase
       .from('pedidos')
       .select('id, cliente_nombre, cliente_telefono, tipo_entrega, total')

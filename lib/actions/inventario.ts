@@ -10,7 +10,7 @@ export async function registrarMovimientoInventario(formData: {
   cantidad: number
   motivo?: string
 }) {
-  const supabase = createServerClient()
+  const supabase = await createServerClient()
 
   // 1. Obtener usuario actual
   const {
@@ -65,7 +65,7 @@ export async function crearInsumo(insumoData: {
   stock_actual: number
   stock_minimo: number
 }) {
-  const supabase = createServerClient()
+  const supabase = await createServerClient()
   const { data, error } = await supabase.from('insumos').insert(insumoData).select().single()
 
   if (error) throw new Error(`Error al crear insumo: ${error.message}`)
@@ -84,7 +84,7 @@ export async function editarInsumo(
     stock_minimo: number
   }
 ) {
-  const supabase = createServerClient()
+  const supabase = await createServerClient()
   const { data, error } = await supabase
     .from('insumos')
     .update(insumoData)
@@ -100,7 +100,7 @@ export async function editarInsumo(
 }
 
 export async function eliminarInsumo(id: number) {
-  const supabase = createServerClient()
+  const supabase = await createServerClient()
 
   // 1. Eliminar historial de movimientos asociados para no violar llave foránea
   await supabase.from('movimientos_inventario').delete().eq('insumo_id', id)

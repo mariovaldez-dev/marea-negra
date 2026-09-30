@@ -21,7 +21,7 @@ export interface ClienteAdminSummary {
 }
 
 export async function getClientesClubAdmin(): Promise<ClienteAdminSummary[]> {
-  const supabase = createServerClient()
+  const supabase = await createServerClient()
 
   // 1. Verificación estricta de seguridad: Solo personal autenticado (Admin/Empleado)
   const {
@@ -123,7 +123,7 @@ export async function getClientesClubAdmin(): Promise<ClienteAdminSummary[]> {
 
 // Eliminar un cliente registrado del Club de Lealtad (Administradores)
 export async function deleteClienteClub(id: string) {
-  const supabase = createServerClient()
+  const supabase = await createServerClient()
 
   const {
     data: { user },

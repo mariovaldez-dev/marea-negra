@@ -19,7 +19,7 @@ const FALLBACK_INSUMOS: Insumo[] = [
 ]
 
 export default async function InventarioAdminPage() {
-  const supabase = createServerClient()
+  const supabase = await createServerClient()
 
   let insumos: Insumo[] = FALLBACK_INSUMOS
   let historial: MovimientoInventario[] = []

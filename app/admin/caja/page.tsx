@@ -7,7 +7,7 @@ import { CierreCaja, Pedido, GastoCaja } from '@/lib/types/database'
 export const revalidate = 0
 
 export default async function CajaAdminPage() {
-  const supabase = createServerClient()
+  const supabase = await createServerClient()
   const fechaHoy = getMazatlanDateString()
 
   let pedidosEntregados: Pedido[] = []

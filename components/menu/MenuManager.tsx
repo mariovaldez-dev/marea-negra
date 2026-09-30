@@ -20,7 +20,6 @@ import {
   PowerOff,
   Calendar,
   Flame,
-  Instagram,
   Sparkles,
   UtensilsCrossed,
   Search,
@@ -29,6 +28,16 @@ import {
   Tag,
   Filter,
 } from 'lucide-react'
+
+function InstagramIcon({ className = 'w-4 h-4' }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <rect width="20" height="20" x="2" y="2" rx="5" ry="5" />
+      <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" />
+      <line x1="17.5" x2="17.51" y1="6.5" y2="6.5" />
+    </svg>
+  )
+}
 
 interface MenuManagerProps {
   initialPlatillos: Platillo[]
@@ -487,7 +496,7 @@ export function MenuManager({
                               className="p-2 text-neutral-500 dark:text-neutral-400 hover:text-coral hover:bg-coral/10 rounded-xl transition-all"
                               title="Generar Historia de Instagram"
                             >
-                              <Instagram className="w-4 h-4" />
+                              <InstagramIcon className="w-4 h-4" />
                             </button>
 
                             {/* EDITAR */}
@@ -578,7 +587,7 @@ export function MenuManager({
                           className="p-1.5 text-neutral-600 dark:text-neutral-300 hover:text-coral rounded-lg"
                           title="Historia Instagram"
                         >
-                          <Instagram className="w-4 h-4" />
+                          <InstagramIcon className="w-4 h-4" />
                         </button>
                         <button
                           type="button"

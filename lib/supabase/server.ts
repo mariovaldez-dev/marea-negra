@@ -1,8 +1,8 @@
-import { createServerClient as createServerClientSSR } from '@supabase/ssr'
+import { createServerClient as createServerClientSSR, type CookieOptions } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 
-export function createServerClient() {
-  const cookieStore = cookies()
+export async function createServerClient() {
+  const cookieStore = await cookies()
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co'
   const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder-anon-key'
 
@@ -11,20 +11,15 @@ export function createServerClient() {
     key,
     {
       cookies: {
-        get(name: string) {
-          return cookieStore.get(name)?.value
+        getAll() {
+          return cookieStore.getAll()
         },
-        set(name: string, value: string, options: any) {
+        setAll(cookiesToSet: { name: string; value: string; options: CookieOptions }[]) {
           try {
-            cookieStore.set({ name, value, ...options })
-          } catch (error) {
-            // Se maneja en middleware si ocurre en Server Components
-          }
-        },
-        remove(name: string, options: any) {
-          try {
-            cookieStore.set({ name, value: '', ...options })
-          } catch (error) {
+            cookiesToSet.forEach(({ name, value, options }) =>
+              cookieStore.set(name, value, options)
+            )
+          } catch {
             // Se maneja en middleware si ocurre en Server Components
           }
         },
@@ -51,9 +46,8 @@ export function createAdminClient() {
     serviceRoleKey,
     {
       cookies: {
-        get() { return null },
-        set() {},
-        remove() {}
+        getAll() { return [] },
+        setAll() {}
       }
     }
   )

@@ -5,7 +5,7 @@ import { Platillo } from '@/lib/types/database'
 import { revalidatePath } from 'next/cache'
 
 export async function getPlatillosList(): Promise<Platillo[]> {
-  const supabase = createServerClient()
+  const supabase = await createServerClient()
   const { data, error } = await supabase
     .from('platillos')
     .select('*')
@@ -16,7 +16,7 @@ export async function getPlatillosList(): Promise<Platillo[]> {
 }
 
 export async function togglePlatilloDisponible(platilloId: number, nuevoEstado: boolean) {
-  const supabase = createServerClient()
+  const supabase = await createServerClient()
   const { error } = await supabase
     .from('platillos')
     .update({ disponible: nuevoEstado })
@@ -32,7 +32,7 @@ export async function togglePlatilloDisponible(platilloId: number, nuevoEstado: 
 }
 
 export async function savePlatillo(platilloData: Partial<Platillo>) {
-  const supabase = createServerClient()
+  const supabase = await createServerClient()
 
   if (platilloData.id) {
     // Actualizar platillo existente
@@ -109,7 +109,7 @@ export async function savePlatillo(platilloData: Partial<Platillo>) {
 }
 
 export async function deletePlatillo(platilloId: number) {
-  const supabase = createServerClient()
+  const supabase = await createServerClient()
   const { error } = await supabase
     .from('platillos')
     .delete()
@@ -130,7 +130,7 @@ export interface FavoritoSistemaResult {
 }
 
 export async function getPlatilloFavoritoDelSistema(): Promise<FavoritoSistemaResult> {
-  const supabase = createServerClient()
+  const supabase = await createServerClient()
 
   // 1. Obtener todos los platillos disponibles
   const { data: platillos } = await supabase

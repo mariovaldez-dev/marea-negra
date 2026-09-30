@@ -7,7 +7,7 @@ import { revalidatePath } from 'next/cache'
 // Obtener todas las recetas con platillos e insumos
 export async function getRecetas(): Promise<PlatilloIngrediente[]> {
   try {
-    const supabase = createServerClient()
+    const supabase = await createServerClient()
     const { data, error } = await supabase
       .from('platillo_ingredientes')
       .select('*, platillos(id, nombre, emoji), insumos(id, nombre, unidad, stock_actual)')
@@ -40,7 +40,7 @@ export async function guardarIngredienteReceta(
   cantidadPorPorcion: number
 ) {
   try {
-    const supabase = createServerClient()
+    const supabase = await createServerClient()
     const { error } = await supabase
       .from('platillo_ingredientes')
       .upsert(
@@ -66,7 +66,7 @@ export async function guardarIngredienteReceta(
 // Eliminar ingrediente de la receta de un platillo
 export async function eliminarIngredienteReceta(id: number) {
   try {
-    const supabase = createServerClient()
+    const supabase = await createServerClient()
     const { error } = await supabase
       .from('platillo_ingredientes')
       .delete()
@@ -86,7 +86,7 @@ export async function eliminarIngredienteReceta(id: number) {
 // Descontar inventario automáticamente al procesar o entregar un pedido
 export async function descontarInventarioPorPedido(pedidoId: number) {
   try {
-    const supabase = createServerClient()
+    const supabase = await createServerClient()
 
     // 1. Obtener los items del pedido
     const { data: items, error: errItems } = await supabase

@@ -1,9 +1,19 @@
 'use client'
 
 import React, { useRef, useState, useEffect, useCallback } from 'react'
-import { X, Download, Loader2, Instagram, Copy, Check, Sparkles, Flame, Image as ImageIcon, Sparkle } from 'lucide-react'
+import { X, Download, Loader2, Copy, Check, Sparkles, Flame, Image as ImageIcon, Sparkle } from 'lucide-react'
 import { Platillo } from '@/lib/types/database'
 import { isPromoItem, getPromoBannerText, parsePrice, formatPrice } from '@/lib/utils/promo'
+
+function InstagramIcon({ className = 'w-4 h-4' }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <rect width="20" height="20" x="2" y="2" rx="5" ry="5" />
+      <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" />
+      <line x1="17.5" x2="17.51" y1="6.5" y2="6.5" />
+    </svg>
+  )
+}
 
 interface InstagramStoryModalProps {
   platillo: Platillo
@@ -1154,7 +1164,7 @@ export function InstagramStoryModal({ platillo, onClose }: InstagramStoryModalPr
             </button>
 
             <div className="flex items-center gap-2 mb-1">
-              <Instagram className="w-4 h-4 text-coral" />
+              <InstagramIcon className="w-4 h-4 text-coral" />
               <span className="text-xs font-sans font-bold text-turquesa tracking-widest uppercase">
                 Creador de Historias IG
               </span>

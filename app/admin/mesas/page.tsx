@@ -6,7 +6,7 @@ import { Mesa, Platillo } from '@/lib/types/database'
 export const revalidate = 0
 
 export default async function MesasAdminPage() {
-  const supabase = createServerClient()
+  const supabase = await createServerClient()
 
   let mesas: Mesa[] = []
   let platillos: Platillo[] = []

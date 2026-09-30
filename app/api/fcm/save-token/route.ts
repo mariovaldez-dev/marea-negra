@@ -10,7 +10,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Token is required' }, { status: 400 })
     }
 
-    const supabase = createServerClient()
+    const supabase = await createServerClient()
     const { data: { user }, error: userError } = await supabase.auth.getUser()
 
     if (userError || !user) {

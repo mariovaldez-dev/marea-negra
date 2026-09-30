@@ -7,7 +7,7 @@ import { getEstadoRestaurante } from '@/lib/actions/negocioEstado'
 export const revalidate = 0
 
 export default async function PedirOnlinePage() {
-  const supabase = createServerClient()
+  const supabase = await createServerClient()
 
   let categorias: Categoria[] = []
   let platillos: Platillo[] = []

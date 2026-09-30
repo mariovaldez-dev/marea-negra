@@ -5,7 +5,7 @@ import { Mesa, FormaMesa, EstadoMesa, MetodoPago, NivelPicor } from '@/lib/types
 import { revalidatePath } from 'next/cache'
 
 export async function getMesasConPedidos(): Promise<Mesa[]> {
-  const supabase = createServerClient()
+  const supabase = await createServerClient()
   try {
     const { data: mesas, error: mesasErr } = await supabase
       .from('mesas')
@@ -28,7 +28,7 @@ export async function getMesasConPedidos(): Promise<Mesa[]> {
 export async function guardarLayoutMesas(
   posiciones: { id: number; pos_x: number; pos_y: number }[]
 ) {
-  const supabase = createServerClient()
+  const supabase = await createServerClient()
   try {
     for (const pos of posiciones) {
       await supabase
@@ -52,7 +52,7 @@ export async function crearMesa(data: {
   pos_x?: number
   pos_y?: number
 }) {
-  const supabase = createServerClient()
+  const supabase = await createServerClient()
   const { data: mesa, error } = await supabase
     .from('mesas')
     .insert({
@@ -83,7 +83,7 @@ export async function editarMesa(
     forma: FormaMesa
   }
 ) {
-  const supabase = createServerClient()
+  const supabase = await createServerClient()
   const { data: mesa, error } = await supabase
     .from('mesas')
     .update({
@@ -104,7 +104,7 @@ export async function editarMesa(
 }
 
 export async function eliminarMesa(id: number) {
-  const supabase = createServerClient()
+  const supabase = await createServerClient()
   const { error } = await supabase
     .from('mesas')
     .update({ activo: false })
@@ -132,7 +132,7 @@ export async function abrirComandaMesa(formData: {
     notas_item?: string
   }[]
 }) {
-  const supabase = createServerClient()
+  const supabase = await createServerClient()
 
   // 1. Consultar mesa para obtener su nombre
   const { data: mesa } = await supabase
@@ -217,7 +217,7 @@ export async function agregarRondaAMesa(formData: {
   }[]
   notas_adicionales?: string
 }) {
-  const supabase = createServerClient()
+  const supabase = await createServerClient()
 
   // 1. Obtener pedido actual
   const { data: pedido } = await supabase
@@ -272,7 +272,7 @@ export async function agregarRondaAMesa(formData: {
 }
 
 export async function cambiarEstadoMesa(mesaId: number, nuevoEstado: EstadoMesa) {
-  const supabase = createServerClient()
+  const supabase = await createServerClient()
   const { error } = await supabase
     .from('mesas')
     .update({ estado: nuevoEstado })
@@ -292,7 +292,7 @@ export async function cobrarYLiberarMesa(formData: {
   total_cobrado: number
   notas?: string
 }) {
-  const supabase = createServerClient()
+  const supabase = await createServerClient()
 
   // 1. Actualizar y cerrar el pedido
   const { error: pedidoErr } = await supabase
@@ -332,7 +332,7 @@ export async function asignarSocioAPedidoMesa(formData: {
   cliente_telefono: string
   cliente_nombre: string
 }) {
-  const supabase = createServerClient()
+  const supabase = await createServerClient()
   const cleanPhone = formData.cliente_telefono.replace(/\D/g, '')
 
   const { error } = await supabase

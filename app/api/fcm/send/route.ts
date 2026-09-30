@@ -5,7 +5,7 @@ import * as Sentry from '@sentry/nextjs'
 
 export async function POST(req: Request) {
   try {
-    const supabase = createServerClient()
+    const supabase = await createServerClient()
     const { data: { user }, error: userError } = await supabase.auth.getUser()
 
     // Solo accesible si hay sesión activa
