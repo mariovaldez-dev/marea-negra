@@ -24,7 +24,7 @@ function LoginForm() {
     setLoading(true)
 
     try {
-      const { error: authError } = await supabase.auth.signInWithPassword({
+      const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
         email,
         password,
       })
@@ -33,7 +33,23 @@ function LoginForm() {
         throw authError
       }
 
-      window.location.href = redirectTo
+      // Si viene un parámetro redirectTo explícito que no sea el dashboard por defecto
+      if (searchParams.get('redirectTo')) {
+        window.location.href = searchParams.get('redirectTo')!
+        return
+      }
+
+      // Obtener rol del usuario para redirigir a su estación de trabajo
+      const userRole = authData.user?.user_metadata?.rol || 'admin'
+      if (userRole === 'cajero') {
+        window.location.href = '/admin/caja'
+      } else if (userRole === 'mesero') {
+        window.location.href = '/admin/mesas'
+      } else if (userRole === 'cocina') {
+        window.location.href = '/admin/pantalla'
+      } else {
+        window.location.href = '/admin/dashboard'
+      }
     } catch (err: any) {
       setError(err.message || 'Credenciales inválidas. Verifica tu correo y contraseña.')
     } finally {

@@ -1,130 +1,141 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
-import {
-  ThermalTicketData,
-  generateThermalTicketCanvas,
-  getThermalTicketBlob,
-} from '@/lib/utils/generateThermalTicketImage'
+import React, { useState } from 'react'
+import { Pedido } from '@/lib/types/database'
+import { printOrderTicket } from '@/lib/utils/printThermalTicket'
 import { useWhatsAppSupport } from '@/lib/hooks/useWhatsAppSupport'
 import {
   Receipt,
-  Download,
+  Printer,
   Copy,
-  Share2,
   Check,
   MessageCircle,
   X,
   Sparkles,
-  Printer,
-  Loader2,
   ExternalLink,
 } from 'lucide-react'
 
 interface PosThermalTicketModalProps {
   isOpen: boolean
   onClose: () => void
-  data: ThermalTicketData
+  pedido: Pedido
 }
 
-export function PosThermalTicketModal({ isOpen, onClose, data }: PosThermalTicketModalProps) {
+function parseItemTicketNotes(rawNote?: string | null) {
+  if (!rawNote) return { exclusions: [], customNote: '' }
+  let workingNote = rawNote
+  const exclusions: string[] = []
+
+  const sinMatch = workingNote.match(/SIN:\s*([^·]+)/i)
+  if (sinMatch) {
+    sinMatch[1].split(',').forEach((s) => {
+      const trimmed = s.trim()
+      if (trimmed) exclusions.push(trimmed)
+    })
+    workingNote = workingNote.replace(/SIN:\s*[^·]+/i, '')
+  }
+
+  workingNote = workingNote.replace(/Picor:\s*[^·]+/i, '')
+  const cleanNote = workingNote.replace(/[·,]/g, ' ').replace(/\s+/g, ' ').trim()
+  return { exclusions, customNote: cleanNote }
+}
+
+function parseTicketGeneralNotes(rawNotes?: string | null) {
+  if (!rawNotes) return { coupon: null, customerNote: null }
+  let working = rawNotes
+  let coupon: string | null = null
+
+  const couponMatch = working.match(/\[Cupón:\s*([^\]]+)\]/i)
+  if (couponMatch) {
+    coupon = couponMatch[1].trim()
+    working = working.replace(/\[Cupón:\s*[^\]]+\]/i, '')
+  }
+
+  const customerNote = working.trim() || null
+  return { coupon, customerNote }
+}
+
+export function PosThermalTicketModal({ isOpen, onClose, pedido }: PosThermalTicketModalProps) {
   const { openWhatsApp } = useWhatsAppSupport()
-  const [ticketImageUrl, setTicketImageUrl] = useState<string | null>(null)
-  const [copiedImage, setCopiedImage] = useState(false)
-  const [downloaded, setDownloaded] = useState(false)
-  const [sharing, setSharing] = useState(false)
+  const [copiedText, setCopiedText] = useState(false)
 
-  useEffect(() => {
-    if (isOpen) {
-      const canvas = generateThermalTicketCanvas(data)
-      const url = canvas.toDataURL('image/png')
-      setTicketImageUrl(url)
-      setCopiedImage(false)
-      setDownloaded(false)
-    } else {
-      setTicketImageUrl(null)
-    }
-  }, [isOpen, data])
+  if (!isOpen || !pedido) return null
 
-  if (!isOpen || !ticketImageUrl) return null
+  const items = pedido.pedido_items || []
+  const subtotal = Number(pedido.total || 0)
+  const propina10 = (subtotal * 0.1).toFixed(0)
+  const propina15 = (subtotal * 0.15).toFixed(0)
 
-  // 1. COPIAR IMAGEN AL PORTAPAPELES PARA PEGAR EN WHATSAPP WEB
-  const handleCopiarImagen = async () => {
+  const fechaFormateada = new Date(pedido.created_at || Date.now()).toLocaleString('es-MX', {
+    dateStyle: 'short',
+    timeStyle: 'short',
+  })
+
+  const { coupon, customerNote } = parseTicketGeneralNotes(pedido.notas)
+
+  const servicioLabel = (pedido.mesa_nombre || pedido.tipo_entrega === 'mesa')
+    ? `🍽️ COMEDOR · ${pedido.mesa_nombre || 'MESA'}`
+    : pedido.tipo_entrega === 'didi'
+    ? '🛵 ENVÍO DIDI / UBER'
+    : '🚗 RECOGER EN LOCAL'
+
+  // 1. IMPRIMIR / PDF
+  const handleImprimir = () => {
+    printOrderTicket(pedido, 'cuenta_cliente')
+  }
+
+  // 2. COPIAR TEXTO FORMATEADO PARA WHATSAPP
+  const handleCopiarTexto = async () => {
+    const origin = typeof window !== 'undefined' ? window.location.origin : 'https://marea-negra.com'
+    const linkRastreo = `${origin}/pedido/${pedido.id}`
+
+    let itemsText = ''
+    items.forEach((item) => {
+      itemsText += `• ${item.cantidad}x *${item.nombre_platillo}* ($${((item.precio_unitario || 0) * item.cantidad).toFixed(0)})\n`
+    })
+
+    const msg = `🌊 *MAREA NEGRA - TICKET DE COMPRA* 🧾
+*FOLIO #${pedido.id}* · ${fechaFormateada}
+Cliente: *${pedido.cliente_nombre}*
+Servicio: ${servicioLabel}
+
+*DETALLE:*
+${itemsText}
+💰 *TOTAL:* $${subtotal.toFixed(0)} MXN
+💳 *PAGO:* ${(pedido.metodo_pago || 'Efectivo').toUpperCase()}
+
+👇 *Ver Ticket Digital en HD:*
+${linkRastreo}
+
+¡Muchas gracias por su preferencia! 🦐🌶️`
+
     try {
-      const blob = await getThermalTicketBlob(data)
-      if (blob && navigator.clipboard && (window as any).ClipboardItem) {
-        await navigator.clipboard.write([
-          new (window as any).ClipboardItem({
-            'image/png': blob,
-          }),
-        ])
-        setCopiedImage(true)
-        setTimeout(() => setCopiedImage(false), 3000)
-      } else {
-        // Fallback: descargar
-        handleDescargarPng()
-      }
-    } catch (err) {
-      console.warn('Clipboard image copy fallback:', err)
-      handleDescargarPng()
+      await navigator.clipboard.writeText(msg)
+      setCopiedText(true)
+      setTimeout(() => setCopiedText(false), 3000)
+    } catch {
+      handleEnviarWhatsApp()
     }
   }
 
-  // 2. DESCARGAR IMAGEN PNG
-  const handleDescargarPng = () => {
-    const link = document.createElement('a')
-    link.download = `ticket_pos_marea_negra_${data.folio}.png`
-    link.href = ticketImageUrl
-    link.click()
-    setDownloaded(true)
-    setTimeout(() => setDownloaded(false), 3000)
-  }
-
-  // 3. COMPARTIR ARCHIVO POR WHATSAPP EN MÓVIL
-  const handleCompartirMovil = async () => {
-    setSharing(true)
-    try {
-      const blob = await getThermalTicketBlob(data)
-      if (blob && navigator.share && navigator.canShare) {
-        const file = new File([blob], `ticket_${data.folio}.png`, { type: 'image/png' })
-        if (navigator.canShare({ files: [file] })) {
-          await navigator.share({
-            title: `Ticket Marea Negra #${data.folio}`,
-            text: `¡Hola ${data.clienteNombre}! Adjuntamos tu ticket de compra de Marea Negra - Aguachiles 🦐`,
-            files: [file],
-          })
-        } else {
-          handleCompartirTextoWhatsApp()
-        }
-      } else {
-        handleCompartirTextoWhatsApp()
-      }
-    } catch (err) {
-      console.warn('Share error:', err)
-      handleCompartirTextoWhatsApp()
-    } finally {
-      setSharing(false)
-    }
-  }
-
-  // 4. COMPARTIR TEXTO + LINK POR WHATSAPP
-  const handleCompartirTextoWhatsApp = () => {
-    const cleanPhone = (data.clienteTelefono || '').replace(/\D/g, '')
+  // 3. ENVIAR DIRECTO A WHATSAPP DEL CLIENTE
+  const handleEnviarWhatsApp = () => {
+    const cleanPhone = (pedido.cliente_telefono || '').replace(/\D/g, '')
     const targetPhone = cleanPhone.startsWith('52') ? cleanPhone : cleanPhone ? `52${cleanPhone}` : ''
 
     const origin = typeof window !== 'undefined' ? window.location.origin : 'https://marea-negra.com'
-    const linkRastreo = `${origin}/pedido/${data.folio}`
+    const linkRastreo = `${origin}/pedido/${pedido.id}`
 
-    const msg = `🌊 *MAREA NEGRA - COMPROBANTE DE COMPRA* 🧾🦐
-¡Hola *${data.clienteNombre}*, tu pedido *#${data.folio}* ha sido entregado con éxito!
+    const msg = `🌊 *MAREA NEGRA - COMPROBANTE DE COMPRA* 🧾
+¡Hola *${pedido.cliente_nombre}*! Tu pedido *Folio #${pedido.id}* está listo.
 
-💰 *Total Pagado:* $${data.total.toFixed(0)} MXN
-💳 *Método:* ${(data.metodoPago || 'Efectivo').toUpperCase()} ✓
+💰 *Total a Cobrar:* $${subtotal.toFixed(0)} MXN
+💳 *Método de Pago:* ${(pedido.metodo_pago || 'Efectivo').toUpperCase()}
 
-👇 *Puedes ver y descargar tu Ticket Digital en HD aquí:*
+👇 *Puedes consultar tu comprobante digital aquí:*
 ${linkRastreo}
 
-¡Muchas gracias por tu preferencia, que lo disfrutes compa! 🌶️🍻`
+¡Muchas gracias por tu preferencia! 🦐🍻`
 
     if (targetPhone) {
       window.open(`https://wa.me/${targetPhone}?text=${encodeURIComponent(msg)}`, '_blank')
@@ -135,7 +146,7 @@ ${linkRastreo}
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/85 animate-in fade-in duration-200 backdrop-blur-sm">
-      <div className="bg-[#111111] border border-oro/30 rounded-3xl p-5 sm:p-7 max-w-lg w-full shadow-2xl relative gold-border-corner flex flex-col gap-4 max-h-[92vh] overflow-y-auto">
+      <div className="bg-[#111111] border border-oro/30 rounded-3xl p-5 sm:p-6 max-w-lg w-full shadow-2xl relative gold-border-corner flex flex-col gap-4 max-h-[92vh] overflow-y-auto">
         <button
           onClick={onClose}
           className="absolute top-4 right-4 p-2 text-arena/60 hover:text-coral rounded-full hover:bg-carbon transition-colors"
@@ -151,81 +162,157 @@ ${linkRastreo}
           <div>
             <span className="text-[10px] font-sans font-bold text-oro uppercase tracking-widest flex items-center gap-1">
               <Sparkles className="w-3 h-3" />
-              <span>IMAGEN DE TICKET REAL (80MM)</span>
+              <span>COMPROBANTE OFICIAL (80MM / PDF)</span>
             </span>
             <h3 className="font-display text-2xl text-blanco tracking-wide">
-              TICKET TÉRMICO POS
+              TICKET DE PEDIDO #{pedido.id}
             </h3>
           </div>
         </div>
 
-        {/* Vista previa del ticket térmico en proporciones reales */}
-        <div className="flex justify-center p-3 bg-[#0A0A0A] rounded-2xl border border-arena/10 overflow-hidden shadow-inner max-h-[380px] overflow-y-auto">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={ticketImageUrl}
-            alt={`Ticket térmico #${data.folio}`}
-            className="w-full max-w-[280px] shadow-2xl rounded-sm border border-neutral-300"
-          />
+        {/* VISTA PREVIA LIMPIA DEL TICKET TÉRMICO REAL (BLANCO Y NEGRO) */}
+        <div className="flex justify-center p-3 bg-[#0A0A0A] rounded-2xl border border-arena/10 max-h-[380px] overflow-y-auto shadow-inner">
+          <div className="bg-white text-black p-4 rounded-xl border border-gray-300 font-sans text-xs shadow-lg flex flex-col gap-2.5 leading-tight max-w-[320px] w-full">
+            {/* Header branding */}
+            <div className="text-center pb-2 border-b-2 border-black flex flex-col items-center">
+              <span className="font-display text-xl font-black tracking-wider uppercase text-black leading-none">
+                MAREA NEGRA
+              </span>
+              <span className="text-[9px] font-bold tracking-widest uppercase text-gray-700 mt-0.5">
+                AGUACHILES & COCTELES
+              </span>
+              <span className="text-[8.5px] text-gray-500">
+                Sinaloa, México · Cocina de Mariscos
+              </span>
+              <div className="w-full bg-black text-white text-center font-bold text-[10.5px] py-1 px-2 rounded mt-1.5 uppercase">
+                {servicioLabel}
+              </div>
+            </div>
+
+            {/* Meta */}
+            <div className="flex flex-col gap-0.5 pb-1.5 border-b border-dashed border-gray-400 text-[10.5px]">
+              <div className="flex justify-between font-bold">
+                <span>FOLIO #{pedido.id}</span>
+                <span className="text-gray-600 font-normal">{fechaFormateada}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-600">Cliente:</span>
+                <span className="font-bold uppercase truncate max-w-[160px]">{pedido.cliente_nombre}</span>
+              </div>
+              {pedido.cliente_telefono && (
+                <div className="flex justify-between text-gray-600">
+                  <span>Teléfono:</span>
+                  <span className="font-mono">{pedido.cliente_telefono}</span>
+                </div>
+              )}
+            </div>
+
+            {/* Items table */}
+            <div className="flex flex-col gap-1.5 pb-2 border-b-2 border-black">
+              <div className="flex justify-between font-bold text-[9.5px] uppercase tracking-wider border-b border-black pb-0.5 text-gray-800">
+                <span>CANT  PLATILLO</span>
+                <span>IMPORTE</span>
+              </div>
+
+              {items.map((item, idx) => {
+                const { exclusions, customNote: itemNote } = parseItemTicketNotes(item.notas_item)
+
+                return (
+                  <div key={idx} className="flex flex-col gap-0.5 text-[11px]">
+                    <div className="flex justify-between items-start font-bold text-black">
+                      <span className="pr-1 truncate">
+                        <span className="font-mono mr-1">{item.cantidad}x</span>
+                        {item.nombre_platillo}
+                      </span>
+                      <span className="font-mono shrink-0">
+                        ${((item.precio_unitario || 0) * (item.cantidad || 1)).toFixed(0)}
+                      </span>
+                    </div>
+
+                    {item.nivel_picor && (
+                      <div className="pl-4 text-[9.5px] text-gray-600">• Picor: <strong>{item.nivel_picor}</strong></div>
+                    )}
+                    {exclusions.map((excl, i) => (
+                      <div key={i} className="pl-4 text-[9.5px] font-bold text-black">• ✕ SIN: {excl.toUpperCase()}</div>
+                    ))}
+                    {itemNote && (
+                      <div className="pl-4 text-[9.5px] italic text-gray-600">• Nota: {itemNote}</div>
+                    )}
+                  </div>
+                )
+              })}
+            </div>
+
+            {/* Notas cliente */}
+            {customerNote && (
+              <div className="border border-black rounded p-1.5 text-[10px] bg-gray-50">
+                <strong className="block text-[8.5px] uppercase tracking-wider text-black">
+                  INSTRUCCIONES:
+                </strong>
+                <span>{customerNote}</span>
+              </div>
+            )}
+
+            {/* Totales */}
+            <div className="flex flex-col gap-0.5 pt-0.5 pb-1 border-b border-dashed border-gray-400 text-[10.5px]">
+              <div className="flex justify-between items-baseline font-black text-sm pt-0.5">
+                <span>TOTAL:</span>
+                <span className="font-mono text-base">${subtotal.toFixed(0)} MXN</span>
+              </div>
+              <div className="flex justify-between text-[9.5px] text-gray-600">
+                <span>Pago:</span>
+                <span className="font-bold uppercase">{pedido.metodo_pago || 'Efectivo'}</span>
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="text-center text-[8.5px] text-gray-500 pt-0.5">
+              ¡Muchas gracias por su preferencia! · Marea Negra
+            </div>
+          </div>
         </div>
 
-        {/* Acciones de Envío y Copiado para WhatsApp */}
+        {/* Acciones principales */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1">
-          {/* Botón Copiar Imagen */}
+          {/* Botón Imprimir / PDF */}
           <button
             type="button"
-            onClick={handleCopiarImagen}
-            className="bg-carbon hover:bg-black text-arena hover:text-blanco border border-arena/20 hover:border-turquesa text-xs font-sans font-bold py-3.5 px-4 rounded-xl transition-all flex items-center justify-center gap-2 shadow-md"
+            onClick={handleImprimir}
+            className="bg-coral hover:bg-coral/90 text-blanco font-sans font-bold text-xs py-3.5 px-4 rounded-xl transition-all flex items-center justify-center gap-2 shadow-md cursor-pointer"
           >
-            {copiedImage ? (
-              <>
-                <Check className="w-4 h-4 text-emerald-400 stroke-[3]" />
-                <span className="text-emerald-400">¡IMAGEN COPIADA!</span>
-              </>
-            ) : (
-              <>
-                <Copy className="w-4 h-4 text-turquesa" />
-                <span>COPIAR IMAGEN (PEGAR EN WA)</span>
-              </>
-            )}
+            <Printer className="w-4 h-4" />
+            <span>IMPRIMIR / PDF (80MM)</span>
           </button>
 
-          {/* Botón Descargar PNG */}
+          {/* Botón Copiar Texto */}
           <button
             type="button"
-            onClick={handleDescargarPng}
-            className="bg-carbon hover:bg-black text-arena hover:text-blanco border border-arena/20 hover:border-oro text-xs font-sans font-bold py-3.5 px-4 rounded-xl transition-all flex items-center justify-center gap-2 shadow-md"
+            onClick={handleCopiarTexto}
+            className="bg-carbon hover:bg-black text-arena hover:text-blanco border border-arena/20 hover:border-oro text-xs font-sans font-bold py-3.5 px-4 rounded-xl transition-all flex items-center justify-center gap-2 shadow-md cursor-pointer"
           >
-            {downloaded ? (
+            {copiedText ? (
               <>
                 <Check className="w-4 h-4 text-emerald-400 stroke-[3]" />
-                <span className="text-emerald-400">¡DESCARGADO!</span>
+                <span className="text-emerald-400">¡COPIADO AL PORTAPAPELES!</span>
               </>
             ) : (
               <>
-                <Download className="w-4 h-4 text-oro" />
-                <span>DESCARGAR PNG</span>
+                <Copy className="w-4 h-4 text-oro" />
+                <span>COPIAR TEXTO WHATSAPP</span>
               </>
             )}
           </button>
         </div>
 
-        {/* Botón Principal: Compartir por WhatsApp Móvil o Enviar Link */}
+        {/* Botón WhatsApp */}
         <button
           type="button"
-          onClick={handleCompartirMovil}
-          disabled={sharing}
-          className="w-full bg-[#25D366] hover:bg-[#1EBE5D] text-white font-sans font-bold text-xs tracking-wider py-4 rounded-xl shadow-lg hover:scale-[1.01] active:scale-[0.98] transition-all flex items-center justify-center gap-2"
+          onClick={handleEnviarWhatsApp}
+          className="w-full bg-[#25D366] hover:bg-[#1EBE5D] text-white font-sans font-bold text-xs tracking-wider py-4 rounded-xl shadow-lg hover:scale-[1.01] active:scale-[0.98] transition-all flex items-center justify-center gap-2 cursor-pointer"
         >
-          {sharing ? (
-            <Loader2 className="w-4 h-4 animate-spin" />
-          ) : (
-            <>
-              <MessageCircle className="w-4 h-4 fill-current" />
-              <span>ENVIAR TICKET POR WHATSAPP AL CLIENTE</span>
-              <ExternalLink className="w-4 h-4" />
-            </>
-          )}
+          <MessageCircle className="w-4 h-4 fill-current" />
+          <span>ENVIAR TICKET POR WHATSAPP AL CLIENTE</span>
+          <ExternalLink className="w-4 h-4" />
         </button>
       </div>
     </div>

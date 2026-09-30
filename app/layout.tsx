@@ -136,7 +136,7 @@ export default function RootLayout({
           }}
         />
       </head>
-      <body className="bg-[#F4F0E8] text-negro dark:bg-negro dark:text-blanco min-h-screen antialiased selection:bg-coral selection:text-blanco transition-colors duration-300">
+      <body className="bg-[#F5F5F5] text-[#171717] dark:bg-negro dark:text-blanco min-h-screen antialiased selection:bg-coral selection:text-blanco transition-colors duration-300">
         <CustomCursor />
         <ThemeProvider>{children}</ThemeProvider>
       </body>

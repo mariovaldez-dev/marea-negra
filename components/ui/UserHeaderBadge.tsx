@@ -55,7 +55,7 @@ export function UserHeaderBadge() {
   // Prevenir desajuste de hidratación (hydration mismatch) entre SSR y Cliente
   if (!mounted) {
     return (
-      <div className="h-9 w-32 bg-arena/10 rounded-full animate-pulse shrink-0" />
+      <div className="h-9 w-32 bg-black/5 dark:bg-white/10 rounded-full animate-pulse shrink-0" />
     )
   }
 
@@ -76,7 +76,7 @@ export function UserHeaderBadge() {
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className="bg-[#F4F0E8] dark:bg-carbon border border-arena/30 dark:border-arena/20 hover:border-turquesa text-negro dark:text-blanco text-xs font-sans font-bold px-3 py-1.5 rounded-full flex items-center gap-2 transition-all shadow-sm"
+        className="bg-white dark:bg-[#111111] border border-black/10 dark:border-white/10 hover:border-turquesa text-negro dark:text-blanco text-xs font-sans font-bold px-3 py-1.5 rounded-full flex items-center gap-2 transition-all shadow-sm"
       >
         <div className="w-5 h-5 rounded-full bg-turquesa text-negro flex items-center justify-center font-bold text-[10px]">
           {userName.charAt(0).toUpperCase()}
@@ -91,16 +91,16 @@ export function UserHeaderBadge() {
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 mt-2 w-56 bg-white dark:bg-[#0C0806] border border-arena/30 dark:border-oro/30 rounded-2xl p-3 shadow-2xl z-50 flex flex-col gap-2 animate-in fade-in zoom-in-95 duration-150">
-          <div className="flex flex-col border-b border-arena/20 dark:border-arena/10 pb-2 px-1">
-            <span className="text-[10px] font-sans uppercase font-bold text-turquesa tracking-wider">Socio Club Marea Negra</span>
+        <div className="absolute right-0 mt-2 w-56 bg-white dark:bg-[#111111] border border-black/10 dark:border-white/10 rounded-2xl p-3 shadow-2xl z-50 flex flex-col gap-2 animate-in fade-in zoom-in-95 duration-150">
+          <div className="flex flex-col border-b border-black/5 dark:border-white/5 pb-2 px-1">
+            <span className="text-[10px] font-mono uppercase font-bold text-turquesa tracking-wider">Socio Club Marea Negra</span>
             <span className="text-xs font-sans font-bold text-negro dark:text-blanco">{userName}</span>
           </div>
 
           <Link
             href="/micuenta"
             onClick={() => setIsOpen(false)}
-            className="flex items-center gap-2 text-xs font-sans font-semibold text-negro/80 dark:text-arena/90 hover:text-turquesa p-2 rounded-xl hover:bg-[#F4F0E8] dark:hover:bg-carbon transition-colors"
+            className="flex items-center gap-2 text-xs font-sans font-semibold text-negro/80 dark:text-arena/90 hover:text-turquesa p-2 rounded-xl hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
           >
             <User className="w-4 h-4 text-turquesa" />
             <span>Mi Perfil & Pedidos</span>

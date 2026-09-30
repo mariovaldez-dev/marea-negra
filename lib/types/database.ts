@@ -1,4 +1,4 @@
-export type UserRole = 'admin' | 'empleado'
+export type UserRole = 'admin' | 'cajero' | 'mesero' | 'cocina' | 'empleado'
 
 export type EstadoPedido = 'nuevo' | 'preparando' | 'listo' | 'entregado' | 'cancelado'
 
@@ -19,8 +19,13 @@ export type CategoriaGasto = 'insumos_urgentes' | 'proveedores' | 'servicios' | 
 export interface Profile {
   id: string
   nombre: string | null
+  email?: string | null
   rol: UserRole
-  created_at: string
+  pin?: string | null
+  telefono?: string | null
+  activo?: boolean
+  puesto?: string | null
+  created_at?: string
 }
 
 export interface Categoria {
@@ -65,6 +70,9 @@ export interface Pedido {
   tipo_entrega?: TipoEntrega
   mesa_id?: number | null
   mesa_nombre?: string | null
+  mesero_id?: string | null
+  mesero_nombre?: string | null
+  cobrado_por?: string | null
   hora_recogida: string | null
   subtotal?: number | null
   descuento?: number | null
@@ -75,6 +83,7 @@ export interface Pedido {
   created_at: string
   pedido_items?: PedidoItem[]
 }
+
 
 export interface Mesa {
   id: number
@@ -139,13 +148,21 @@ export interface MovimientoInventario {
   profile?: Profile
 }
 
+export type EstadoCaja = 'abierta' | 'cerrada'
+
 export interface CierreCaja {
   id: number
   fecha: string
+  estado?: EstadoCaja
+  hora_apertura?: string | null
+  hora_cierre?: string | null
+  abierto_por?: string | null
+  fondo_inicial?: number | null
+  monto_apertura_desglose?: DesgloseBilletes | null
+  notas_apertura?: string | null
   total_efectivo: number
   total_transferencia: number
   total_oxxo: number
-  fondo_inicial?: number | null
   total_gastos?: number | null
   desglose_billetes?: DesgloseBilletes | null
   total_sistema: number
@@ -156,6 +173,7 @@ export interface CierreCaja {
   created_at: string
   profile?: Profile
 }
+
 
 export interface CartItem {
   platillo: Platillo
@@ -168,6 +186,7 @@ export interface ConfiguredCartItem {
   cantidad: number
   nivelPicor: NivelPicor
   notasItem: string
+  sinIngredientes?: string[]
 }
 
 export interface PlatilloIngrediente {
@@ -179,3 +198,36 @@ export interface PlatilloIngrediente {
   platillo?: Platillo
   insumo?: Insumo
 }
+
+export interface DatosSucursal {
+  nombre_sucursal: string
+  slogan: string
+  telefono_whatsapp: string
+  telefono_fijo?: string
+  direccion: string
+  colonia?: string
+  ciudad: string
+  google_maps_url?: string
+  radio_cobertura_km?: number
+  costo_envio_base?: number
+  wifi_red?: string
+  wifi_password?: string
+  rfc?: string
+}
+
+export const DEFAULT_SUCURSAL: DatosSucursal = {
+  nombre_sucursal: 'Marea Negra',
+  slogan: 'Aguachiles & Cocteles · Sinaloa Mar & Tierra',
+  telefono_whatsapp: '6676820396',
+  telefono_fijo: '6676820396',
+  direccion: 'Av. del Mar #1200, Fracc. Tellerías',
+  colonia: 'Tellerías',
+  ciudad: 'Culiacán, Sinaloa, México',
+  google_maps_url: 'https://maps.google.com/?q=Marea+Negra+Aguachiles+Mazatlan',
+  radio_cobertura_km: 10,
+  costo_envio_base: 40,
+  wifi_red: 'MareaNegra_Invitados',
+  wifi_password: 'AguachileNegro2026',
+  rfc: 'MNE240101XYZ',
+}
+

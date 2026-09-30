@@ -36,29 +36,38 @@ export function ListRow({
   const displayValor = valor !== undefined ? valor : value
   const displaySubtexto = subtexto || subtitle || valueSubtitle
 
+  const getBadgeClass = (status: string) => {
+    switch (status) {
+      case 'disponible':
+      case 'listo':
+      case 'entregado':
+        return 'bg-[#16A34B] text-white shadow-sm'
+      case 'agotado':
+      case 'nuevo':
+        return 'bg-coral text-white shadow-sm'
+      case 'preparando':
+      case 'promo':
+        return 'bg-[#ECC94B] text-[#3A2D00] shadow-sm'
+      default:
+        return 'bg-turquesa text-black shadow-sm'
+    }
+  }
+
   return (
-    <div className="bg-white dark:bg-carbon border border-arena/30 dark:border-arena/10 rounded-2xl p-4 md:p-5 transition-all hover:border-turquesa/40 flex flex-col gap-3 shadow-md max-w-full min-w-0 overflow-hidden">
+    <div className="bg-white dark:bg-[#141414] border border-black/10 dark:border-white/10 rounded-[24px] p-4 sm:p-5 transition-all hover:border-turquesa/50 flex flex-col gap-3 shadow-sm hover:shadow-md max-w-full min-w-0 overflow-hidden">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 min-w-0">
         <div className="flex items-center gap-3 min-w-0 flex-1 overflow-hidden">
           <div className="flex flex-col min-w-0 flex-1 overflow-hidden">
             <div className="flex items-center gap-2 flex-wrap min-w-0">
-              <h4 className="font-sans font-bold text-base md:text-lg text-negro dark:text-blanco truncate max-w-full">
+              <h4 className="font-sans font-bold text-base md:text-lg text-black dark:text-white truncate max-w-full">
                 {displayNombre}
               </h4>
 
               {badgeText && (
                 <span
-                  className={`text-[10px] md:text-xs font-sans font-bold uppercase px-2.5 py-0.5 rounded-full border shrink-0 ${
-                    displayBadgeStatus === 'disponible' ||
-                    displayBadgeStatus === 'listo' ||
-                    displayBadgeStatus === 'entregado'
-                      ? 'bg-turquesa/10 text-turquesa border-turquesa/30'
-                      : displayBadgeStatus === 'agotado' ||
-                        displayBadgeStatus === 'nuevo' ||
-                        displayBadgeStatus === 'preparando'
-                      ? 'bg-coral/10 text-coral border-coral/30'
-                      : 'bg-arena/10 text-arena border-arena/30'
-                  }`}
+                  className={`text-[10px] md:text-[11px] font-sans font-bold uppercase px-3 py-0.5 rounded-full shrink-0 ${getBadgeClass(
+                    displayBadgeStatus
+                  )}`}
                 >
                   {badgeText}
                 </span>
@@ -66,16 +75,16 @@ export function ListRow({
             </div>
 
             {displaySubtexto && (
-              <span className="font-sans text-xs md:text-sm text-negro/80 dark:text-arena mt-0.5 break-words">
+              <span className="font-sans text-xs md:text-sm text-black/60 dark:text-white/60 mt-0.5 break-words">
                 {displaySubtexto}
               </span>
             )}
           </div>
         </div>
 
-        <div className="flex items-center justify-between md:justify-end gap-3 pt-2 md:pt-0 border-t md:border-t-0 border-arena/10 shrink-0">
+        <div className="flex items-center justify-between md:justify-end gap-3 pt-2 md:pt-0 border-t md:border-t-0 border-black/5 dark:border-white/5 shrink-0">
           {displayValor !== undefined && (
-            <span className="font-display text-xl md:text-2xl text-coral tracking-wide font-bold">
+            <span className="font-display text-2xl md:text-3xl text-coral tracking-wide font-bold">
               {displayValor}
             </span>
           )}
@@ -84,7 +93,11 @@ export function ListRow({
         </div>
       </div>
 
-      {footer && <div className="pt-2.5 border-t border-arena/10 break-words">{footer}</div>}
+      {footer && (
+        <div className="pt-2.5 border-t border-black/5 dark:border-white/5 break-words">
+          {footer}
+        </div>
+      )}
     </div>
   )
 }

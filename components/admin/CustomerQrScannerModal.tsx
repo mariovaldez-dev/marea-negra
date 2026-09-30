@@ -72,12 +72,9 @@ export function CustomerQrScannerModal({
             aspectRatio: 1.0,
           },
           async (decodedText) => {
-            // QR detectado con éxito
             await handleQrFound(decodedText)
           },
-          () => {
-            // Frame sin QR (ignorar)
-          }
+          () => {}
         )
         isRunningRef.current = true
       } catch (err: any) {
@@ -87,7 +84,6 @@ export function CustomerQrScannerModal({
       }
     }
 
-    // Delay breve para asegurar que el div del DOM esté montado
     const timeout = setTimeout(() => {
       startScanner()
     }, 200)
@@ -121,7 +117,7 @@ export function CustomerQrScannerModal({
         setCliente(res.cliente)
         if (onCustomerSelected) onCustomerSelected(res.cliente)
       } else {
-        setErrorMsg(res.error || 'Código no reconocido.')
+        setErrorMsg(res.error || 'Código QR no reconocido.')
       }
     } catch (err: any) {
       setErrorMsg('Error al consultar datos del socio.')
@@ -223,26 +219,27 @@ export function CustomerQrScannerModal({
   const sellosActuales = cliente ? (cliente.pedidosEntregados || 0) % pedidosReq : 0
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/85 flex items-center justify-center p-4">
-      <div className="bg-[#050404] bg-dots-pattern border-2 border-oro/40 rounded-3xl w-full max-w-lg p-6 gold-border-corner shadow-2xl relative text-blanco flex flex-col gap-5 max-h-[92vh] overflow-y-auto">
+    <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200">
+      <div className="bg-white dark:bg-[#111111] border border-black/10 dark:border-white/10 rounded-[32px] w-full max-w-lg p-6 sm:p-7 shadow-2xl relative text-negro dark:text-blanco flex flex-col gap-5 max-h-[92vh] overflow-y-auto">
         <button
+          type="button"
           onClick={() => {
             stopScanner()
             onClose()
           }}
-          className="absolute top-4 right-4 p-2 text-arena/60 hover:text-blanco rounded-full hover:bg-carbon border border-arena/20 z-20"
+          className="absolute top-5 right-5 p-2 text-negro/40 dark:text-arena/50 hover:text-negro dark:hover:text-blanco rounded-full hover:bg-black/5 dark:hover:bg-white/10 transition-colors z-20"
         >
           <X className="w-5 h-5" />
         </button>
 
         {/* Encabezado */}
         <div>
-          <div className="flex items-center gap-2 text-turquesa font-mono text-xs uppercase tracking-widest font-bold">
-            <Camera className="w-4 h-4" />
-            <span>IDENTIFICACIÓN DE SOCIO</span>
+          <div className="flex items-center gap-1.5 text-turquesa font-mono text-[10px] uppercase tracking-wider font-bold">
+            <Camera className="w-3.5 h-3.5" />
+            <span>Identificación de Socio</span>
           </div>
-          <h2 className="font-display text-3xl text-blanco mt-1">
-            ESCANEAR QR DE SOCIO
+          <h2 className="font-sans font-black text-2xl text-negro dark:text-blanco tracking-tight mt-0.5">
+            Escanear QR de Socio
           </h2>
         </div>
 
@@ -250,21 +247,21 @@ export function CustomerQrScannerModal({
         {!cliente && (
           <div className="flex flex-col gap-4">
             {/* TABS: CÁMARA vs MANUAL */}
-            <div className="grid grid-cols-2 gap-2 bg-carbon p-1.5 rounded-2xl border border-arena/15">
+            <div className="grid grid-cols-2 gap-1.5 bg-black/5 dark:bg-white/5 p-1 rounded-full border border-black/5 dark:border-white/5">
               <button
                 type="button"
                 onClick={() => {
                   setErrorMsg(null)
                   setActiveTab('camara')
                 }}
-                className={`py-2 px-3 rounded-xl text-xs font-sans font-bold transition-all flex items-center justify-center gap-1.5 ${
+                className={`py-2 px-3 rounded-full text-xs font-sans font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
                   activeTab === 'camara'
-                    ? 'bg-turquesa text-negro shadow-md'
-                    : 'text-arena/70 hover:text-blanco'
+                    ? 'bg-white dark:bg-[#222222] text-negro dark:text-blanco shadow-sm'
+                    : 'text-negro/60 dark:text-arena/60 hover:text-negro dark:hover:text-blanco'
                 }`}
               >
-                <Camera className="w-3.5 h-3.5" />
-                <span>CÁMARA EN VIVO</span>
+                <Camera className="w-3.5 h-3.5 text-turquesa" />
+                <span>Cámara en Vivo</span>
               </button>
 
               <button
@@ -274,21 +271,21 @@ export function CustomerQrScannerModal({
                   setErrorMsg(null)
                   setActiveTab('manual')
                 }}
-                className={`py-2 px-3 rounded-xl text-xs font-sans font-bold transition-all flex items-center justify-center gap-1.5 ${
+                className={`py-2 px-3 rounded-full text-xs font-sans font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
                   activeTab === 'manual'
-                    ? 'bg-oro text-negro shadow-md'
-                    : 'text-arena/70 hover:text-blanco'
+                    ? 'bg-white dark:bg-[#222222] text-negro dark:text-blanco shadow-sm'
+                    : 'text-negro/60 dark:text-arena/60 hover:text-negro dark:hover:text-blanco'
                 }`}
               >
-                <Search className="w-3.5 h-3.5" />
-                <span>BÚSQUEDA MANUAL</span>
+                <Search className="w-3.5 h-3.5 text-oro" />
+                <span>Búsqueda Manual</span>
               </button>
             </div>
 
             {/* VISTA 1: CÁMARA EN VIVO */}
             {activeTab === 'camara' && (
               <div className="flex flex-col items-center gap-3">
-                <div className="relative w-full aspect-square max-w-[300px] bg-black rounded-3xl overflow-hidden border-2 border-turquesa/40 shadow-inner flex items-center justify-center">
+                <div className="relative w-full aspect-square max-w-[280px] bg-black rounded-3xl overflow-hidden border-2 border-turquesa/40 shadow-inner flex items-center justify-center">
                   <div id="customer-qr-video-region" className="w-full h-full object-cover" />
 
                   {/* Marco decorativo de escaneo */}
@@ -297,15 +294,15 @@ export function CustomerQrScannerModal({
                   {loadingSearch && (
                     <div className="absolute inset-0 bg-black/80 flex flex-col items-center justify-center gap-2 z-10">
                       <Loader2 className="w-8 h-8 text-turquesa animate-spin" />
-                      <span className="text-xs font-sans font-bold text-blanco">
-                        CONSULTANDO SOCIO...
+                      <span className="text-xs font-sans font-bold text-white">
+                        Consultando socio...
                       </span>
                     </div>
                   )}
                 </div>
 
-                <p className="text-xs font-serif italic text-arena/70 text-center">
-                  Apunta la cámara al código QR de la tarjeta del cliente.
+                <p className="text-xs text-negro/50 dark:text-arena/60 text-center">
+                  Apunta la cámara al código QR del cliente para identificarlo.
                 </p>
               </div>
             )}
@@ -314,18 +311,18 @@ export function CustomerQrScannerModal({
             {activeTab === 'manual' && (
               <form onSubmit={handleManualSearch} className="flex flex-col gap-4">
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-xs font-sans text-arena uppercase font-bold">
+                  <label className="text-xs font-sans text-negro/70 dark:text-arena/70 font-bold">
                     Celular o N° de Socio del Cliente
                   </label>
                   <div className="relative">
-                    <Phone className="w-4 h-4 absolute left-3.5 top-3.5 text-arena/50" />
+                    <Phone className="w-4 h-4 absolute left-3.5 top-3.5 text-negro/40 dark:text-arena/50" />
                     <input
                       type="text"
                       required
-                      placeholder="Ej. 6671234567 o MN-8492-VIP"
+                      placeholder="Ej. 6671234567 o MN-VIP-001"
                       value={manualInput}
                       onChange={(e) => setManualInput(e.target.value)}
-                      className="bg-carbon border border-arena/20 rounded-xl pl-10 pr-4 py-3 text-base text-blanco w-full focus:border-oro focus:outline-none font-mono"
+                      className="bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-2xl pl-10 pr-4 py-3 text-sm text-negro dark:text-blanco w-full focus:outline-none focus:ring-2 focus:ring-turquesa font-mono"
                     />
                   </div>
                 </div>
@@ -333,17 +330,17 @@ export function CustomerQrScannerModal({
                 <button
                   type="submit"
                   disabled={loadingSearch}
-                  className="bg-oro text-negro hover:bg-blanco font-sans font-bold text-xs tracking-wider py-3.5 px-4 rounded-xl transition-all flex items-center justify-center gap-2 shadow-md"
+                  className="bg-coral hover:bg-coral/90 text-white font-sans font-bold text-xs tracking-wider py-3.5 px-4 rounded-2xl transition-all flex items-center justify-center gap-2 shadow-md active:scale-95 cursor-pointer"
                 >
                   {loadingSearch ? (
                     <>
                       <Loader2 className="w-4 h-4 animate-spin" />
-                      <span>BUSCANDO...</span>
+                      <span>Buscando...</span>
                     </>
                   ) : (
                     <>
                       <Search className="w-4 h-4" />
-                      <span>BUSCAR SOCIO CLUB</span>
+                      <span>Buscar Socio Club</span>
                     </>
                   )}
                 </button>
@@ -351,7 +348,7 @@ export function CustomerQrScannerModal({
             )}
 
             {errorMsg && (
-              <div className="bg-red-950/40 border border-red-800 text-red-300 text-xs p-3 rounded-xl text-center">
+              <div className="bg-red-500/10 border border-red-500/20 text-red-600 dark:text-red-400 text-xs p-3.5 rounded-2xl text-center">
                 {errorMsg}
               </div>
             )}
@@ -360,27 +357,27 @@ export function CustomerQrScannerModal({
 
         {/* CLIENTE DETECTADO Y RECONOCIDO CON ÉXITO */}
         {cliente && (
-          <div className="flex flex-col gap-5 animate-in fade-in zoom-in duration-300">
-            <div className="bg-[#111] border border-oro/40 rounded-2xl p-5 flex flex-col gap-4 shadow-xl">
+          <div className="flex flex-col gap-4 animate-in fade-in zoom-in-95 duration-200">
+            <div className="bg-black/[0.02] dark:bg-white/[0.02] border border-black/10 dark:border-white/10 rounded-2xl p-5 flex flex-col gap-4 shadow-sm">
               {/* Cabecera del socio */}
-              <div className="flex items-start justify-between border-b border-arena/15 pb-3">
+              <div className="flex items-start justify-between border-b border-black/5 dark:border-white/5 pb-3">
                 <div className="flex flex-col">
-                  <span className="text-[10px] font-sans font-bold text-turquesa uppercase tracking-wider flex items-center gap-1">
+                  <span className="text-[10px] font-mono font-bold text-turquesa uppercase tracking-wider flex items-center gap-1">
                     <ShieldCheck className="w-3.5 h-3.5" />
-                    <span>SOCIO IDENTIFICADO</span>
+                    <span>Socio Identificado</span>
                   </span>
-                  <h3 className="font-display text-3xl text-blanco mt-0.5">
+                  <h3 className="font-sans font-black text-2xl text-negro dark:text-blanco mt-0.5">
                     {cliente.nombreCliente}
                   </h3>
-                  <span className="text-xs font-mono text-arena/70">
+                  <span className="text-xs font-mono text-negro/50 dark:text-arena/60">
                     +52 {cliente.telefono} · Puntos: {cliente.puntos}
                   </span>
                 </div>
 
-                <div className="bg-carbon border border-oro/30 px-3 py-1.5 rounded-xl flex items-center gap-1.5">
-                  <Award className="w-4 h-4 text-oro" />
-                  <span className="text-xs font-display text-oro tracking-wider">
-                    {cliente.nivelLealtad.toUpperCase()}
+                <div className="bg-[#ECC94B] text-[#3A2D00] px-3 py-1 rounded-full flex items-center gap-1.5 shadow-sm">
+                  <Award className="w-3.5 h-3.5" />
+                  <span className="text-[10px] font-mono font-black tracking-wider uppercase">
+                    {cliente.nivelLealtad}
                   </span>
                 </div>
               </div>
@@ -388,24 +385,24 @@ export function CustomerQrScannerModal({
               {/* Sellos de Lealtad por Pedidos Reales */}
               <div className="flex flex-col gap-2">
                 <div className="flex justify-between items-center text-xs">
-                  <span className="font-bold text-arena/80 uppercase">
-                    Sellos Acumulados por Consumos:
+                  <span className="font-bold text-negro/70 dark:text-arena/80">
+                    Sellos Acumulados por Consumo:
                   </span>
-                  <span className="font-mono text-oro font-bold">
-                    {sellosActuales} / {pedidosReq} sellos ({cliente.pedidosEntregados} pedidos totales)
+                  <span className="font-mono text-coral font-bold">
+                    {sellosActuales} / {pedidosReq} sellos ({cliente.pedidosEntregados} pedidos)
                   </span>
                 </div>
 
-                <div className="flex items-center gap-2 bg-black/40 p-2 rounded-xl border border-arena/10">
+                <div className="flex items-center gap-1.5 bg-black/[0.03] dark:bg-white/[0.03] p-2 rounded-2xl border border-black/5 dark:border-white/5">
                   {Array.from({ length: pedidosReq }).map((_, idx) => {
                     const isChecked = idx < sellosActuales
                     return (
                       <div
                         key={idx}
-                        className={`flex-1 h-8 rounded-lg flex items-center justify-center text-xs transition-all ${
+                        className={`flex-1 h-9 rounded-xl flex items-center justify-center text-xs font-mono font-bold transition-all ${
                           isChecked
-                            ? 'bg-coral text-blanco font-bold shadow-sm border border-oro'
-                            : 'bg-carbon text-arena/30 border border-arena/10'
+                            ? 'bg-coral text-white shadow-sm'
+                            : 'bg-black/5 dark:bg-white/5 text-negro/30 dark:text-arena/30'
                         }`}
                       >
                         {isChecked ? '🦐' : idx + 1}
@@ -417,33 +414,33 @@ export function CustomerQrScannerModal({
 
               {/* Recompensa y Canjes Disponibles */}
               {cliente.proximaRecompensa && (
-                <div className={`rounded-xl p-3.5 flex flex-col gap-2 text-xs border ${
+                <div className={`rounded-2xl p-3.5 flex flex-col gap-2 text-xs border ${
                   cliente.canjesDisponibles > 0
-                    ? 'bg-gradient-to-r from-oro/20 to-amber-500/15 border-oro shadow-[0_0_15px_rgba(201,168,76,0.2)]'
-                    : 'bg-turquesa/10 border-turquesa/30'
+                    ? 'bg-[#ECC94B]/15 border-[#ECC94B]/30'
+                    : 'bg-turquesa/10 border-turquesa/20'
                 }`}>
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <Gift className={`w-4 h-4 shrink-0 ${cliente.canjesDisponibles > 0 ? 'text-oro animate-bounce' : 'text-turquesa'}`} />
-                      <span className="text-blanco font-bold text-sm">
+                      <Gift className={`w-4 h-4 shrink-0 ${cliente.canjesDisponibles > 0 ? 'text-[#8B6E00] dark:text-[#ECC94B] animate-bounce' : 'text-turquesa'}`} />
+                      <span className="text-negro dark:text-blanco font-bold text-xs sm:text-sm">
                         {cliente.proximaRecompensa}
                       </span>
                     </div>
 
-                    <span className={`text-[10px] font-mono font-bold px-2.5 py-0.5 rounded-full uppercase ${
+                    <span className={`text-[10px] font-mono font-bold px-2.5 py-0.5 rounded-full uppercase shadow-sm ${
                       cliente.canjesDisponibles > 0
-                        ? 'bg-oro text-negro shadow-md'
-                        : 'bg-turquesa/20 text-turquesa border border-turquesa/30'
+                        ? 'bg-[#ECC94B] text-[#3A2D00]'
+                        : 'bg-turquesa text-negro'
                     }`}>
                       {cliente.canjesDisponibles > 0
-                        ? `🎉 ¡${cliente.canjesDisponibles} LISTO PARA CANJE!`
+                        ? `🎉 ¡${cliente.canjesDisponibles} Listo para canje!`
                         : `Faltan ${cliente.pedidosFaltantesParaRecompensa} pedidos`}
                     </span>
                   </div>
 
                   {cliente.totalCanjesRealizados > 0 && (
-                    <span className="text-[10px] font-sans text-arena/70 italic">
-                      🏆 Historial: {cliente.totalCanjesRealizados} premio(s) entregado(s) a este socio.
+                    <span className="text-[10px] text-negro/50 dark:text-arena/60 italic">
+                      🏆 Historial: {cliente.totalCanjesRealizados} premio(s) entregado(s).
                     </span>
                   )}
                 </div>
@@ -452,38 +449,37 @@ export function CustomerQrScannerModal({
 
             {/* Mensajes de Confirmación */}
             {canjeSuccessMsg && (
-              <div className="bg-emerald-950/60 border border-emerald-500 text-emerald-200 text-xs p-4 rounded-2xl flex items-center gap-3 shadow-xl">
-                <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0" />
+              <div className="bg-[#16A34B]/10 border border-[#16A34B]/30 text-[#16A34B] text-xs p-3.5 rounded-2xl flex items-center gap-2.5">
+                <CheckCircle2 className="w-4 h-4 shrink-0" />
                 <span className="font-bold">{canjeSuccessMsg}</span>
               </div>
             )}
 
             {puntosSuccess && (
-              <div className="bg-emerald-950/50 border border-emerald-500/50 text-emerald-300 text-xs p-3.5 rounded-xl flex items-center gap-2 shadow-lg">
-                <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
-                <span>¡Puntos bonificados exitosamente para {cliente.nombreCliente}!</span>
+              <div className="bg-[#16A34B]/10 border border-[#16A34B]/30 text-[#16A34B] text-xs p-3.5 rounded-2xl flex items-center gap-2.5">
+                <CheckCircle2 className="w-4 h-4 shrink-0" />
+                <span>¡Puntos bonificados con éxito para {cliente.nombreCliente}!</span>
               </div>
             )}
 
             {/* ACCIONES DE CAJA / SALÓN */}
-            <div className="flex flex-col gap-2.5">
-              {/* BOTÓN DE CANJE DIRECTO SI TIENE PREMIOS DISPONIBLES */}
+            <div className="flex flex-col gap-2 pt-1">
               {cliente.canjesDisponibles > 0 && (
                 <button
                   type="button"
                   onClick={handleCanjearRecompensa}
                   disabled={isCanjeando}
-                  className="w-full bg-gradient-to-r from-oro via-amber-400 to-yellow-500 text-negro hover:brightness-110 font-sans font-bold text-xs tracking-wider py-4 rounded-xl transition-all flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(201,168,76,0.4)]"
+                  className="w-full bg-[#ECC94B] hover:bg-[#ECC94B]/90 text-[#3A2D00] font-sans font-bold text-xs tracking-wider py-3.5 rounded-2xl transition-all flex items-center justify-center gap-2 shadow-md active:scale-95 cursor-pointer"
                 >
                   {isCanjeando ? (
                     <>
                       <Loader2 className="w-4 h-4 animate-spin" />
-                      <span>PROCESANDO CANJE...</span>
+                      <span>Procesando canje...</span>
                     </>
                   ) : (
                     <>
                       <Gift className="w-4 h-4 stroke-[2.5]" />
-                      <span>🎁 CANJEAR: {(cliente.proximaRecompensa || 'PLATILLO GRATIS').toUpperCase()}</span>
+                      <span>🎁 Canjear: {(cliente.proximaRecompensa || 'Platillo Gratis').toUpperCase()}</span>
                     </>
                   )}
                 </button>
@@ -496,10 +492,10 @@ export function CustomerQrScannerModal({
                     onCustomerSelected(cliente)
                     onClose()
                   }}
-                  className="w-full bg-turquesa text-negro hover:bg-blanco font-sans font-bold text-xs tracking-wider py-3.5 rounded-xl transition-all flex items-center justify-center gap-2 shadow-lg"
+                  className="w-full bg-[#16A34B] hover:bg-[#16A34B]/90 text-white font-sans font-bold text-xs tracking-wider py-3.5 rounded-2xl transition-all flex items-center justify-center gap-2 shadow-md active:scale-95 cursor-pointer"
                 >
                   <UserCheck className="w-4 h-4" />
-                  <span>✓ ASOCIAR CLIENTE A ESTA VENTA / MESA</span>
+                  <span>Asociar Cliente a esta Venta / Mesa</span>
                 </button>
               )}
 
@@ -507,17 +503,17 @@ export function CustomerQrScannerModal({
                 type="button"
                 onClick={handleBonificarPuntos}
                 disabled={isAddingPuntos}
-                className="w-full bg-carbon border border-arena/20 hover:border-oro text-arena hover:text-blanco font-sans font-bold text-xs tracking-wider py-3 rounded-xl transition-all flex items-center justify-center gap-2 shadow-md"
+                className="w-full bg-black/5 dark:bg-white/10 hover:bg-black/10 dark:hover:bg-white/15 text-negro dark:text-blanco font-sans font-bold text-xs tracking-wider py-3 rounded-2xl transition-all flex items-center justify-center gap-2 shadow-sm cursor-pointer"
               >
                 {isAddingPuntos ? (
                   <>
                     <Loader2 className="w-4 h-4 animate-spin" />
-                    <span>BONIFICANDO...</span>
+                    <span>Bonificando...</span>
                   </>
                 ) : (
                   <>
                     <Star className="w-4 h-4 text-oro" />
-                    <span>⭐ BONIFICAR +10 PUNTOS DE LEALTAD</span>
+                    <span>⭐ Bonificar +10 Puntos de Lealtad</span>
                   </>
                 )}
               </button>
@@ -525,10 +521,10 @@ export function CustomerQrScannerModal({
               <button
                 type="button"
                 onClick={handleScanAnother}
-                className="w-full bg-carbon border border-arena/20 hover:border-turquesa text-arena hover:text-blanco font-sans font-bold text-xs py-2.5 rounded-xl transition-all flex items-center justify-center gap-2"
+                className="w-full bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 text-negro/60 dark:text-arena/60 font-sans font-bold text-xs py-2.5 rounded-2xl transition-all flex items-center justify-center gap-2 cursor-pointer"
               >
                 <RefreshCw className="w-3.5 h-3.5" />
-                <span>ESCANEAR OTRO CLIENTE</span>
+                <span>Escanear Otro Cliente</span>
               </button>
             </div>
           </div>

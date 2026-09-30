@@ -1,0 +1,62 @@
+import React from 'react'
+
+export default function EmpleadosLoadingSkeleton() {
+  return (
+    <div className="flex flex-col gap-6 max-w-7xl mx-auto pb-12 animate-pulse">
+      {/* Header Skeleton */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-black/[0.08] dark:border-white/[0.08]">
+        <div className="flex flex-col gap-2">
+          <div className="w-28 h-5 bg-black/10 dark:bg-white/10 rounded-full" />
+          <div className="w-64 sm:w-80 h-9 bg-black/10 dark:bg-white/10 rounded-2xl" />
+        </div>
+        <div className="w-48 h-11 bg-black/10 dark:bg-white/10 rounded-2xl" />
+      </div>
+
+      {/* 4 Bento KPIs */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {[1, 2, 3, 4].map((i) => (
+          <div
+            key={i}
+            className="bg-white dark:bg-[#111317] border border-black/[0.08] dark:border-white/[0.08] rounded-[24px] p-5 flex flex-col justify-between min-h-[140px]"
+          >
+            <div className="flex justify-between items-start mb-2">
+              <div className="w-24 h-3.5 bg-black/10 dark:bg-white/10 rounded-full" />
+              <div className="w-8 h-8 rounded-xl bg-black/10 dark:bg-white/10" />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <div className="w-20 h-8 bg-black/10 dark:bg-white/10 rounded-xl" />
+              <div className="w-32 h-3 bg-black/5 dark:bg-white/5 rounded-full" />
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Search Bar */}
+      <div className="w-full h-12 bg-white dark:bg-[#111317] border border-black/[0.08] dark:border-white/[0.08] rounded-2xl" />
+
+      {/* Table Container Skeleton */}
+      <div className="bg-white dark:bg-[#111317] border border-black/[0.08] dark:border-white/[0.08] rounded-[28px] p-5 flex flex-col gap-4">
+        <div className="flex justify-between items-center pb-3 border-b border-black/[0.08] dark:border-white/[0.08]">
+          <div className="w-48 h-6 bg-black/10 dark:bg-white/10 rounded-xl" />
+          <div className="w-24 h-4 bg-black/10 dark:bg-white/10 rounded-full" />
+        </div>
+        <div className="flex flex-col divide-y divide-black/5 dark:divide-white/5">
+          {[1, 2, 3, 4, 5].map((row) => (
+            <div key={row} className="py-3.5 flex items-center justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-xl bg-black/10 dark:bg-white/10 shrink-0" />
+                <div className="flex flex-col gap-1.5">
+                  <div className="w-36 h-4 bg-black/10 dark:bg-white/10 rounded-md" />
+                  <div className="w-24 h-3 bg-black/5 dark:bg-white/5 rounded-md" />
+                </div>
+              </div>
+              <div className="w-28 h-4 bg-black/10 dark:bg-white/10 rounded-md hidden md:block" />
+              <div className="w-20 h-6 bg-black/10 dark:bg-white/10 rounded-full" />
+              <div className="w-24 h-7 bg-black/5 dark:bg-white/5 rounded-xl" />
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  )
+}

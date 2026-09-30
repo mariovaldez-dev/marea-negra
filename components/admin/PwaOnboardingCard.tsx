@@ -40,30 +40,24 @@ export function PwaOnboardingCard() {
   if (!show || platform === 'other') return null
 
   return (
-    <div className="bg-[#050404] border border-oro/15 rounded-xl p-5 sm:p-6 mb-6 shadow-[0_0_20px_rgba(201,168,76,0.05)] relative overflow-hidden flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
-      
-      {/* Patrón 4 Texture */}
-      <div className="absolute inset-0 pointer-events-none opacity-20"
-        style={{ backgroundImage: 'radial-gradient(rgba(201,168,76,0.15) 1px, transparent 1px)', backgroundSize: '18px 18px' }}
-      ></div>
-
-      <div className="flex items-start gap-4 z-10 relative">
-        <div className="bg-oro/10 border border-oro/30 p-3 rounded-xl flex-shrink-0">
-          <Smartphone className="w-8 h-8 text-oro" />
+    <div className="bg-white dark:bg-[#111111] border border-black/10 dark:border-white/10 rounded-2xl p-5 sm:p-6 mb-6 shadow-sm relative overflow-hidden flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+      <div className="flex items-start gap-4">
+        <div className="bg-turquesa/10 border border-turquesa/20 p-3 rounded-xl flex-shrink-0 text-turquesa">
+          <Smartphone className="w-6 h-6" />
         </div>
         <div className="flex flex-col gap-1">
-          <h3 className="font-display text-2xl tracking-wide text-blanco">
-            Instala la app en tu celular
+          <h3 className="font-sans font-bold text-base sm:text-lg text-negro dark:text-blanco">
+            Instala la app en tu dispositivo
           </h3>
-          <p className="font-serif italic text-arena/70 text-sm">
-            Para recibir notificaciones al instante y acceso rápido.
+          <p className="font-sans text-xs text-negro/60 dark:text-arena/70">
+            Para recibir notificaciones sonoras al instante y acceder más rápido.
           </p>
 
-          <div className="mt-3 bg-carbon border border-arena/10 rounded-lg p-3 text-sm font-sans text-arena/80 inline-block">
+          <div className="mt-2.5 bg-black/[0.02] dark:bg-white/[0.02] border border-black/5 dark:border-white/5 rounded-xl p-3 text-xs font-sans text-negro/80 dark:text-arena/80 inline-block">
             {platform === 'ios' ? (
               <div className="flex flex-col gap-1.5">
                 <p className="flex items-center gap-2">
-                  <span className="w-5 h-5 bg-white text-black flex items-center justify-center rounded-md text-xs font-bold font-serif">↑</span>
+                  <span className="w-5 h-5 bg-black/10 dark:bg-white/10 text-negro dark:text-blanco flex items-center justify-center rounded-md text-xs font-bold">↑</span>
                   <span>1. Toca el botón <strong>Compartir</strong> en la barra de Safari.</span>
                 </p>
                 <p className="flex items-center gap-2">
@@ -74,7 +68,7 @@ export function PwaOnboardingCard() {
             ) : (
               <div className="flex flex-col gap-1.5">
                 <p className="flex items-center gap-2">
-                  <span className="font-bold text-lg leading-none tracking-[0.1em]">⋮</span>
+                  <span className="font-bold text-base leading-none">⋮</span>
                   <span>1. Toca el <strong>menú</strong> en la esquina superior derecha.</span>
                 </p>
                 <p className="flex items-center gap-2">
@@ -87,21 +81,16 @@ export function PwaOnboardingCard() {
         </div>
       </div>
 
-      <div className="z-10 relative flex-shrink-0 w-full md:w-auto">
+      <div className="flex-shrink-0 w-full md:w-auto">
         <button
           onClick={handleDismiss}
-          className="w-full md:w-auto px-5 py-2.5 bg-oro/10 hover:bg-oro/20 border border-oro/30 text-oro font-sans font-semibold text-sm rounded-lg transition-colors flex items-center justify-center gap-2"
+          className="w-full md:w-auto px-4 py-2.5 bg-black/5 dark:bg-white/10 hover:bg-black/10 dark:hover:bg-white/20 text-negro dark:text-blanco font-sans font-semibold text-xs rounded-xl transition-colors flex items-center justify-center gap-2 active:scale-95"
         >
-          <CheckCircle2 className="w-4 h-4" />
+          <CheckCircle2 className="w-4 h-4 text-emerald-500" />
           <span>Ya lo instalé</span>
         </button>
       </div>
-
-      {/* Decorative corners */}
-      <div className="absolute top-0 left-0 w-3 h-3 border-t border-l border-oro pointer-events-none rounded-tl-xl"></div>
-      <div className="absolute top-0 right-0 w-3 h-3 border-t border-r border-oro pointer-events-none rounded-tr-xl"></div>
-      <div className="absolute bottom-0 left-0 w-3 h-3 border-b border-l border-oro pointer-events-none rounded-bl-xl"></div>
-      <div className="absolute bottom-0 right-0 w-3 h-3 border-b border-r border-oro pointer-events-none rounded-br-xl"></div>
     </div>
   )
 }
+

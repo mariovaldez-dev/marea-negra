@@ -5,10 +5,8 @@ import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { createBrowserClient } from '@/lib/supabase/client'
 import { UserRole } from '@/lib/types/database'
-import { ThemeToggle } from '@/components/ui/ThemeToggle'
 import { BrandLogo } from '@/components/ui/BrandLogo'
-import { RestauranteStateToggle } from '@/components/admin/RestauranteStateToggle'
-import { NotificationButton } from '@/components/ui/NotificationButton'
+import { AdminHeader } from '@/components/admin/AdminHeader'
 import { CambiarPasswordAdminModal } from '@/components/auth/CambiarPasswordAdminModal'
 import {
   LayoutDashboard,
@@ -18,15 +16,117 @@ import {
   CircleDollarSign,
   Monitor,
   Ticket,
-  LogOut,
-  UserCheck,
-  Menu as MenuIcon,
-  X,
   Users,
   Clock,
   LayoutGrid,
-  KeyRound,
+  UserCog,
+  Sparkles,
 } from 'lucide-react'
+
+interface NavItem {
+  name: string
+  href: string
+  icon: any
+  roles: UserRole[]
+  badge?: string
+  badgeColor?: string
+}
+
+interface NavSection {
+  title: string
+  items: NavItem[]
+}
+
+const NAV_SECTIONS: NavSection[] = [
+  {
+    title: 'OPERACIONES',
+    items: [
+      {
+        name: 'Dashboard',
+        href: '/admin/dashboard',
+        icon: LayoutDashboard,
+        roles: ['admin', 'cajero', 'empleado'],
+      },
+      {
+        name: 'Pedidos en Vivo',
+        href: '/admin/pedidos',
+        icon: ShoppingBag,
+        roles: ['admin', 'mesero', 'cajero', 'empleado'],
+        badge: 'Live',
+        badgeColor: 'bg-coral text-white',
+      },
+      {
+        name: 'Pantalla Cocina',
+        href: '/admin/pantalla',
+        icon: Monitor,
+        roles: ['admin', 'cocina', 'mesero', 'cajero', 'empleado'],
+      },
+      {
+        name: 'Mesas & Salón',
+        href: '/admin/mesas',
+        icon: LayoutGrid,
+        roles: ['admin', 'mesero', 'cajero', 'empleado'],
+      },
+      {
+        name: 'Cierre de Caja',
+        href: '/admin/caja',
+        icon: CircleDollarSign,
+        roles: ['admin', 'cajero'],
+      },
+    ],
+  },
+  {
+    title: 'CATÁLOGO & STOCK',
+    items: [
+      {
+        name: 'Gestión de Menú',
+        href: '/admin/menu',
+        icon: UtensilsCrossed,
+        roles: ['admin'],
+      },
+      {
+        name: 'Inventario & Insumos',
+        href: '/admin/inventario',
+        icon: Package,
+        roles: ['admin', 'cocina', 'empleado'],
+      },
+    ],
+  },
+  {
+    title: 'FIDELIZACIÓN & CRM',
+    items: [
+      {
+        name: 'Clientes del Club',
+        href: '/admin/clientes',
+        icon: Users,
+        roles: ['admin', 'cajero', 'empleado'],
+      },
+      {
+        name: 'Cupones & Promos',
+        href: '/admin/cupones',
+        icon: Ticket,
+        roles: ['admin'],
+      },
+    ],
+  },
+  {
+    title: 'ADMINISTRACIÓN',
+    items: [
+      {
+        name: 'Empleados & Roles',
+        href: '/admin/empleados',
+        icon: UserCog,
+        roles: ['admin'],
+      },
+      {
+        name: 'Horarios & Sucursal',
+        href: '/admin/horarios',
+        icon: Clock,
+        roles: ['admin'],
+      },
+    ],
+  },
+]
 
 export default function AdminLayout({
   children,
@@ -65,181 +165,111 @@ export default function AdminLayout({
     router.refresh()
   }
 
-  const navItems = [
-    {
-      name: 'Dashboard',
-      href: '/admin/dashboard',
-      icon: LayoutDashboard,
-      roles: ['admin', 'empleado'],
-    },
-    {
-      name: 'Pantalla Cocina',
-      href: '/admin/pantalla',
-      icon: Monitor,
-      roles: ['admin', 'empleado'],
-    },
-    {
-      name: 'Mesas & Salón',
-      href: '/admin/mesas',
-      icon: LayoutGrid,
-      roles: ['admin', 'empleado'],
-    },
-    {
-      name: 'Pedidos (Kanban)',
-      href: '/admin/pedidos',
-      icon: ShoppingBag,
-      roles: ['admin', 'empleado'],
-    },
-    {
-      name: 'Gestión de Menú',
-      href: '/admin/menu',
-      icon: UtensilsCrossed,
-      roles: ['admin'],
-    },
-    {
-      name: 'Inventario',
-      href: '/admin/inventario',
-      icon: Package,
-      roles: ['admin', 'empleado'],
-    },
-    {
-      name: 'Cierre de Caja',
-      href: '/admin/caja',
-      icon: CircleDollarSign,
-      roles: ['admin'],
-    },
-    {
-      name: 'Cupones & Promos',
-      href: '/admin/cupones',
-      icon: Ticket,
-      roles: ['admin'],
-    },
-    {
-      name: 'Horarios & Sucursal',
-      href: '/admin/horarios',
-      icon: Clock,
-      roles: ['admin'],
-    },
-    {
-      name: 'Clientes del Club',
-      href: '/admin/clientes',
-      icon: Users,
-      roles: ['admin', 'empleado'],
-    },
-  ]
-
-  const visibleNavItems = navItems.filter((item) => item.roles.includes(role))
-
   return (
-    <div className="min-h-screen bg-[#F4F0E8] dark:bg-negro text-negro dark:text-blanco flex flex-col md:flex-row transition-colors duration-300">
-      {/* Botón menú móvil */}
-      <div className="md:hidden bg-white dark:bg-carbon border-b border-arena/30 dark:border-arena/10 px-5 py-4 flex items-center justify-between sticky top-0 z-50">
-        <div className="flex items-center gap-2">
-          <span className="font-display text-2xl text-negro dark:text-blanco">MAREA NEGRA</span>
-          <span className="font-serif italic text-xs text-coral">— admin —</span>
-        </div>
-        <div className="flex items-center gap-3">
-          <ThemeToggle />
-          <button
-            onClick={() => setMobileOpen(!mobileOpen)}
-            className="p-2 text-negro/80 dark:text-arena hover:text-coral"
-          >
-            {mobileOpen ? <X className="w-7 h-7" /> : <MenuIcon className="w-7 h-7" />}
-          </button>
-        </div>
-      </div>
-
-      {/* SIDEBAR ADMIN */}
+    <div className="min-h-screen bg-[#F5F5F5] dark:bg-[#080808] text-negro dark:text-blanco flex flex-col md:flex-row transition-colors duration-300">
+      {/* SIDEBAR ADMIN (Bento / Linear Navigation) */}
       <aside
-        className={`w-72 bg-white dark:bg-carbon border-r border-arena/30 dark:border-oro/10 flex flex-col justify-between p-7 fixed inset-y-0 left-0 z-40 transform transition-transform duration-300 md:sticky md:top-0 md:h-screen md:overflow-y-auto md:shrink-0 md:translate-x-0 ${
-          mobileOpen ? 'translate-x-0' : '-translate-x-full'
+        className={`w-64 lg:w-72 bg-white dark:bg-[#0C0D0E] border-r border-black/[0.07] dark:border-white/[0.07] flex flex-col justify-between p-4 lg:p-5 fixed inset-y-0 left-0 z-40 transform transition-transform duration-300 md:sticky md:top-0 md:h-screen md:overflow-y-auto md:shrink-0 md:translate-x-0 ${
+          mobileOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full'
         }`}
       >
-        <div className="flex flex-col gap-8">
-          {/* Logo Brand Header, State Toggle & Theme Toggle */}
-          <div className="flex flex-col gap-3">
-            <div className="flex items-center justify-between">
-              <div className="flex flex-col">
-                <BrandLogo size="md" href="/admin/dashboard" />
-                <span className="font-serif italic text-sm text-coral mt-0.5">
-                  — admin —
-                </span>
-              </div>
-              <ThemeToggle />
-            </div>
-            <RestauranteStateToggle />
+        <div className="flex flex-col gap-5">
+          {/* Logo Brand Header */}
+          <div className="flex flex-col pb-4 border-b border-black/[0.06] dark:border-white/[0.06]">
+            <BrandLogo size="md" href="/admin/dashboard" />
+            <span className="font-serif italic text-xs text-coral font-bold tracking-widest mt-1">
+              — terminal de operaciones —
+            </span>
           </div>
 
-          {/* Menú de Navegación */}
-          <nav className="flex flex-col gap-1.5">
-            {visibleNavItems.map((item) => {
-              const Icon = item.icon
-              const isActive = pathname === item.href
+          {/* Menú de Navegación Segmentado en Secciones */}
+          <nav className="flex flex-col gap-5 pb-6">
+            {NAV_SECTIONS.map((section) => {
+              const visibleItems = section.items.filter((item) =>
+                item.roles.includes(role)
+              )
+
+              if (visibleItems.length === 0) return null
 
               return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  onClick={() => setMobileOpen(false)}
-                  className={`flex items-center gap-3.5 px-4 py-3.5 rounded-r-xl font-sans text-sm md:text-base tracking-wide transition-all border-l-4 ${
-                    isActive
-                      ? 'border-l-coral bg-arena/20 dark:bg-blanco/5 text-negro dark:text-blanco font-bold shadow-sm'
-                      : 'border-l-transparent text-negro/80 dark:text-arena/80 hover:text-negro dark:hover:text-blanco hover:bg-arena/10 dark:hover:bg-blanco/5'
-                  }`}
-                >
-                  <Icon
-                    className={`w-5 h-5 ${
-                      isActive ? 'text-coral' : 'text-negro/50 dark:text-arena/50'
-                    }`}
-                  />
-                  <span>{item.name}</span>
-                </Link>
+                <div key={section.title} className="flex flex-col gap-1">
+                  {/* Título de Sección */}
+                  <span className="text-[10px] font-sans font-bold uppercase tracking-wider text-neutral-400 dark:text-neutral-500 px-3 py-1">
+                    {section.title}
+                  </span>
+
+                  {/* Lista de Enlaces */}
+                  <div className="flex flex-col gap-1">
+                    {visibleItems.map((item) => {
+                      const Icon = item.icon
+                      const isActive = pathname === item.href
+
+                      return (
+                        <Link
+                          key={item.href}
+                          href={item.href}
+                          onClick={() => setMobileOpen(false)}
+                          className={`group relative flex items-center justify-between px-3.5 py-2.5 rounded-2xl font-sans text-xs tracking-wide transition-all duration-200 active:scale-[0.98] ${
+                            isActive
+                              ? 'bg-neutral-950 text-white dark:bg-white/[0.10] dark:text-white dark:border dark:border-white/[0.08] font-bold shadow-sm shadow-black/10'
+                              : 'text-neutral-600 dark:text-neutral-400 hover:text-neutral-950 dark:hover:text-white hover:bg-neutral-100/80 dark:hover:bg-white/[0.05] font-medium'
+                          }`}
+                        >
+                          <div className="flex items-center gap-3 min-w-0">
+                            <Icon
+                              className={`w-4 h-4 shrink-0 transition-transform duration-200 group-hover:scale-110 ${
+                                isActive
+                                  ? 'text-[#2ABFBF]'
+                                  : 'text-neutral-400 dark:text-neutral-500 group-hover:text-neutral-900 dark:group-hover:text-white'
+                              }`}
+                            />
+                            <span className="truncate">{item.name}</span>
+                          </div>
+
+                          {/* Badge Opcional (ej. LIVE) */}
+                          {item.badge && (
+                            <span
+                              className={`text-[9px] font-mono font-bold uppercase px-1.5 py-0.5 rounded-full ${
+                                item.badgeColor || 'bg-[#2ABFBF] text-black'
+                              }`}
+                            >
+                              {item.badge}
+                            </span>
+                          )}
+                        </Link>
+                      )
+                    })}
+                  </div>
+                </div>
               )
             })}
           </nav>
         </div>
 
-        {/* Footer Sidebar: Perfil y Logout */}
-        <div className="pt-6 border-t border-arena/30 dark:border-arena/10 flex flex-col gap-3">
-          <div className="flex items-center gap-3 px-2">
-          <div className="w-10 h-10 rounded-full bg-turquesa/10 border border-turquesa/30 text-turquesa flex items-center justify-center font-bold text-sm">
-            <UserCheck className="w-5 h-5" />
-          </div>
-          <div className="flex flex-col min-w-0">
-            <span className="font-sans font-bold text-sm text-negro dark:text-blanco truncate">
-              {userName}
-            </span>
-            <span className="text-xs font-sans text-turquesa font-semibold uppercase tracking-wider">
-              Rol: {role}
-            </span>
-          </div>
-        </div>
-
-        <NotificationButton />
-
-        <button
-          type="button"
-          onClick={() => setShowPasswordModal(true)}
-          className="flex items-center gap-2 px-3 py-2 text-xs font-sans font-semibold text-arena/80 hover:text-blanco hover:bg-blanco/5 rounded-xl transition-colors w-full border border-arena/10"
-        >
-          <KeyRound className="w-3.5 h-3.5 text-oro" />
-          <span>Cambiar mi Contraseña</span>
-        </button>
-
-        <button
-          onClick={handleLogout}
-          className="flex items-center gap-2 px-3 py-2 text-xs font-sans font-semibold text-coral hover:bg-coral/10 rounded-xl transition-colors w-full"
-        >
-            <LogOut className="w-4 h-4" />
-            <span>Cerrar Sesión</span>
-          </button>
+        {/* Footer Sidebar Sutil & Limpio */}
+        <div className="pt-3 border-t border-black/[0.06] dark:border-white/[0.06] flex items-center justify-between text-[11px] font-sans text-neutral-400 dark:text-neutral-500">
+          <span>v2.5 Sinaloa Mar & Tierra</span>
+          <span className="w-2 h-2 rounded-full bg-[#16A34B] animate-pulse" title="Sistema en Línea" />
         </div>
       </aside>
 
-      {/* ÁREA DE CONTENIDO */}
-      <main className="flex-1 p-6 md:p-10 max-w-7xl mx-auto w-full">
-        {children}
-      </main>
+      {/* CONTENEDOR PRINCIPAL CON HEADER SUPERIOR */}
+      <div className="flex-1 flex flex-col min-w-0">
+        {/* HEADER SUPERIOR */}
+        <AdminHeader
+          userName={userName}
+          role={role}
+          mobileOpen={mobileOpen}
+          setMobileOpen={setMobileOpen}
+          onOpenPasswordModal={() => setShowPasswordModal(true)}
+          onLogout={handleLogout}
+        />
+
+        {/* ÁREA DE CONTENIDO */}
+        <main className="flex-1 p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto w-full">
+          {children}
+        </main>
+      </div>
 
       {/* MODAL CAMBIAR CONTRASEÑA ADMIN */}
       <CambiarPasswordAdminModal

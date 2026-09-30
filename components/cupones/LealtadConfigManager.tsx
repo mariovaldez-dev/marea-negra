@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useMemo } from 'react'
 import {
   getRecompensasLealtadList,
   saveRecompensaLealtad,
@@ -26,12 +26,20 @@ import {
   Gift,
   Percent,
   DollarSign,
+  ChevronLeft,
+  ChevronRight,
+  Search,
 } from 'lucide-react'
+
+const ITEMS_PER_PAGE = 10
 
 export function LealtadConfigManager() {
   const [recompensas, setRecompensas] = useState<RecompensaLealtadItem[]>([])
   const [platillosList, setPlatillosList] = useState<Platillo[]>([])
   const [loading, setLoading] = useState(true)
+  const [searchTerm, setSearchTerm] = useState('')
+  const [currentPage, setCurrentPage] = useState(1)
+
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [editingItem, setEditingItem] = useState<RecompensaLealtadItem | null>(null)
   const [saving, setSaving] = useState(false)
@@ -65,6 +73,25 @@ export function LealtadConfigManager() {
   useEffect(() => {
     loadRecompensas()
   }, [])
+
+  // Filtrado
+  const filteredRecompensas = useMemo(() => {
+    const term = searchTerm.toLowerCase().trim()
+    return recompensas.filter((r) => {
+      return (
+        r.codigo.toLowerCase().includes(term) ||
+        r.titulo.toLowerCase().includes(term) ||
+        (r.producto_regalo && r.producto_regalo.toLowerCase().includes(term))
+      )
+    })
+  }, [recompensas, searchTerm])
+
+  // Paginación de 10 en 10
+  const totalPages = Math.max(1, Math.ceil(filteredRecompensas.length / ITEMS_PER_PAGE))
+  const paginatedRecompensas = useMemo(() => {
+    const start = (currentPage - 1) * ITEMS_PER_PAGE
+    return filteredRecompensas.slice(start, start + ITEMS_PER_PAGE)
+  }, [filteredRecompensas, currentPage])
 
   const openCreateModal = () => {
     setEditingItem(null)
@@ -142,165 +169,288 @@ export function LealtadConfigManager() {
   }
 
   return (
-    <div className="bg-white dark:bg-[#050404] bg-dots-pattern border-2 border-arena/30 dark:border-oro/40 rounded-3xl p-6 md:p-8 gold-border-corner shadow-2xl text-negro dark:text-blanco flex flex-col gap-6 transition-colors">
-      {/* HEADER DE RECOMPENSAS DE LEALTAD MULTI-TIPO */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-arena/20 dark:border-arena/15 pb-5">
+    <div className="bg-white dark:bg-[#111317] border border-black/[0.08] dark:border-white/[0.08] rounded-[28px] p-5 md:p-6 shadow-sm flex flex-col gap-6 text-negro dark:text-blanco transition-colors">
+      {/* HEADER DE RECOMPENSAS DE LEALTAD */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-black/[0.08] dark:border-white/[0.08] pb-4">
         <div className="flex items-center gap-3">
-          <div className="p-3 bg-[#8C6D1F]/15 dark:bg-oro/20 border border-[#8C6D1F]/30 dark:border-oro/40 rounded-2xl text-[#8C6D1F] dark:text-oro">
-            <Award className="w-6 h-6 animate-pulse" />
+          <div className="p-3 bg-[#C9A84C]/15 text-[#C9A84C] rounded-2xl">
+            <Award className="w-6 h-6" />
           </div>
           <div className="flex flex-col">
-            <span className="text-[10px] font-sans font-bold uppercase tracking-widest text-[#8C6D1F] dark:text-oro flex items-center gap-1">
-              <Sparkles className="w-3 h-3 text-oro" />
-              <span>PLAN DE LEALTAD MULTI-TIPO (% OFF / PRODUCTO GRATIS / $ MONTO FIJO)</span>
+            <span className="text-[10px] font-sans font-bold uppercase tracking-widest text-[#C9A84C] flex items-center gap-1">
+              <Sparkles className="w-3 h-3 text-[#C9A84C]" />
+              <span>PLAN DE LEALTAD MULTI-TIPO</span>
             </span>
-            <h2 className="font-display text-3xl md:text-4xl text-negro dark:text-blanco tracking-wide">
-              CUPONES DE LEALTAD Y RECOMPENSAS
+            <h2 className="font-display text-2xl md:text-3xl text-negro dark:text-blanco tracking-wide">
+              RECOMPENSAS POR CONSUMO
             </h2>
           </div>
         </div>
 
         <button
           onClick={openCreateModal}
-          className="bg-oro text-negro hover:bg-negro hover:text-blanco dark:hover:bg-blanco dark:hover:text-negro font-sans font-bold text-xs tracking-wider px-6 py-3.5 rounded-full transition-all flex items-center gap-2 shadow-[0_0_20px_rgba(201,168,76,0.3)] self-start md:self-auto shrink-0"
+          className="bg-[#C9A84C] text-black hover:bg-[#C9A84C]/90 font-sans font-bold text-xs tracking-wider px-5 py-3 rounded-2xl transition-all flex items-center gap-2 shadow-md self-start md:self-auto shrink-0"
         >
           <Plus className="w-4 h-4 stroke-[3]" />
-          <span>+ NUEVO CUPÓN DE LEALTAD</span>
+          <span>+ NUEVA RECOMPENSA DE LEALTAD</span>
         </button>
       </div>
 
-      <p className="font-sans text-sm text-negro/70 dark:text-arena/70">
-        Crea cualquier tipo de cupón de lealtad: porcentaje de descuento en la orden, producto gratis seleccionado de tu menú o descuento en dinero ($ MXN). Se desbloquearán automáticamente cuando el cliente acumule los pedidos requeridos.
+      <p className="font-sans text-xs text-negro/70 dark:text-arena/70">
+        Configura los beneficios que se desbloquean automáticamente cuando los socios acumulan pedidos completados (% de descuento, producto de cortesía o saldo a favor).
       </p>
 
-      {/* LISTADO DE CUPONES DE LEALTAD N-DINÁMICOS */}
+      {/* TABLA DE RECOMPENSAS DE LEALTAD CON PAGINACIÓN DE 10 */}
       {loading ? (
         <div className="p-8 text-center flex items-center justify-center gap-2 text-negro/60 dark:text-arena/60">
-          <Loader2 className="w-5 h-5 animate-spin text-oro" />
-          <span>Cargando cupones de lealtad desde la base de datos...</span>
+          <Loader2 className="w-5 h-5 animate-spin text-[#C9A84C]" />
+          <span className="font-sans text-xs font-medium">Cargando recompensas de lealtad...</span>
         </div>
-      ) : recompensas.length === 0 ? (
-        <div className="bg-[#F4F0E8] dark:bg-carbon/50 border border-dashed border-arena/40 dark:border-arena/20 rounded-2xl p-8 text-center flex flex-col items-center gap-3">
-          <Award className="w-10 h-10 text-oro/60" />
-          <h4 className="font-display text-2xl text-negro dark:text-blanco">
-            NO HAY CUPONES DE LEALTAD REGISTRADOS
+      ) : filteredRecompensas.length === 0 ? (
+        <div className="bg-black/[0.02] dark:bg-white/[0.02] border border-dashed border-black/10 dark:border-white/10 rounded-2xl p-8 text-center flex flex-col items-center gap-3 font-sans">
+          <Award className="w-10 h-10 text-[#C9A84C]/60" />
+          <h4 className="font-display text-2xl text-negro dark:text-blanco font-bold">
+            NO HAY RECOMPENSAS REGISTRADAS
           </h4>
-          <p className="font-sans text-xs text-negro/60 dark:text-arena/60 max-w-md">
-            No se muestra nada al cliente hasta que agregues un cupón. Presiona el botón a continuación para crear el primero.
+          <p className="text-xs text-negro/60 dark:text-arena/60 max-w-md">
+            Agrega una recompensa para premiar la recurrencia de tus clientes en cada visita.
           </p>
           <button
             onClick={openCreateModal}
-            className="mt-2 bg-oro text-negro font-sans font-bold text-xs px-5 py-3 rounded-xl shadow-md hover:bg-blanco"
+            className="mt-2 bg-[#C9A84C] text-black font-bold text-xs px-5 py-3 rounded-xl shadow-md hover:bg-[#C9A84C]/90"
           >
-            + AGREGAR PRIMER CUPÓN DE LEALTAD
+            + AGREGAR PRIMERA RECOMPENSA
           </button>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {recompensas.map((item) => (
-            <div
-              key={item.id || item.codigo}
-              className="bg-[#F4F0E8] dark:bg-carbon border border-oro/30 hover:border-oro rounded-2xl p-5 flex flex-col justify-between shadow-lg gap-3 transition-all"
-            >
-              <div className="flex flex-col gap-2">
-                <div className="flex justify-between items-start">
-                  <span className="bg-oro/20 text-[#8C6D1F] dark:text-oro font-sans text-[10px] font-bold px-2.5 py-0.5 rounded-full border border-oro/30 flex items-center gap-1">
-                    <ShoppingBag className="w-3 h-3 text-oro" />
-                    <span>AL ALCANZAR {item.pedidos_requeridos} PEDIDO(S)</span>
+        <div className="flex flex-col gap-4">
+          {/* VISTA ESCRITORIO (TABLA) */}
+          <div className="hidden md:block overflow-x-auto">
+            <table className="w-full text-left border-collapse text-xs font-sans">
+              <thead className="bg-black/[0.02] dark:bg-white/[0.02] border-b border-black/[0.08] dark:border-white/[0.08]">
+                <tr>
+                  <th className="py-3.5 px-4 font-bold text-[11px] uppercase tracking-wider text-negro/60 dark:text-arena/60">
+                    Requisito de Desbloqueo
+                  </th>
+                  <th className="py-3.5 px-4 font-bold text-[11px] uppercase tracking-wider text-negro/60 dark:text-arena/60">
+                    Código & Título
+                  </th>
+                  <th className="py-3.5 px-4 font-bold text-[11px] uppercase tracking-wider text-negro/60 dark:text-arena/60">
+                    Beneficio
+                  </th>
+                  <th className="py-3.5 px-4 font-bold text-[11px] uppercase tracking-wider text-negro/60 dark:text-arena/60 text-center">
+                    Estado
+                  </th>
+                  <th className="py-3.5 px-4 font-bold text-[11px] uppercase tracking-wider text-negro/60 dark:text-arena/60 text-right">
+                    Acciones
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-black/5 dark:divide-white/5">
+                {paginatedRecompensas.map((item) => (
+                  <tr
+                    key={item.id || item.codigo}
+                    className="hover:bg-black/[0.02] dark:hover:bg-white/[0.02] transition-colors"
+                  >
+                    {/* Requisito */}
+                    <td className="py-3.5 px-4">
+                      <span className="bg-[#C9A84C]/15 text-[#C9A84C] font-bold px-3 py-1 rounded-full text-[11px] inline-flex items-center gap-1.5">
+                        <ShoppingBag className="w-3.5 h-3.5" />
+                        <span>Al {item.pedidos_requeridos}° pedido</span>
+                      </span>
+                    </td>
+
+                    {/* Código y Título */}
+                    <td className="py-3.5 px-4">
+                      <div className="flex flex-col min-w-0">
+                        <span className="font-mono font-bold text-xs text-[#2ABFBF]">
+                          {item.codigo}
+                        </span>
+                        <span className="font-bold text-sm text-negro dark:text-blanco truncate mt-0.5">
+                          {item.titulo}
+                        </span>
+                        {item.tipo_recompensa === 'producto_regalo' && item.producto_regalo && (
+                          <span className="text-[11px] text-[#C9A84C] font-medium mt-0.5">
+                            🎁 Cortesía: {item.producto_regalo} (100% OFF)
+                          </span>
+                        )}
+                      </div>
+                    </td>
+
+                    {/* Beneficio */}
+                    <td className="py-3.5 px-4">
+                      {item.tipo_recompensa === 'producto_regalo' ? (
+                        <span className="bg-[#2ABFBF]/15 text-[#2ABFBF] font-bold px-2.5 py-1 rounded-full text-[11px] inline-flex items-center gap-1">
+                          <Gift className="w-3.5 h-3.5" />
+                          <span>REGALO 100% OFF</span>
+                        </span>
+                      ) : item.tipo_recompensa === 'monto_fijo' ? (
+                        <span className="font-display text-xl text-coral font-bold">
+                          -${item.monto_fijo} MXN
+                        </span>
+                      ) : (
+                        <span className="font-display text-xl text-coral font-bold">
+                          -{item.descuento_porcentaje}% OFF
+                        </span>
+                      )}
+                    </td>
+
+                    {/* Estado */}
+                    <td className="py-3.5 px-4 text-center">
+                      <button
+                        type="button"
+                        onClick={() => item.id && handleToggle(item.id, item.activo)}
+                        className={`text-[10px] font-bold px-3 py-1 rounded-full border transition-all ${
+                          item.activo
+                            ? 'bg-[#16A34B] text-white border-transparent'
+                            : 'bg-black/10 dark:bg-white/10 text-negro/60 dark:text-arena/60 border-transparent'
+                        }`}
+                        title="Clic para pausar o activar"
+                      >
+                        {item.activo ? 'ACTIVO' : 'PAUSADO'}
+                      </button>
+                    </td>
+
+                    {/* Acciones */}
+                    <td className="py-3.5 px-4 text-right">
+                      <div className="flex items-center justify-end gap-1.5 whitespace-nowrap">
+                        <button
+                          onClick={() => openEditModal(item)}
+                          className="p-1.5 text-negro/60 dark:text-arena/60 hover:text-[#2ABFBF] hover:bg-[#2ABFBF]/10 rounded-xl transition-colors"
+                          title="Editar recompensa"
+                        >
+                          <Edit2 className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => item.id && handleDelete(item.id)}
+                          className="p-1.5 text-negro/40 dark:text-arena/40 hover:text-red-500 hover:bg-red-500/10 rounded-xl transition-colors"
+                          title="Eliminar recompensa"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {/* VISTA MÓVIL (LISTA ESCROLLEABLE) */}
+          <div className="block md:hidden divide-y divide-black/5 dark:divide-white/5 font-sans">
+            {paginatedRecompensas.map((item) => (
+              <div
+                key={item.id || item.codigo}
+                className="p-4 flex flex-col gap-3 hover:bg-black/[0.02] dark:hover:bg-white/[0.02] transition-colors"
+              >
+                <div className="flex items-start justify-between gap-2">
+                  <span className="bg-[#C9A84C]/15 text-[#C9A84C] font-bold px-3 py-1 rounded-full text-[11px] inline-flex items-center gap-1.5">
+                    <ShoppingBag className="w-3 h-3" />
+                    <span>Al {item.pedidos_requeridos}° pedido</span>
                   </span>
 
                   {item.tipo_recompensa === 'producto_regalo' ? (
-                    <span className="bg-turquesa/20 text-turquesa text-[11px] font-sans font-bold px-2.5 py-0.5 rounded-full flex items-center gap-1 border border-turquesa/30">
-                      <Gift className="w-3.5 h-3.5" />
-                      <span>REGALO GRATIS</span>
+                    <span className="bg-[#2ABFBF]/15 text-[#2ABFBF] font-bold px-2.5 py-0.5 rounded-full text-[11px]">
+                      REGALO GRATIS
                     </span>
                   ) : item.tipo_recompensa === 'monto_fijo' ? (
-                    <span className="font-display text-2xl text-coral font-bold">
+                    <span className="font-display text-xl text-coral font-bold">
                       -${item.monto_fijo} MXN
                     </span>
                   ) : (
-                    <span className="font-display text-2xl text-coral font-bold">
+                    <span className="font-display text-xl text-coral font-bold">
                       -{item.descuento_porcentaje}% OFF
                     </span>
                   )}
                 </div>
 
-                <span className="font-mono text-xs font-bold text-turquesa tracking-wider mt-1">
-                  Código: {item.codigo}
-                </span>
-
-                <h4 className="font-sans font-bold text-sm text-negro dark:text-blanco leading-snug">
-                  {item.titulo}
-                </h4>
-
-                {item.tipo_recompensa === 'producto_regalo' && item.producto_regalo && (
-                  <span className="text-xs font-sans text-[#8C6D1F] dark:text-oro italic bg-oro/10 px-2.5 py-1 rounded-lg border border-oro/20 self-start">
-                    🎁 Regalo: {item.producto_regalo} (100% OFF)
+                <div className="flex flex-col">
+                  <span className="font-mono font-bold text-xs text-[#2ABFBF]">
+                    {item.codigo}
                   </span>
-                )}
-              </div>
+                  <span className="font-bold text-sm text-negro dark:text-blanco mt-0.5">
+                    {item.titulo}
+                  </span>
+                </div>
 
-              <div className="flex items-center justify-between pt-3 border-t border-arena/20 dark:border-arena/10 mt-2">
-                <button
-                  type="button"
-                  onClick={() => item.id && handleToggle(item.id, item.activo)}
-                  className={`px-3 py-1 rounded-full text-[11px] font-sans font-bold border transition-all flex items-center gap-1 ${
-                    item.activo
-                      ? 'bg-turquesa/15 border-turquesa/40 text-turquesa'
-                      : 'bg-coral/15 border-coral/40 text-coral'
-                  }`}
-                >
-                  {item.activo ? (
-                    <>
-                      <Power className="w-3 h-3" />
-                      <span>Activo</span>
-                    </>
-                  ) : (
-                    <>
-                      <PowerOff className="w-3 h-3" />
-                      <span>Pausado</span>
-                    </>
-                  )}
-                </button>
+                <div className="flex items-center justify-between pt-1">
+                  <button
+                    type="button"
+                    onClick={() => item.id && handleToggle(item.id, item.activo)}
+                    className={`text-[10px] font-bold px-3 py-1 rounded-full ${
+                      item.activo ? 'bg-[#16A34B] text-white' : 'bg-black/10 dark:bg-white/10 text-negro/60 dark:text-arena/60'
+                    }`}
+                  >
+                    {item.activo ? 'ACTIVO' : 'PAUSADO'}
+                  </button>
 
-                <div className="flex items-center gap-1">
-                  <button
-                    onClick={() => openEditModal(item)}
-                    className="p-2 text-negro/60 dark:text-arena/60 hover:text-negro dark:hover:text-blanco hover:bg-arena/20 dark:hover:bg-carbon rounded-lg transition-colors"
-                    title="Editar cupón de lealtad"
-                  >
-                    <Edit2 className="w-4 h-4" />
-                  </button>
-                  <button
-                    onClick={() => item.id && handleDelete(item.id)}
-                    className="p-2 text-coral/70 hover:text-coral hover:bg-coral/10 rounded-lg transition-colors"
-                    title="Eliminar cupón de lealtad"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
+                  <div className="flex items-center gap-1">
+                    <button
+                      onClick={() => openEditModal(item)}
+                      className="p-2 text-negro/60 dark:text-arena/60 hover:text-[#2ABFBF] rounded-xl"
+                    >
+                      <Edit2 className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={() => item.id && handleDelete(item.id)}
+                      className="p-2 text-negro/40 dark:text-arena/40 hover:text-red-500 rounded-xl"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
                 </div>
               </div>
+            ))}
+          </div>
+
+          {/* PAGINACIÓN DE 10 */}
+          {totalPages > 1 && (
+            <div className="flex items-center justify-between p-4 border-t border-black/[0.08] dark:border-white/[0.08] font-sans">
+              <span className="text-xs font-medium text-negro/60 dark:text-arena/60">
+                Mostrando página {currentPage} de {totalPages} ({filteredRecompensas.length} recompensas)
+              </span>
+              <div className="flex items-center gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                  disabled={currentPage === 1}
+                  className="p-2 rounded-xl border border-black/10 dark:border-white/10 disabled:opacity-30 hover:bg-black/5 dark:hover:bg-white/5 transition-all text-xs font-bold"
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                </button>
+                <span className="text-xs font-bold px-2 text-negro dark:text-blanco">
+                  {currentPage} / {totalPages}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                  disabled={currentPage === totalPages}
+                  className="p-2 rounded-xl border border-black/10 dark:border-white/10 disabled:opacity-30 hover:bg-black/5 dark:hover:bg-white/5 transition-all text-xs font-bold"
+                >
+                  <ChevronRight className="w-4 h-4" />
+                </button>
+              </div>
             </div>
-          ))}
+          )}
         </div>
       )}
 
-      {/* MODAL CREAR / EDITAR CUPÓN DE LEALTAD MULTI-TIPO */}
+      {/* MODAL CREAR / EDITAR CUPÓN DE LEALTAD */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-[#050404] bg-dots-pattern border border-arena/30 dark:border-oro/40 rounded-2xl w-full max-w-lg p-6 gold-border-corner shadow-2xl relative text-negro dark:text-blanco transition-colors max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-[#16181D] border border-black/10 dark:border-white/10 rounded-[28px] w-full max-w-lg p-6 shadow-2xl relative text-negro dark:text-blanco transition-colors max-h-[90vh] overflow-y-auto flex flex-col gap-4 font-sans">
             <button
               onClick={() => setIsModalOpen(false)}
-              className="absolute top-4 right-4 p-2 text-negro/60 dark:text-arena/60 hover:text-negro dark:hover:text-blanco rounded-full hover:bg-arena/20 dark:hover:bg-carbon"
+              className="absolute top-4 right-4 p-2 text-negro/40 dark:text-arena/40 hover:text-negro dark:hover:text-blanco rounded-full hover:bg-black/5 dark:hover:bg-white/5"
             >
               <X className="w-5 h-5" />
             </button>
 
-            <div className="mb-5">
-              <span className="text-xs font-sans font-bold tracking-widest text-oro uppercase">
-                {editingItem ? 'EDITAR CUPÓN DE LEALTAD' : 'NUEVO CUPÓN DE LEALTAD'}
+            <div>
+              <span className="text-xs font-bold tracking-widest text-[#C9A84C] uppercase">
+                {editingItem ? 'EDITAR RECOMPENSA' : 'NUEVA RECOMPENSA'}
               </span>
-              <h3 className="font-display text-3xl text-negro dark:text-blanco">
+              <h3 className="font-display text-3xl text-negro dark:text-blanco mt-0.5">
                 {editingItem ? `CUPÓN: ${editingItem.codigo}` : 'CREAR RECOMPENSA DE LEALTAD'}
               </h3>
             </div>
@@ -308,17 +458,17 @@ export function LealtadConfigManager() {
             <form onSubmit={handleSubmit} className="flex flex-col gap-4">
               {/* TIPO DE RECOMPENSA */}
               <div className="flex flex-col gap-1.5">
-                <label className="text-xs font-sans uppercase font-bold text-negro/80 dark:text-arena/90">
+                <label className="text-xs uppercase font-bold text-negro/80 dark:text-arena/80">
                   Tipo de Recompensa de Lealtad *
                 </label>
                 <div className="grid grid-cols-3 gap-2">
                   <button
                     type="button"
                     onClick={() => setTipoRecompensa('porcentaje')}
-                    className={`p-3 rounded-xl border text-xs font-sans font-bold flex flex-col items-center gap-1.5 transition-all ${
+                    className={`p-3 rounded-2xl border text-xs font-bold flex flex-col items-center gap-1.5 transition-all ${
                       tipoRecompensa === 'porcentaje'
-                        ? 'bg-coral text-blanco border-coral shadow-md'
-                        : 'bg-[#F4F0E8] dark:bg-carbon border-arena/30 text-negro/70 dark:text-arena/70 hover:border-coral'
+                        ? 'bg-coral text-white border-coral shadow-md'
+                        : 'bg-black/[0.02] dark:bg-white/[0.02] border-black/10 dark:border-white/10 text-negro/70 dark:text-arena/70 hover:border-coral'
                     }`}
                   >
                     <Percent className="w-4 h-4" />
@@ -328,10 +478,10 @@ export function LealtadConfigManager() {
                   <button
                     type="button"
                     onClick={() => setTipoRecompensa('producto_regalo')}
-                    className={`p-3 rounded-xl border text-xs font-sans font-bold flex flex-col items-center gap-1.5 transition-all ${
+                    className={`p-3 rounded-2xl border text-xs font-bold flex flex-col items-center gap-1.5 transition-all ${
                       tipoRecompensa === 'producto_regalo'
-                        ? 'bg-turquesa text-negro border-turquesa shadow-md'
-                        : 'bg-[#F4F0E8] dark:bg-carbon border-arena/30 text-negro/70 dark:text-arena/70 hover:border-turquesa'
+                        ? 'bg-[#2ABFBF] text-black border-[#2ABFBF] shadow-md'
+                        : 'bg-black/[0.02] dark:bg-white/[0.02] border-black/10 dark:border-white/10 text-negro/70 dark:text-arena/70 hover:border-[#2ABFBF]'
                     }`}
                   >
                     <Gift className="w-4 h-4" />
@@ -341,10 +491,10 @@ export function LealtadConfigManager() {
                   <button
                     type="button"
                     onClick={() => setTipoRecompensa('monto_fijo')}
-                    className={`p-3 rounded-xl border text-xs font-sans font-bold flex flex-col items-center gap-1.5 transition-all ${
+                    className={`p-3 rounded-2xl border text-xs font-bold flex flex-col items-center gap-1.5 transition-all ${
                       tipoRecompensa === 'monto_fijo'
-                        ? 'bg-oro text-negro border-oro shadow-md'
-                        : 'bg-[#F4F0E8] dark:bg-carbon border-arena/30 text-negro/70 dark:text-arena/70 hover:border-oro'
+                        ? 'bg-[#C9A84C] text-black border-[#C9A84C] shadow-md'
+                        : 'bg-black/[0.02] dark:bg-white/[0.02] border-black/10 dark:border-white/10 text-negro/70 dark:text-arena/70 hover:border-[#C9A84C]'
                     }`}
                   >
                     <DollarSign className="w-4 h-4" />
@@ -353,9 +503,9 @@ export function LealtadConfigManager() {
                 </div>
               </div>
 
-              {/* Pedidos Requeridos para Desbloquear */}
+              {/* Pedidos Requeridos */}
               <div className="flex flex-col gap-1.5">
-                <label className="text-xs font-sans uppercase font-bold text-negro/80 dark:text-arena/90">
+                <label className="text-xs uppercase font-bold text-negro/80 dark:text-arena/80">
                   Número de Pedidos Completados Requeridos *
                 </label>
                 <input
@@ -365,13 +515,13 @@ export function LealtadConfigManager() {
                   placeholder="Ej. 3, 5, 8, 12..."
                   value={pedidosRequeridos}
                   onChange={(e) => setPedidosRequeridos(Number(e.target.value))}
-                  className="bg-[#F4F0E8] dark:bg-carbon border border-arena/30 dark:border-arena/20 rounded-xl px-4 py-3 text-base text-negro dark:text-blanco focus:border-oro focus:outline-none"
+                  className="bg-black/[0.03] dark:bg-white/[0.03] border border-black/10 dark:border-white/10 rounded-xl px-4 py-3 text-base text-negro dark:text-blanco focus:border-[#C9A84C] focus:outline-none font-medium"
                 />
               </div>
 
               {/* Código de Cupón */}
               <div className="flex flex-col gap-1.5">
-                <label className="text-xs font-sans uppercase font-bold text-negro/80 dark:text-arena/90">
+                <label className="text-xs uppercase font-bold text-negro/80 dark:text-arena/80">
                   Código del Cupón *
                 </label>
                 <input
@@ -380,13 +530,13 @@ export function LealtadConfigManager() {
                   placeholder="Ej. LEALTAD-3-PEDIDOS o TOSTADA-GRATIS"
                   value={codigo}
                   onChange={(e) => setCodigo(e.target.value.toUpperCase())}
-                  className="bg-[#F4F0E8] dark:bg-carbon border border-arena/30 dark:border-arena/20 rounded-xl px-4 py-3 text-base font-mono uppercase text-negro dark:text-blanco focus:border-oro focus:outline-none"
+                  className="bg-black/[0.03] dark:bg-white/[0.03] border border-black/10 dark:border-white/10 rounded-xl px-4 py-3 text-base font-mono uppercase text-negro dark:text-blanco focus:border-[#C9A84C] focus:outline-none"
                 />
               </div>
 
               {/* Título de la Recompensa */}
               <div className="flex flex-col gap-1.5">
-                <label className="text-xs font-sans uppercase font-bold text-negro/80 dark:text-arena/90">
+                <label className="text-xs uppercase font-bold text-negro/80 dark:text-arena/80">
                   Título / Descripción de la Recompensa *
                 </label>
                 <input
@@ -395,7 +545,7 @@ export function LealtadConfigManager() {
                   placeholder="Ej. Tostada de Callo Gratis en tu 3er Pedido 🥑"
                   value={titulo}
                   onChange={(e) => setTitulo(e.target.value)}
-                  className="bg-[#F4F0E8] dark:bg-carbon border border-arena/30 dark:border-arena/20 rounded-xl px-4 py-3 text-base text-negro dark:text-blanco focus:border-oro focus:outline-none"
+                  className="bg-black/[0.03] dark:bg-white/[0.03] border border-black/10 dark:border-white/10 rounded-xl px-4 py-3 text-sm text-negro dark:text-blanco focus:border-[#C9A84C] focus:outline-none font-medium"
                 />
               </div>
 
@@ -403,10 +553,10 @@ export function LealtadConfigManager() {
               {tipoRecompensa === 'porcentaje' && (
                 <div className="flex flex-col gap-1.5">
                   <div className="flex justify-between items-center">
-                    <label className="text-xs font-sans uppercase font-bold text-negro/80 dark:text-arena/90">
+                    <label className="text-xs uppercase font-bold text-negro/80 dark:text-arena/80">
                       Porcentaje de Descuento (% OFF en comanda) *
                     </label>
-                    <span className="font-display text-2xl text-coral">{descuentoPorcentaje}% OFF</span>
+                    <span className="font-display text-2xl text-coral font-bold">{descuentoPorcentaje}% OFF</span>
                   </div>
                   <input
                     type="range"
@@ -422,7 +572,7 @@ export function LealtadConfigManager() {
 
               {tipoRecompensa === 'monto_fijo' && (
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-xs font-sans uppercase font-bold text-negro/80 dark:text-arena/90">
+                  <label className="text-xs uppercase font-bold text-negro/80 dark:text-arena/80">
                     Descuento en Dinero ($ MXN) *
                   </label>
                   <input
@@ -432,18 +582,17 @@ export function LealtadConfigManager() {
                     placeholder="Ej. 50 (Monto en $ MXN)"
                     value={montoFijo}
                     onChange={(e) => setMontoFijo(Number(e.target.value))}
-                    className="bg-[#F4F0E8] dark:bg-carbon border border-arena/30 dark:border-arena/20 rounded-xl px-4 py-3 text-base text-negro dark:text-blanco focus:border-oro focus:outline-none"
+                    className="bg-black/[0.03] dark:bg-white/[0.03] border border-black/10 dark:border-white/10 rounded-xl px-4 py-3 text-base text-negro dark:text-blanco focus:border-[#C9A84C] focus:outline-none"
                   />
                 </div>
               )}
 
               {tipoRecompensa === 'producto_regalo' && (
                 <div className="flex flex-col gap-2">
-                  <label className="text-xs font-sans uppercase font-bold text-negro/80 dark:text-arena/90">
+                  <label className="text-xs uppercase font-bold text-negro/80 dark:text-arena/80">
                     Seleccionar Platillo de Regalo del Menú (100% GRATIS) *
                   </label>
                   
-                  {/* Select customizado libre de popups nativos de macOS */}
                   <CustomSelect
                     options={[
                       ...platillosList.map((p) => ({
@@ -465,32 +614,27 @@ export function LealtadConfigManager() {
                     placeholder="-- Selecciona un platillo del menú --"
                   />
 
-                  {/* Input manual de respaldo */}
                   <div className="flex flex-col gap-1 mt-1">
-                    <span className="text-[10px] font-sans text-negro/60 dark:text-arena/60 uppercase">O escribe un nombre personalizado para el regalo:</span>
+                    <span className="text-[10px] text-negro/60 dark:text-arena/60 uppercase">O escribe un nombre personalizado para el regalo:</span>
                     <input
                       type="text"
                       placeholder="Ej. Tostada de Callo de Hacha o Bebida al gusto"
                       value={productoRegalo}
                       onChange={(e) => setProductoRegalo(e.target.value)}
-                      className="bg-[#F4F0E8] dark:bg-carbon border border-arena/30 dark:border-arena/20 rounded-xl px-4 py-2.5 text-xs text-negro dark:text-blanco focus:border-turquesa focus:outline-none"
+                      className="bg-black/[0.03] dark:bg-white/[0.03] border border-black/10 dark:border-white/10 rounded-xl px-4 py-2.5 text-xs text-negro dark:text-blanco focus:border-[#2ABFBF] focus:outline-none"
                     />
                   </div>
-
-                  <span className="text-[11px] font-sans text-turquesa">
-                    Este producto se insertará automáticamente con precio de $0.00 GRATIS en la comanda BDD y WhatsApp.
-                  </span>
                 </div>
               )}
 
               {/* Estado Activo */}
-              <div className="flex justify-between items-center bg-[#F4F0E8] dark:bg-carbon p-3 rounded-xl border border-arena/30 dark:border-arena/20 mt-1">
-                <span className="text-xs font-sans font-bold">Estado Activo:</span>
+              <div className="flex justify-between items-center bg-black/[0.02] dark:bg-white/[0.02] p-3 rounded-2xl border border-black/10 dark:border-white/10 mt-1">
+                <span className="text-xs font-bold">Estado Activo:</span>
                 <button
                   type="button"
                   onClick={() => setActivo(!activo)}
                   className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all ${
-                    activo ? 'bg-turquesa text-negro' : 'bg-coral text-blanco'
+                    activo ? 'bg-[#16A34B] text-white' : 'bg-coral text-white'
                   }`}
                 >
                   {activo ? 'ACTIVADO' : 'PAUSADO'}
@@ -501,14 +645,14 @@ export function LealtadConfigManager() {
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}
-                  className="px-5 py-3 bg-[#F4F0E8] dark:bg-carbon border border-arena/30 dark:border-arena/20 text-negro dark:text-blanco font-sans font-bold text-xs rounded-xl hover:bg-arena/20 dark:hover:bg-arena/10"
+                  className="px-5 py-3 bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 text-negro dark:text-blanco font-bold text-xs rounded-xl hover:bg-black/10 dark:hover:bg-white/10"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
                   disabled={saving}
-                  className="px-6 py-3 bg-oro text-negro font-sans font-bold text-xs tracking-wider rounded-xl hover:bg-blanco transition-all flex items-center gap-2 shadow-lg disabled:opacity-50"
+                  className="px-6 py-3 bg-[#C9A84C] text-black font-bold text-xs tracking-wider rounded-xl hover:bg-[#C9A84C]/90 transition-all flex items-center gap-2 shadow-md disabled:opacity-50"
                 >
                   {saving ? (
                     <>
@@ -518,7 +662,7 @@ export function LealtadConfigManager() {
                   ) : (
                     <>
                       <CheckCircle2 className="w-4 h-4" />
-                      <span>GUARDAR CUPÓN DE LEALTAD</span>
+                      <span>GUARDAR RECOMPENSA</span>
                     </>
                   )}
                 </button>

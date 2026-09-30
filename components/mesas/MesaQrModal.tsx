@@ -37,7 +37,7 @@ export function MesaQrModal({ mesa, onClose }: MesaQrModalProps) {
   }
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/85 flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200">
       {/* Estilos para impresión de plantilla QR */}
       <style jsx global>{`
         @media print {
@@ -63,76 +63,78 @@ export function MesaQrModal({ mesa, onClose }: MesaQrModalProps) {
         }
       `}</style>
 
-      <div className="bg-[#050404] bg-dots-pattern border-2 border-oro/40 rounded-3xl w-full max-w-md p-6 md:p-8 gold-border-corner shadow-2xl relative text-blanco flex flex-col gap-6">
+      <div className="bg-white dark:bg-[#111111] border border-black/10 dark:border-white/10 rounded-[32px] w-full max-w-md p-6 sm:p-7 shadow-2xl relative text-negro dark:text-blanco flex flex-col gap-5">
         <button
+          type="button"
           onClick={onClose}
-          className="absolute top-4 right-4 p-2 text-arena/60 hover:text-blanco rounded-full hover:bg-carbon border border-arena/20"
+          className="absolute top-5 right-5 p-2 text-negro/40 dark:text-arena/50 hover:text-negro dark:hover:text-blanco rounded-full hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
         >
           <X className="w-5 h-5" />
         </button>
 
-        <div className="flex items-center gap-2 text-turquesa font-mono text-xs uppercase tracking-widest font-bold">
+        <div className="flex items-center gap-2 text-turquesa font-mono text-xs uppercase tracking-wider font-bold">
           <QrCode className="w-4 h-4" />
-          <span>AUTOPEDIDO QR PARA MESA</span>
+          <span>Autopedido QR para Mesa</span>
         </div>
 
         {/* TARJETA IMPRIMIBLE DE QR */}
         <div
           id="mesa-qr-print-card"
-          className="bg-white text-black p-6 rounded-2xl shadow-xl flex flex-col items-center justify-center text-center gap-3 border-2 border-black/10"
+          className="bg-white text-black p-6 rounded-3xl shadow-sm flex flex-col items-center justify-center text-center gap-3 border border-black/10"
         >
           <div className="flex flex-col items-center">
-            <span className="font-display text-2xl tracking-wider text-black">
+            <span className="font-sans font-black text-2xl tracking-tight text-black">
               MAREA NEGRA
             </span>
-            <span className="font-serif italic text-xs text-black/70 -mt-1">
-              Aguachiles · Sinaloa
+            <span className="font-sans font-medium text-xs text-black/60 -mt-0.5">
+              Aguachiles & Cocteles · Sinaloa
             </span>
           </div>
 
-          <div className="p-2 bg-black/5 rounded-2xl border border-black/10 shadow-inner my-1">
-            {/* Imagen del QR */}
+          <div className="p-3 bg-white rounded-2xl border border-black/10 shadow-sm my-1">
             <img
               src={qrImageUrl}
               alt={`QR para ${mesa.nombre}`}
-              className="w-48 h-48 object-contain rounded-xl"
+              className="w-44 h-44 object-contain rounded-xl"
             />
           </div>
 
-          <div className="flex flex-col items-center gap-0.5">
+          <div className="flex flex-col items-center gap-1">
             <span className="bg-black text-white text-xs font-mono font-bold px-3 py-1 rounded-full uppercase tracking-wider">
               📍 {mesa.nombre.toUpperCase()}
             </span>
             <p className="font-sans text-xs font-bold text-black/80 mt-1">
               ESCANEA CON TU CÁMARA PARA PEDIR
             </p>
-            <p className="font-serif italic text-[11px] text-black/60">
+            <p className="font-sans text-[11px] text-black/60">
               Tu orden llegará directo a tu mesa.
             </p>
           </div>
         </div>
 
         {/* ACCIONES */}
-        <div className="flex flex-col gap-2.5">
+        <div className="flex flex-col gap-2.5 pt-1">
           <div className="flex items-center gap-2">
             <button
+              type="button"
               onClick={handlePrint}
-              className="flex-1 bg-turquesa text-negro font-sans font-bold text-xs py-3.5 px-4 rounded-xl hover:bg-blanco transition-all flex items-center justify-center gap-2 shadow-lg"
+              className="flex-1 bg-coral hover:bg-coral/90 text-white font-sans font-bold text-xs py-3.5 px-4 rounded-2xl transition-all flex items-center justify-center gap-2 shadow-md active:scale-95 cursor-pointer"
             >
               <Printer className="w-4 h-4" />
-              <span>IMPRIMIR PARA MESA (WINDOW.PRINT)</span>
+              <span>Imprimir QR de Mesa</span>
             </button>
 
             <button
+              type="button"
               onClick={handleCopyLink}
-              className="bg-carbon border border-arena/20 text-blanco p-3.5 rounded-xl hover:border-turquesa transition-all flex items-center justify-center"
+              className="bg-black/5 dark:bg-white/10 hover:bg-black/10 dark:hover:bg-white/15 text-negro dark:text-blanco p-3.5 rounded-2xl transition-all flex items-center justify-center cursor-pointer active:scale-95"
               title="Copiar enlace de pedido"
             >
-              {copied ? <Check className="w-4 h-4 text-turquesa" /> : <Copy className="w-4 h-4" />}
+              {copied ? <Check className="w-4 h-4 text-[#16A34B]" /> : <Copy className="w-4 h-4" />}
             </button>
           </div>
 
-          <p className="text-[11px] font-mono text-center text-arena/50 truncate">
+          <p className="text-[11px] font-mono text-center text-negro/40 dark:text-arena/50 truncate">
             {qrTargetUrl}
           </p>
         </div>

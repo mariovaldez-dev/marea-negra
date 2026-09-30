@@ -46,8 +46,8 @@
   }
 
   select option {
-    background-color: #F4F0E8 !important;
-    color: #080808 !important;
+    background-color: #FFFFFF !important;
+    color: #0F172A !important;
     padding: 10px !important;
   }
 
@@ -57,14 +57,14 @@
     padding: 10px !important;
   }
 
-  /* Modo Claro (Marea Clara) por defecto */
+  /* Modo Claro (Minimalist Neutral #F5F5F5) por defecto */
   body {
-    background-color: #F4F0E8;
-    color: #080808;
+    background-color: #F5F5F5;
+    color: #171717;
     font-family: var(--font-sans), system-ui, sans-serif;
     font-size: 1.05rem;
     line-height: 1.6;
-    transition: background-color 0.3s ease, color 0.3s ease;
+    transition: background-color 0.2s ease, color 0.2s ease;
   }
 
   /* Modo Oscuro (Marea Oscura) cuando la clase .dark está presente */
@@ -149,20 +149,36 @@
   pointer-events: none;
 }
 
-/* Scrollbar personalizado */
+/* Scrollbar ultra-fino y elegante (Apple / Linear Bento style) */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 5px;
+  height: 5px;
 }
 ::-webkit-scrollbar-track {
-  background: #111111;
+  background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: #E8430A;
-  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.18);
+  border-radius: 9999px;
+  transition: background 0.2s ease;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #2ABFBF;
+  background: rgba(0, 0, 0, 0.35);
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.18);
+}
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.35);
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0, 0, 0, 0.18) transparent;
+}
+.dark * {
+  scrollbar-color: rgba(255, 255, 255, 0.18) transparent;
 }
 
 /* 6. Ripple Animation para botones táctiles */

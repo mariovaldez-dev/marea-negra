@@ -162,7 +162,7 @@ Me gustaría que me apoyaran con una solución por favor.`
             ¡MUCHAS GRACIAS POR TU OPINIÓN!
           </h3>
 
-          <p className="font-serif italic text-sm text-negro/70 dark:text-arena/70 max-w-md">
+          <p className="font-sans font-medium text-sm text-black/70 dark:text-white/70 max-w-md">
             {canalFinal === 'google_maps'
               ? 'Tu reseña nos ayuda a seguir preparando los mejores mariscos de Sinaloa. ¡Te esperamos pronto!'
               : canalFinal === 'whatsapp_soporte'
@@ -219,12 +219,12 @@ Me gustaría que me apoyaran con una solución por favor.`
 
           {/* MENSAJE DINÁMICO SEGÚN ESTRELLAS */}
           <p
-            className={`font-serif italic text-sm transition-all ${
+            className={`font-sans text-sm font-semibold transition-all ${
               rating === 5
                 ? 'text-oro font-bold text-base scale-105'
                 : rating > 0 && rating <= 3
                 ? 'text-coral font-bold'
-                : 'text-negro/70 dark:text-arena/70'
+                : 'text-black/70 dark:text-white/70'
             }`}
           >
             {getRatingLabel(activeRating)}

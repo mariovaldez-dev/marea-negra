@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState, useRef, useEffect } from 'react'
-import { Mesa, Platillo } from '@/lib/types/database'
+import { Mesa } from '@/lib/types/database'
 import { guardarLayoutMesas } from '@/lib/actions/mesas'
 import {
   Users,
@@ -9,11 +9,11 @@ import {
   DollarSign,
   Edit2,
   Move,
-  Check,
   Save,
   Loader2,
-  Clock,
   Sparkles,
+  MapPin,
+  Utensils,
 } from 'lucide-react'
 
 interface MesasFloorPlanProps {
@@ -67,11 +67,9 @@ export function MesasFloorPlan({
     const rawX = e.clientX - rect.left - dragOffset.x
     const rawY = e.clientY - rect.top - dragOffset.y
 
-    // Limitar dentro del canvas (ej. 800x600 o similar)
-    const maxX = Math.max(100, rect.width - 150)
-    const maxY = Math.max(100, rect.height - 150)
+    const maxX = Math.max(100, rect.width - 160)
+    const maxY = Math.max(100, rect.height - 160)
 
-    // Ajustar a cuadrícula de 10px (Grid snapping)
     const snappedX = Math.max(10, Math.min(maxX, Math.round(rawX / 10) * 10))
     const snappedY = Math.max(10, Math.min(maxY, Math.round(rawY / 10) * 10))
 
@@ -100,7 +98,6 @@ export function MesasFloorPlan({
       )
       setHasChanges(false)
       onLayoutSaved()
-      alert('¡Distribución del plano guardada con éxito!')
     } catch (err) {
       console.error('Error al guardar layout:', err)
       alert('Ocurrió un error al guardar la distribución.')
@@ -113,14 +110,14 @@ export function MesasFloorPlan({
     <div className="flex flex-col gap-4">
       {/* Barra de estado del editor de plano */}
       {isEditMode && (
-        <div className="bg-oro/10 border border-oro/30 rounded-2xl p-3.5 px-5 flex items-center justify-between shadow-lg">
+        <div className="bg-[#ECC94B]/10 border border-[#ECC94B]/30 rounded-2xl p-4 px-5 flex items-center justify-between shadow-sm animate-in fade-in duration-200">
           <div className="flex items-center gap-3">
-            <Move className="w-5 h-5 text-oro animate-pulse" />
+            <Move className="w-5 h-5 text-[#ECC94B] animate-pulse" />
             <div className="flex flex-col">
-              <span className="text-xs font-sans font-bold text-oro uppercase tracking-wider">
-                MODO ACOMODO DE PLANO ACTIVO
+              <span className="text-xs font-sans font-bold text-[#8B6E00] dark:text-[#ECC94B] uppercase tracking-wider">
+                Modo Acomodo de Plano Activo
               </span>
-              <p className="text-[11px] font-serif italic text-arena/70">
+              <p className="text-xs text-negro/60 dark:text-arena/70">
                 Arrastra las mesas con el cursor para posicionarlas en el plano físico de tu restaurante.
               </p>
             </div>
@@ -130,48 +127,51 @@ export function MesasFloorPlan({
             type="button"
             onClick={handleSaveLayout}
             disabled={!hasChanges || isSaving}
-            className="bg-oro text-negro hover:bg-blanco font-sans font-bold text-xs px-5 py-2.5 rounded-xl transition-all flex items-center gap-2 shadow-md disabled:opacity-40"
+            className="bg-[#ECC94B] text-[#3A2D00] font-sans font-bold text-xs px-5 py-2.5 rounded-full transition-all flex items-center gap-2 shadow-sm disabled:opacity-40 active:scale-95 cursor-pointer"
           >
             {isSaving ? (
               <>
                 <Loader2 className="w-4 h-4 animate-spin" />
-                <span>GUARDANDO...</span>
+                <span>Guardando...</span>
               </>
             ) : (
               <>
                 <Save className="w-4 h-4" />
-                <span>GUARDAR PLANO</span>
+                <span>Guardar Plano</span>
               </>
             )}
           </button>
         </div>
       )}
 
-      {/* CANVAS / PLANO INTERACTIVO */}
+      {/* CANVAS / PLANO INTERACTIVO DUAL THEME */}
       <div
         ref={canvasRef}
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
         onMouseLeave={handleMouseUp}
-        className={`relative w-full h-[620px] bg-[#050404] bg-dots-pattern border-2 rounded-3xl overflow-hidden shadow-2xl transition-colors select-none ${
+        className={`relative w-full h-[620px] bg-white dark:bg-[#0D0E10] border border-black/10 dark:border-white/10 rounded-[32px] overflow-hidden shadow-sm transition-colors select-none ${
           isEditMode
-            ? 'border-oro/40 ring-4 ring-oro/10 cursor-crosshair'
-            : 'border-arena/20 gold-border-corner'
+            ? 'border-[#ECC94B]/40 ring-4 ring-[#ECC94B]/10 cursor-crosshair'
+            : ''
         }`}
         style={{
+          backgroundImage: 'radial-gradient(rgba(0,0,0,0.06) 1px, transparent 1px)',
           backgroundSize: '24px 24px',
         }}
       >
         {/* Zonas decorativas de fondo */}
-        <div className="absolute top-4 left-6 pointer-events-none opacity-40">
-          <span className="font-display text-sm text-arena/40 tracking-widest uppercase">
-            🚪 ENTRADA PRINCIPAL / SALÓN
+        <div className="absolute top-4 left-6 pointer-events-none">
+          <span className="text-[10px] font-mono font-bold text-negro/30 dark:text-arena/30 tracking-widest uppercase flex items-center gap-1.5">
+            <MapPin className="w-3.5 h-3.5" />
+            <span>Entrada Principal / Salón</span>
           </span>
         </div>
 
-        <div className="absolute bottom-4 right-6 pointer-events-none opacity-40">
-          <span className="font-display text-sm text-arena/40 tracking-widest uppercase">
-            🍹 ÁREA DE BARRA & BEBIDAS
+        <div className="absolute bottom-4 right-6 pointer-events-none">
+          <span className="text-[10px] font-mono font-bold text-negro/30 dark:text-arena/30 tracking-widest uppercase flex items-center gap-1.5">
+            <Utensils className="w-3.5 h-3.5" />
+            <span>Área de Barra & Cocina</span>
           </span>
         </div>
 
@@ -183,10 +183,10 @@ export function MesasFloorPlan({
           const totalMesa = Number(mesa.pedido_activo?.total || 0)
 
           // Clases según la forma visual
-          let shapeClasses = 'w-32 h-32 rounded-2xl'
-          if (mesa.forma === 'redonda') shapeClasses = 'w-32 h-32 rounded-full'
-          else if (mesa.forma === 'rectangular') shapeClasses = 'w-44 h-28 rounded-2xl'
-          else if (mesa.forma === 'barra') shapeClasses = 'w-28 h-24 rounded-xl'
+          let shapeClasses = 'w-36 h-36 rounded-[28px]'
+          if (mesa.forma === 'redonda') shapeClasses = 'w-36 h-36 rounded-full'
+          else if (mesa.forma === 'rectangular') shapeClasses = 'w-48 h-32 rounded-[28px]'
+          else if (mesa.forma === 'barra') shapeClasses = 'w-32 h-28 rounded-2xl'
 
           return (
             <div
@@ -199,21 +199,21 @@ export function MesasFloorPlan({
               onClick={() => {
                 if (!isEditMode) onSelectMesa(mesa)
               }}
-              className={`absolute transition-transform flex flex-col items-center justify-between p-3.5 shadow-xl border-2 text-center ${shapeClasses} ${
+              className={`absolute transition-all flex flex-col items-center justify-between p-3.5 shadow-md border text-center ${shapeClasses} ${
                 isEditMode
-                  ? 'cursor-grab active:cursor-grabbing hover:scale-105 border-oro bg-carbon/90 ring-2 ring-oro/30 z-30'
+                  ? 'cursor-grab active:cursor-grabbing hover:scale-105 border-[#ECC94B] bg-white dark:bg-[#1A1A1A] ring-2 ring-[#ECC94B]/30 z-30'
                   : 'cursor-pointer hover:scale-105 active:scale-95'
               } ${
                 isFree
-                  ? 'bg-carbon/80 border-emerald-500/40 hover:border-emerald-400 text-blanco'
+                  ? 'bg-white dark:bg-[#141414] border-black/10 dark:border-white/10 hover:border-[#16A34B]'
                   : isOccupied
-                  ? 'bg-[#180a08] border-coral shadow-[0_0_20px_rgba(232,67,10,0.3)] text-blanco'
-                  : 'bg-[#181408] border-oro shadow-[0_0_20px_rgba(201,168,76,0.3)] text-blanco animate-pulse'
+                  ? 'bg-white dark:bg-[#141414] border-coral shadow-coral/10'
+                  : 'bg-white dark:bg-[#141414] border-[#ECC94B] animate-pulse'
               }`}
             >
               {/* Header de la mesa: Capacidad + Botón QR */}
-              <div className="w-full flex items-center justify-between text-[10px] text-arena/60">
-                <span className="flex items-center gap-1 font-mono">
+              <div className="w-full flex items-center justify-between text-[10px] text-negro/50 dark:text-arena/60 px-1">
+                <span className="flex items-center gap-1 font-mono font-bold">
                   <Users className="w-3 h-3 text-turquesa" />
                   <span>{mesa.capacidad}p</span>
                 </span>
@@ -224,7 +224,7 @@ export function MesasFloorPlan({
                     e.stopPropagation()
                     onOpenQr(mesa)
                   }}
-                  className="p-1 text-arena/60 hover:text-turquesa rounded-md hover:bg-carbon border border-arena/20"
+                  className="p-1 text-negro/60 dark:text-arena/60 hover:text-turquesa rounded-md hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
                   title="Ver código QR de la mesa"
                 >
                   <QrCode className="w-3 h-3" />
@@ -233,34 +233,34 @@ export function MesasFloorPlan({
 
               {/* Centro de la mesa: Nombre y Estado */}
               <div className="flex flex-col items-center justify-center my-auto">
-                <span className="font-display text-base md:text-lg tracking-wider text-blanco leading-tight">
+                <span className="font-sans font-black text-sm sm:text-base tracking-tight text-negro dark:text-blanco leading-tight">
                   {mesa.nombre}
                 </span>
 
                 {isFree ? (
-                  <span className="text-[9px] font-sans font-bold text-emerald-400 uppercase tracking-widest mt-0.5">
-                    🟢 LIBRE
+                  <span className="text-[9px] font-mono font-bold bg-[#16A34B] text-white px-2 py-0.5 rounded-full mt-1 shadow-sm">
+                    Libre
                   </span>
                 ) : (
-                  <div className="flex flex-col items-center">
-                    <span className="font-display text-base text-coral font-bold -mt-0.5">
+                  <div className="flex flex-col items-center mt-0.5">
+                    <span className="font-sans font-black text-sm sm:text-base text-negro dark:text-blanco">
                       ${totalMesa.toFixed(0)}
                     </span>
                     <span
-                      className={`text-[8px] font-sans font-bold uppercase tracking-wider px-1.5 py-0.2 rounded-full ${
+                      className={`text-[8px] font-mono font-bold uppercase tracking-wider px-2 py-0.5 rounded-full mt-0.5 shadow-sm ${
                         isPendingBill
-                          ? 'bg-oro text-negro'
-                          : 'bg-coral/30 text-coral border border-coral/40'
+                          ? 'bg-[#ECC94B] text-[#3A2D00]'
+                          : 'bg-coral text-white'
                       }`}
                     >
-                      {isPendingBill ? '🟡 CUENTA' : '🔴 COMIENDO'}
+                      {isPendingBill ? 'Cuenta' : 'Comiendo'}
                     </span>
                   </div>
                 )}
               </div>
 
               {/* Footer de la mesa */}
-              <div className="w-full flex items-center justify-center text-[9px] font-sans">
+              <div className="w-full flex items-center justify-center text-[9px] font-sans px-1">
                 {isEditMode ? (
                   <button
                     type="button"
@@ -268,14 +268,14 @@ export function MesasFloorPlan({
                       e.stopPropagation()
                       onEditConfig(mesa)
                     }}
-                    className="text-oro hover:underline flex items-center gap-1"
+                    className="text-oro font-bold hover:underline flex items-center gap-1"
                   >
                     <Edit2 className="w-2.5 h-2.5" />
                     <span>Config</span>
                   </button>
                 ) : (
-                  <span className="text-arena/50 truncate max-w-full font-serif italic text-[10px]">
-                    {isFree ? 'Toca para abrir' : mesa.pedido_activo?.cliente_nombre || 'Comanda activa'}
+                  <span className="text-negro/50 dark:text-arena/50 truncate max-w-full font-medium text-[10px]">
+                    {isFree ? 'Abrir comanda' : mesa.pedido_activo?.cliente_nombre || 'Comanda activa'}
                   </span>
                 )}
               </div>

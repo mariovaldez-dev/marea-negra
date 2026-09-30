@@ -2,7 +2,6 @@
 
 import React, { useState } from 'react'
 import { Insumo, MovimientoInventario, TipoMovimiento, Platillo, PlatilloIngrediente } from '@/lib/types/database'
-import { NarrativeCard } from '@/components/ui/NarrativeCard'
 import {
   registrarMovimientoInventario,
   crearInsumo,
@@ -24,14 +23,18 @@ import {
   Edit2,
   Trash2,
   TrendingUp,
-  Calendar,
   Copy,
-  Sparkles,
   PackageCheck,
   Truck,
   ChefHat,
   Utensils,
   BookOpen,
+  Boxes,
+  Layers,
+  Search,
+  ChevronLeft,
+  ChevronRight,
+  Sparkles,
 } from 'lucide-react'
 
 interface InventoryManagerProps {
@@ -41,23 +44,34 @@ interface InventoryManagerProps {
   initialRecetas?: PlatilloIngrediente[]
 }
 
+const ITEMS_PER_PAGE = 10
+
 export function InventoryManager({
   initialInsumos,
   historialMovimientos,
   initialPlatillos = [],
   initialRecetas = [],
 }: InventoryManagerProps) {
-  const [activeTab, setActiveTab] = useState<'stock' | 'proyeccion' | 'recetas'>('stock')
+  const [activeTab, setActiveTab] = useState<'stock' | 'recetas' | 'proyeccion' | 'bitacora'>('stock')
   const [insumos, setInsumos] = useState<Insumo[]>(initialInsumos)
   const [movimientos, setMovimientos] = useState<MovimientoInventario[]>(historialMovimientos)
   const [platillos] = useState<Platillo[]>(initialPlatillos)
   const [recetas, setRecetas] = useState<PlatilloIngrediente[]>(initialRecetas)
   const [copiedOrder, setCopiedOrder] = useState(false)
 
+  // Estados de Búsqueda y Filtros Homologados
+  const [searchQuery, setSearchQuery] = useState('')
+  const [stockFilter, setStockFilter] = useState<'todos' | 'bajo' | 'optimo'>('todos')
+  const [recetasFilter, setRecetasFilter] = useState<'todos' | 'con_receta' | 'sin_receta'>('todos')
+  const [proyeccionFilter, setProyeccionFilter] = useState<'todos' | 'critico' | 'surtir' | 'optimo'>('todos')
+  const [bitacoraFilter, setBitacoraFilter] = useState<'todos' | 'entrada' | 'salida'>('todos')
+
+  // Paginación Homologada
+  const [currentPage, setCurrentPage] = useState(1)
+
   // Modales
   const [activeModal, setActiveModal] = useState<'movimiento' | 'nuevo' | 'editar' | 'receta' | null>(null)
   const [selectedInsumo, setSelectedInsumo] = useState<Insumo | null>(null)
-  const [selectedPlatillo, setSelectedPlatillo] = useState<Platillo | null>(null)
   const [tipoMov, setTipoMov] = useState<TipoMovimiento>('entrada')
   const [cantidad, setCantidad] = useState<string | number>(1)
   const [motivo, setMotivo] = useState('')
@@ -73,6 +87,13 @@ export function InventoryManager({
   const [formUnidad, setFormUnidad] = useState('kg')
   const [formStockActual, setFormStockActual] = useState<string | number>(5)
   const [formStockMinimo, setFormStockMinimo] = useState<string | number>(2)
+
+  // Cambio de Pestaña con reinicio de página y búsqueda
+  const handleTabChange = (tab: 'stock' | 'recetas' | 'proyeccion' | 'bitacora') => {
+    setActiveTab(tab)
+    setSearchQuery('')
+    setCurrentPage(1)
+  }
 
   const handleOpenMovModal = (insumo: Insumo, tipo: TipoMovimiento) => {
     setSelectedInsumo(insumo)
@@ -116,7 +137,6 @@ export function InventoryManager({
         motivo,
       })
 
-      // Actualizar estado local
       setInsumos((prev) =>
         prev.map((item) =>
           item.id === selectedInsumo.id
@@ -125,7 +145,6 @@ export function InventoryManager({
         )
       )
 
-      // Agregar a bitácora local
       const nuevoMov: MovimientoInventario = {
         id: Date.now(),
         insumo_id: selectedInsumo.id,
@@ -137,7 +156,6 @@ export function InventoryManager({
         insumo: selectedInsumo,
       }
       setMovimientos((prev) => [nuevoMov, ...prev])
-
       setActiveModal(null)
     } catch (err) {
       console.error('Error al registrar movimiento:', err)
@@ -220,7 +238,10 @@ export function InventoryManager({
   const handleCopyShoppingList = () => {
     const listLines = insumos.map((i) => {
       const demandaEstimada = Number(i.stock_minimo) * 1.8
-      const sugerido = Math.max(0, Math.ceil(demandaEstimada + Number(i.stock_minimo) - Number(i.stock_actual)))
+      const sugerido = Math.max(
+        0,
+        Math.ceil(demandaEstimada + Number(i.stock_minimo) - Number(i.stock_actual))
+      )
       return `• ${i.nombre}: Pedir ${sugerido} ${i.unidad} (Stock actual: ${i.stock_actual} ${i.unidad})`
     })
 
@@ -293,31 +314,85 @@ export function InventoryManager({
     }
   }
 
+  // Métricas
+  const lowStockCount = insumos.filter((i) => i.stock_actual <= i.stock_minimo).length
+  const totalInsumos = insumos.length
+  const totalRecetasLinked = recetas.length
+  const totalMovimientos = movimientos.length
+
+  // Listas filtradas por pestaña
+  const filteredInsumos = insumos.filter((insumo) => {
+    const matches = insumo.nombre.toLowerCase().includes(searchQuery.toLowerCase())
+    const isLow = insumo.stock_actual <= insumo.stock_minimo
+    if (stockFilter === 'bajo') return matches && isLow
+    if (stockFilter === 'optimo') return matches && !isLow
+    return matches
+  })
+
+  const filteredPlatillos = platillos.filter((p) => {
+    const matches = p.nombre.toLowerCase().includes(searchQuery.toLowerCase())
+    const hasReceta = recetas.some((r) => r.platillo_id === p.id)
+    if (recetasFilter === 'con_receta') return matches && hasReceta
+    if (recetasFilter === 'sin_receta') return matches && !hasReceta
+    return matches
+  })
+
+  const filteredProyeccion = insumos.filter((insumo) => {
+    const matches = insumo.nombre.toLowerCase().includes(searchQuery.toLowerCase())
+    const demandaEstimada = Number(insumo.stock_minimo) * 1.8
+    const sugerido = Math.max(
+      0,
+      Math.ceil(demandaEstimada + Number(insumo.stock_minimo) - Number(insumo.stock_actual))
+    )
+    const isLow = insumo.stock_actual <= insumo.stock_minimo
+
+    if (proyeccionFilter === 'critico') return matches && isLow
+    if (proyeccionFilter === 'surtir') return matches && !isLow && sugerido > 0
+    if (proyeccionFilter === 'optimo') return matches && !isLow && sugerido === 0
+    return matches
+  })
+
+  const filteredMovimientos = movimientos.filter((m) => {
+    const insumoNombre = m.insumo?.nombre || ''
+    const motivoText = m.motivo || ''
+    const matches =
+      insumoNombre.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      motivoText.toLowerCase().includes(searchQuery.toLowerCase())
+    if (bitacoraFilter === 'entrada') return matches && m.tipo === 'entrada'
+    if (bitacoraFilter === 'salida') return matches && m.tipo === 'salida'
+    return matches
+  })
+
   return (
-    <div className="flex flex-col gap-6">
-      {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-arena/10 pb-4">
-        <div>
-          <span className="text-xs font-sans font-semibold tracking-widest text-turquesa uppercase">
-            CONTROL DE INGREDIENTES, MERMA & ESCANDALLOS
-          </span>
-          <h1 className="font-display text-4xl text-blanco tracking-wide">
-            INVENTARIO & RECETAS DE COCINA
+    <div className="flex flex-col gap-6 relative min-h-[calc(100vh-140px)] w-full max-w-7xl mx-auto pb-20">
+      {/* ── BENTO HEADER ────────────────────────────────────────────────────────── */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-black/10 dark:border-white/10">
+        <div className="flex flex-col gap-1">
+          <div className="flex items-center gap-2">
+            <span className="bg-coral text-white text-[10px] font-bold px-2.5 py-0.5 rounded-full uppercase tracking-wider shadow-sm">
+              CONTROL DE COCINA
+            </span>
+            <span className="text-[11px] font-sans font-medium text-black/50 dark:text-white/50">
+              Insumos, Merma & Escandallos
+            </span>
+          </div>
+          <h1 className="font-display text-3xl sm:text-4xl text-black dark:text-white tracking-wide">
+            INVENTARIO & RECETAS
           </h1>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 flex-wrap">
           <button
             onClick={() => handleOpenRecetaModal()}
-            className="bg-carbon border border-oro/40 hover:border-oro text-oro hover:text-blanco font-sans font-bold text-xs tracking-wider px-5 py-3 rounded-full transition-all flex items-center gap-2"
+            className="inline-flex items-center gap-2 bg-black/[0.04] dark:bg-white/[0.05] hover:bg-black/10 dark:hover:bg-white/10 text-black dark:text-white border border-black/10 dark:border-white/10 font-sans font-bold text-xs tracking-wider px-4 py-2.5 rounded-full transition-all active:scale-95"
           >
-            <ChefHat className="w-4 h-4" />
-            <span>CONFIGURAR RECETA</span>
+            <ChefHat className="w-4 h-4 text-oro" />
+            <span>VINCULAR INGREDIENTE</span>
           </button>
 
           <button
             onClick={handleOpenCrearModal}
-            className="bg-turquesa text-negro hover:bg-blanco font-sans font-bold text-xs tracking-wider px-5 py-3 rounded-full shadow-[0_0_20px_rgba(42,191,191,0.3)] transition-all flex items-center gap-2"
+            className="inline-flex items-center gap-2 bg-coral text-white hover:bg-coral/90 font-sans font-bold text-xs tracking-wider px-5 py-2.5 rounded-full shadow-[0_4px_20px_rgba(232,67,10,0.35)] transition-all active:scale-95"
           >
             <Plus className="w-4 h-4 stroke-[3]" />
             <span>NUEVO INSUMO</span>
@@ -325,455 +400,933 @@ export function InventoryManager({
         </div>
       </div>
 
-      {/* PESTAÑAS: STOCK ACTUAL VS RECETAS VS PROYECCIÓN */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 bg-carbon p-1.5 rounded-2xl border border-arena/20">
+      {/* ── 4 BENTO KPI CARDS HOMOLOGADAS ─────────────────────────────────────── */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5 sm:gap-4">
+        <div className="bg-white dark:bg-[#111111] border border-black/10 dark:border-white/10 rounded-[24px] p-4 flex items-center justify-between shadow-sm">
+          <div className="flex flex-col">
+            <span className="text-[10px] font-sans font-bold uppercase tracking-wider text-black/50 dark:text-white/50">
+              TOTAL INSUMOS
+            </span>
+            <span className="font-display text-2xl sm:text-3xl text-black dark:text-white">
+              {totalInsumos}
+            </span>
+          </div>
+          <div className="w-9 h-9 rounded-full bg-turquesa/10 dark:bg-turquesa/20 text-turquesa flex items-center justify-center">
+            <Boxes className="w-4 h-4" />
+          </div>
+        </div>
+
+        <div className="bg-white dark:bg-[#111111] border border-black/10 dark:border-white/10 rounded-[24px] p-4 flex items-center justify-between shadow-sm">
+          <div className="flex flex-col">
+            <span className="text-[10px] font-sans font-bold uppercase tracking-wider text-black/50 dark:text-white/50">
+              STOCK BAJO
+            </span>
+            <span
+              className={`font-display text-2xl sm:text-3xl ${
+                lowStockCount > 0 ? 'text-coral' : 'text-[#16A34B]'
+              }`}
+            >
+              {lowStockCount}
+            </span>
+          </div>
+          <div
+            className={`w-9 h-9 rounded-full flex items-center justify-center ${
+              lowStockCount > 0
+                ? 'bg-coral/10 dark:bg-coral/20 text-coral'
+                : 'bg-[#16A34B]/10 dark:bg-[#16A34B]/20 text-[#16A34B]'
+            }`}
+          >
+            {lowStockCount > 0 ? (
+              <AlertTriangle className="w-4 h-4" />
+            ) : (
+              <Check className="w-4 h-4 stroke-[3]" />
+            )}
+          </div>
+        </div>
+
+        <div className="bg-white dark:bg-[#111111] border border-black/10 dark:border-white/10 rounded-[24px] p-4 flex items-center justify-between shadow-sm">
+          <div className="flex flex-col">
+            <span className="text-[10px] font-sans font-bold uppercase tracking-wider text-black/50 dark:text-white/50">
+              ESCANDALLOS
+            </span>
+            <span className="font-display text-2xl sm:text-3xl text-oro">
+              {totalRecetasLinked}
+            </span>
+          </div>
+          <div className="w-9 h-9 rounded-full bg-oro/10 dark:bg-oro/20 text-oro flex items-center justify-center">
+            <Layers className="w-4 h-4" />
+          </div>
+        </div>
+
+        <div className="bg-white dark:bg-[#111111] border border-black/10 dark:border-white/10 rounded-[24px] p-4 flex items-center justify-between shadow-sm">
+          <div className="flex flex-col">
+            <span className="text-[10px] font-sans font-bold uppercase tracking-wider text-black/50 dark:text-white/50">
+              MOVIMIENTOS
+            </span>
+            <span className="font-display text-2xl sm:text-3xl text-black dark:text-white">
+              {totalMovimientos}
+            </span>
+          </div>
+          <div className="w-9 h-9 rounded-full bg-black/5 dark:bg-white/10 text-black dark:text-white flex items-center justify-center">
+            <History className="w-4 h-4" />
+          </div>
+        </div>
+      </div>
+
+      {/* ── 4 PESTAÑAS SEGMENTADAS HOMOLOGADAS ─────────────────────────────────── */}
+      <div className="flex items-center p-1 bg-black/[0.04] dark:bg-white/[0.05] rounded-full border border-black/5 dark:border-white/10 w-full sm:w-fit overflow-x-auto no-scrollbar">
         <button
           type="button"
-          onClick={() => setActiveTab('stock')}
-          className={`py-3 px-4 rounded-xl text-xs sm:text-sm font-sans font-bold transition-all flex items-center justify-center gap-2 ${
+          onClick={() => handleTabChange('stock')}
+          className={`px-4 py-2 rounded-full text-xs font-sans font-bold transition-all flex items-center gap-1.5 shrink-0 ${
             activeTab === 'stock'
-              ? 'bg-turquesa text-negro shadow-md'
-              : 'text-arena/70 hover:text-blanco'
+              ? 'bg-turquesa text-black shadow-sm font-extrabold'
+              : 'text-black/70 dark:text-white/70 hover:text-black dark:hover:text-white'
           }`}
         >
-          <PackageCheck className="w-4 h-4" />
+          <PackageCheck className="w-3.5 h-3.5" />
           <span>STOCK ACTUAL ({insumos.length})</span>
         </button>
 
         <button
           type="button"
-          onClick={() => setActiveTab('recetas')}
-          className={`py-3 px-4 rounded-xl text-xs sm:text-sm font-sans font-bold transition-all flex items-center justify-center gap-2 ${
+          onClick={() => handleTabChange('recetas')}
+          className={`px-4 py-2 rounded-full text-xs font-sans font-bold transition-all flex items-center gap-1.5 shrink-0 ${
             activeTab === 'recetas'
-              ? 'bg-oro text-negro shadow-md'
-              : 'text-arena/70 hover:text-blanco'
+              ? 'bg-oro text-black shadow-sm font-extrabold'
+              : 'text-black/70 dark:text-white/70 hover:text-black dark:hover:text-white'
           }`}
         >
-          <BookOpen className="w-4 h-4" />
-          <span>🍳 RECETAS & ESCANDALLOS ({platillos.length})</span>
+          <BookOpen className="w-3.5 h-3.5" />
+          <span>RECETARIO & ESCANDALLOS ({platillos.length})</span>
         </button>
 
         <button
           type="button"
-          onClick={() => setActiveTab('proyeccion')}
-          className={`py-3 px-4 rounded-xl text-xs sm:text-sm font-sans font-bold transition-all flex items-center justify-center gap-2 ${
+          onClick={() => handleTabChange('proyeccion')}
+          className={`px-4 py-2 rounded-full text-xs font-sans font-bold transition-all flex items-center gap-1.5 shrink-0 ${
             activeTab === 'proyeccion'
-              ? 'bg-gradient-to-r from-coral to-amber-600 text-blanco shadow-md'
-              : 'text-arena/70 hover:text-blanco'
+              ? 'bg-coral text-white shadow-sm font-extrabold'
+              : 'text-black/70 dark:text-white/70 hover:text-black dark:hover:text-white'
           }`}
         >
-          <TrendingUp className="w-4 h-4" />
-          <span>📊 PROYECCIÓN FIN DE SEMANA</span>
+          <TrendingUp className="w-3.5 h-3.5" />
+          <span>PROYECCIÓN COMPRAS</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => handleTabChange('bitacora')}
+          className={`px-4 py-2 rounded-full text-xs font-sans font-bold transition-all flex items-center gap-1.5 shrink-0 ${
+            activeTab === 'bitacora'
+              ? 'bg-black dark:bg-white text-white dark:text-black shadow-sm font-extrabold'
+              : 'text-black/70 dark:text-white/70 hover:text-black dark:hover:text-white'
+          }`}
+        >
+          <History className="w-3.5 h-3.5" />
+          <span>BITÁCORA ({movimientos.length})</span>
         </button>
       </div>
 
-      {/* VISTA 1: STOCK ACTUAL */}
-      {activeTab === 'stock' && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {insumos.map((insumo) => {
-            const isLow = insumo.stock_actual <= insumo.stock_minimo
-            const percentage = Math.min(
-              100,
-              Math.round((insumo.stock_actual / (insumo.stock_minimo * 2.5)) * 100)
-            )
-
-          return (
-            <div
-              key={insumo.id}
-              className={`bg-[#050404] bg-dots-pattern border rounded-2xl p-5 flex flex-col justify-between transition-all group ${
-                isLow
-                  ? 'border-coral/50 shadow-[0_0_15px_rgba(232,67,10,0.15)]'
-                  : 'border-arena/10 hover:border-turquesa/40'
-              }`}
-            >
-              <div>
-                <div className="flex justify-between items-start mb-2">
-                  <div className="flex flex-col">
-                    <h3 className="font-sans font-bold text-base text-blanco group-hover:text-turquesa transition-colors">
-                      {insumo.nombre}
-                    </h3>
-                    <span className="text-[10px] font-sans text-arena/60">
-                      Unidad: {insumo.unidad}
-                    </span>
-                  </div>
-
-                  <div className="flex items-center gap-1.5">
-                    {/* Botón Editar */}
-                    <button
-                      onClick={() => handleOpenEditarModal(insumo)}
-                      className="p-1.5 bg-carbon border border-arena/20 text-arena/80 hover:text-turquesa hover:border-turquesa rounded-lg transition-all"
-                      title="Editar insumo"
-                    >
-                      <Edit2 className="w-3.5 h-3.5" />
-                    </button>
-
-                    {/* Botón Eliminar */}
-                    <button
-                      onClick={() => handleEliminarInsumo(insumo)}
-                      className="p-1.5 bg-carbon border border-arena/20 text-arena/80 hover:text-coral hover:border-coral rounded-lg transition-all"
-                      title="Eliminar insumo"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
-                </div>
-
-                <div className="flex items-baseline gap-2 mt-2">
-                  <span className="font-display text-4xl text-blanco">
-                    {insumo.stock_actual}
-                  </span>
-                  <span className="text-xs font-sans text-arena/70">
-                    / mín: {insumo.stock_minimo} {insumo.unidad}
-                  </span>
-                </div>
-
-                {/* Badge de estado */}
-                <div className="mt-2">
-                  {isLow ? (
-                    <span className="inline-flex px-2.5 py-1 text-[10px] font-sans font-bold uppercase tracking-wider rounded-md bg-coral/20 text-coral border border-coral/40 items-center gap-1">
-                      <AlertTriangle className="w-3.5 h-3.5" />
-                      <span>⚠ Stock Bajo ({insumo.stock_actual} {insumo.unidad})</span>
-                    </span>
-                  ) : (
-                    <span className="inline-flex px-2.5 py-1 text-[10px] font-sans uppercase tracking-wider rounded-md bg-turquesa/10 text-turquesa border border-turquesa/20">
-                      Óptimo ({insumo.stock_actual} {insumo.unidad})
-                    </span>
-                  )}
-                </div>
-
-                {/* Barra de progreso de Stock */}
-                <div className="w-full h-2.5 bg-carbon rounded-full overflow-hidden mt-3 border border-arena/10">
-                  <div
-                    className={`h-full transition-all duration-500 ${
-                      isLow ? 'bg-coral' : 'bg-turquesa'
-                    }`}
-                    style={{ width: `${percentage}%` }}
-                  />
-                </div>
-              </div>
-
-              {/* Botones + Entrada y - Salida */}
-              <div className="flex items-center gap-2 mt-6 pt-4 border-t border-arena/10">
-                <button
-                  onClick={() => handleOpenMovModal(insumo, 'entrada')}
-                  className="flex-1 bg-turquesa/10 text-turquesa hover:bg-turquesa hover:text-negro border border-turquesa/30 font-sans font-bold text-xs py-2.5 px-3 rounded-xl transition-all flex items-center justify-center gap-1 shadow-md"
-                >
-                  <Plus className="w-4 h-4 stroke-[3]" />
-                  <span>+ ENTRADA</span>
-                </button>
-
-                <button
-                  onClick={() => handleOpenMovModal(insumo, 'salida')}
-                  className="flex-1 bg-coral/10 text-coral hover:bg-coral hover:text-blanco border border-coral/30 font-sans font-bold text-xs py-2.5 px-3 rounded-xl transition-all flex items-center justify-center gap-1 shadow-md"
-                >
-                  <Minus className="w-4 h-4 stroke-[3]" />
-                  <span>- SALIDA</span>
-                </button>
-              </div>
-            </div>
-          )
-        })}
-      </div>
-      )}
-
-      {/* VISTA 2: PROYECCIÓN PREDICTIVA DE COMPRAS PARA FIN DE SEMANA */}
-      {activeTab === 'proyeccion' && (
-        <div className="flex flex-col gap-6 animate-in fade-in zoom-in-95 duration-200">
-          {/* BANNER EXPLICATIVO */}
-          <div className="bg-white dark:bg-[#050404] bg-dots-pattern border border-arena/30 dark:border-oro/30 rounded-3xl p-6 shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-4">
-            <div className="flex items-center gap-3">
-              <div className="p-3 bg-oro/20 text-oro rounded-2xl border border-oro/30">
-                <Truck className="w-6 h-6 text-oro" />
-              </div>
-              <div>
-                <h3 className="font-display text-2xl text-negro dark:text-blanco">
-                  PROYECCIÓN INTELIGENTE DE COMPRAS (VIE - DOM)
-                </h3>
-                <p className="text-xs text-negro/70 dark:text-arena/70">
-                  Cálculo automático de demanda para asegurar stock en horas pico sin generar merma innecesaria.
-                </p>
-              </div>
-            </div>
-
-            <button
-              type="button"
-              onClick={handleCopyShoppingList}
-              className="bg-oro text-negro hover:bg-blanco font-sans font-bold text-xs py-3 px-5 rounded-2xl shadow-lg transition-all flex items-center gap-2 border border-oro/40 shrink-0"
-            >
-              {copiedOrder ? (
-                <>
-                  <Check className="w-4 h-4 text-negro" />
-                  <span>¡LISTA COPIADA!</span>
-                </>
-              ) : (
-                <>
-                  <Copy className="w-4 h-4" />
-                  <span>📋 COPIAR LISTA PARA PROVEEDOR</span>
-                </>
-              )}
-            </button>
-          </div>
-
-          {/* TABLA DE INSUMOS CON SEMÁFORO DE COMPRA */}
-          <div className="bg-white dark:bg-[#050404] bg-dots-pattern border border-arena/30 dark:border-oro/30 rounded-3xl p-6 shadow-xl flex flex-col gap-4">
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs font-sans">
-                <thead>
-                  <tr className="border-b border-arena/20 text-arena uppercase text-[10px] tracking-wider">
-                    <th className="pb-3">Insumo</th>
-                    <th className="pb-3 text-center">Stock Actual</th>
-                    <th className="pb-3 text-center">Consumo Estimado (Fin de Semana)</th>
-                    <th className="pb-3 text-center">Stock Mínimo</th>
-                    <th className="pb-3 text-center">Sugerencia de Compra</th>
-                    <th className="pb-3 text-right">Estado / Urgencia</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-arena/10">
-                  {insumos.map((insumo) => {
-                    const demandaEstimada = Number(insumo.stock_minimo) * 1.8
-                    const sugerido = Math.max(
-                      0,
-                      Math.ceil(demandaEstimada + Number(insumo.stock_minimo) - Number(insumo.stock_actual))
-                    )
-                    const isLow = insumo.stock_actual <= insumo.stock_minimo
-
-                    return (
-                      <tr key={insumo.id} className="hover:bg-arena/5 transition-colors">
-                        <td className="py-4 font-bold text-sm text-negro dark:text-blanco">
-                          {insumo.nombre}
-                        </td>
-                        <td className="py-4 text-center font-mono font-bold text-turquesa">
-                          {insumo.stock_actual} {insumo.unidad}
-                        </td>
-                        <td className="py-4 text-center font-mono text-arena/80">
-                          ~{demandaEstimada.toFixed(1)} {insumo.unidad}
-                        </td>
-                        <td className="py-4 text-center font-mono text-arena/60">
-                          {insumo.stock_minimo} {insumo.unidad}
-                        </td>
-                        <td className="py-4 text-center">
-                          {sugerido > 0 ? (
-                            <span className="font-display text-lg text-coral font-bold bg-coral/10 px-3 py-1 rounded-xl border border-coral/30">
-                              Pedir +{sugerido} {insumo.unidad}
-                            </span>
-                          ) : (
-                            <span className="text-emerald-400 font-mono font-bold bg-emerald-950/40 px-3 py-1 rounded-xl border border-emerald-500/30">
-                              Cubierto ✅
-                            </span>
-                          )}
-                        </td>
-                        <td className="py-4 text-right">
-                          {isLow ? (
-                            <span className="text-[10px] font-bold text-coral bg-coral/20 border border-coral/40 px-2.5 py-1 rounded-full uppercase animate-pulse">
-                              🔴 Crítico / Urgente
-                            </span>
-                          ) : sugerido > 0 ? (
-                            <span className="text-[10px] font-bold text-amber-400 bg-amber-950/40 border border-amber-500/30 px-2.5 py-1 rounded-full uppercase">
-                              🟡 Comprar p/ Fin de Semana
-                            </span>
-                          ) : (
-                            <span className="text-[10px] font-bold text-emerald-400 bg-emerald-950/30 border border-emerald-500/20 px-2.5 py-1 rounded-full uppercase">
-                              🟢 Stock Óptimo
-                            </span>
-                          )}
-                        </td>
-                      </tr>
-                    )
-                  })}
-                </tbody>
-              </table>
-            </div>
-          </div>
+      {/* ── BARRA DE BÚSQUEDA Y FILTROS ESTÁNDAR HOMOLOGADA ────────────────────── */}
+      <div className="bg-white dark:bg-[#111111] border border-black/10 dark:border-white/10 rounded-[28px] p-3 sm:p-4 shadow-sm flex flex-col md:flex-row items-center justify-between gap-3">
+        <div className="relative w-full md:w-80">
+          <Search className="w-4 h-4 absolute left-3.5 top-3 text-black/40 dark:text-white/40" />
+          <input
+            type="text"
+            placeholder={
+              activeTab === 'stock'
+                ? 'Buscar insumo por nombre...'
+                : activeTab === 'recetas'
+                ? 'Buscar platillo por nombre...'
+                : activeTab === 'proyeccion'
+                ? 'Filtrar insumo para compra...'
+                : 'Buscar en bitácora...'
+            }
+            value={searchQuery}
+            onChange={(e) => {
+              setSearchQuery(e.target.value)
+              setCurrentPage(1)
+            }}
+            className="w-full bg-black/[0.03] dark:bg-white/[0.05] border border-black/10 dark:border-white/10 rounded-full pl-10 pr-4 py-2 text-xs text-black dark:text-white focus:border-turquesa focus:outline-none transition-all"
+          />
         </div>
-      )}
 
-      {/* VISTA 3: RECETAS & ESCANDALLOS */}
-      {activeTab === 'recetas' && (
-        <div className="flex flex-col gap-6 animate-in fade-in duration-300">
-          <div className="bg-[#050404] bg-dots-pattern border border-oro/30 rounded-3xl p-6 shadow-2xl flex flex-col md:flex-row md:items-center justify-between gap-4">
-            <div className="flex items-center gap-3">
-              <div className="p-3 bg-oro/10 border border-oro/30 rounded-2xl text-oro shadow-inner">
-                <ChefHat className="w-8 h-8" />
-              </div>
-              <div className="flex flex-col">
-                <span className="text-xs font-sans font-bold tracking-widest text-turquesa uppercase">
-                  DESCUENTO AUTOMÁTICO POR COMANDA
-                </span>
-                <h2 className="font-display text-3xl text-blanco tracking-wide">
-                  RECETARIO & ESCANDALLOS DE PLATILLOS
-                </h2>
-                <span className="text-xs font-serif italic text-arena/80">
-                  Cada vez que una orden entra a cocina o se entrega, el sistema descuenta automáticamente los gramos/unidades exactas de tus insumos.
-                </span>
-              </div>
-            </div>
+        {/* Filtros dinámicos según pestaña activa */}
+        <div className="flex items-center gap-1.5 w-full md:w-auto flex-wrap justify-start md:justify-end">
+          {activeTab === 'stock' && (
+            <>
+              <button
+                onClick={() => { setStockFilter('todos'); setCurrentPage(1) }}
+                className={`px-3 py-1.5 rounded-full text-xs font-sans font-bold transition-all ${
+                  stockFilter === 'todos'
+                    ? 'bg-black/10 dark:bg-white/15 text-black dark:text-white font-extrabold'
+                    : 'text-black/60 dark:text-white/60 hover:text-black dark:hover:text-white'
+                }`}
+              >
+                Todos ({insumos.length})
+              </button>
+              <button
+                onClick={() => { setStockFilter('bajo'); setCurrentPage(1) }}
+                className={`px-3 py-1.5 rounded-full text-xs font-sans font-bold transition-all ${
+                  stockFilter === 'bajo'
+                    ? 'bg-coral text-white shadow-sm'
+                    : 'text-black/60 dark:text-white/60 hover:text-coral'
+                }`}
+              >
+                ⚠️ Bajo ({lowStockCount})
+              </button>
+              <button
+                onClick={() => { setStockFilter('optimo'); setCurrentPage(1) }}
+                className={`px-3 py-1.5 rounded-full text-xs font-sans font-bold transition-all ${
+                  stockFilter === 'optimo'
+                    ? 'bg-[#16A34B] text-white shadow-sm'
+                    : 'text-black/60 dark:text-white/60 hover:text-[#16A34B]'
+                }`}
+              >
+                ✅ Óptimo ({insumos.length - lowStockCount})
+              </button>
+            </>
+          )}
 
-            <button
-              onClick={() => handleOpenRecetaModal()}
-              className="bg-oro text-negro hover:bg-blanco font-sans font-bold text-xs tracking-wider px-6 py-3.5 rounded-full shadow-[0_0_20px_rgba(201,168,76,0.3)] transition-all flex items-center gap-2 self-start md:self-auto shrink-0"
-            >
-              <Plus className="w-4 h-4 stroke-[3]" />
-              <span>AGREGAR INGREDIENTE A PLATILLO</span>
-            </button>
-          </div>
+          {activeTab === 'recetas' && (
+            <>
+              <button
+                onClick={() => { setRecetasFilter('todos'); setCurrentPage(1) }}
+                className={`px-3 py-1.5 rounded-full text-xs font-sans font-bold transition-all ${
+                  recetasFilter === 'todos'
+                    ? 'bg-black/10 dark:bg-white/15 text-black dark:text-white font-extrabold'
+                    : 'text-black/60 dark:text-white/60 hover:text-black dark:hover:text-white'
+                }`}
+              >
+                Todos ({platillos.length})
+              </button>
+              <button
+                onClick={() => { setRecetasFilter('con_receta'); setCurrentPage(1) }}
+                className={`px-3 py-1.5 rounded-full text-xs font-sans font-bold transition-all ${
+                  recetasFilter === 'con_receta'
+                    ? 'bg-oro text-black shadow-sm font-extrabold'
+                    : 'text-black/60 dark:text-white/60 hover:text-oro'
+                }`}
+              >
+                🍳 Con Escandallo
+              </button>
+              <button
+                onClick={() => { setRecetasFilter('sin_receta'); setCurrentPage(1) }}
+                className={`px-3 py-1.5 rounded-full text-xs font-sans font-bold transition-all ${
+                  recetasFilter === 'sin_receta'
+                    ? 'bg-black/10 dark:bg-white/15 text-black dark:text-white font-extrabold'
+                    : 'text-black/60 dark:text-white/60 hover:text-black dark:hover:text-white'
+                }`}
+              >
+                Sin Receta
+              </button>
+            </>
+          )}
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {platillos.map((platillo) => {
-              const ingredientesPlatillo = recetas.filter((r) => r.platillo_id === platillo.id)
+          {activeTab === 'proyeccion' && (
+            <>
+              <button
+                onClick={() => { setProyeccionFilter('todos'); setCurrentPage(1) }}
+                className={`px-3 py-1.5 rounded-full text-xs font-sans font-bold transition-all ${
+                  proyeccionFilter === 'todos'
+                    ? 'bg-black/10 dark:bg-white/15 text-black dark:text-white font-extrabold'
+                    : 'text-black/60 dark:text-white/60 hover:text-black dark:hover:text-white'
+                }`}
+              >
+                Todos ({insumos.length})
+              </button>
+              <button
+                onClick={() => { setProyeccionFilter('critico'); setCurrentPage(1) }}
+                className={`px-3 py-1.5 rounded-full text-xs font-sans font-bold transition-all ${
+                  proyeccionFilter === 'critico'
+                    ? 'bg-coral text-white shadow-sm'
+                    : 'text-black/60 dark:text-white/60 hover:text-coral'
+                }`}
+              >
+                🔴 Críticos
+              </button>
+              <button
+                onClick={() => { setProyeccionFilter('surtir'); setCurrentPage(1) }}
+                className={`px-3 py-1.5 rounded-full text-xs font-sans font-bold transition-all ${
+                  proyeccionFilter === 'surtir'
+                    ? 'bg-[#ECC94B] text-[#3A2D00] shadow-sm font-bold'
+                    : 'text-black/60 dark:text-white/60 hover:text-[#ECC94B]'
+                }`}
+              >
+                🟡 Surtir
+              </button>
+              <button
+                type="button"
+                onClick={handleCopyShoppingList}
+                className="bg-coral text-white hover:bg-coral/90 font-sans font-bold text-xs py-1.5 px-3.5 rounded-full shadow-sm transition-all flex items-center gap-1 shrink-0 ml-1"
+              >
+                {copiedOrder ? (
+                  <>
+                    <Check className="w-3.5 h-3.5 stroke-[3]" />
+                    <span>¡Copiado!</span>
+                  </>
+                ) : (
+                  <>
+                    <Copy className="w-3.5 h-3.5" />
+                    <span>Copiar WhatsApp</span>
+                  </>
+                )}
+              </button>
+            </>
+          )}
 
-              return (
-                <div
-                  key={platillo.id}
-                  className="bg-[#0A0A0A] border border-arena/20 hover:border-oro/50 rounded-2xl p-5 shadow-xl flex flex-col justify-between gap-4 transition-all group"
-                >
-                  <div className="flex flex-col gap-3">
-                    <div className="flex items-center justify-between border-b border-arena/10 pb-3">
-                      <div className="flex items-center gap-2.5">
-                        <span className="text-2xl">{platillo.emoji || '🦐'}</span>
-                        <div className="flex flex-col">
-                          <span className="font-display text-xl text-blanco tracking-wide group-hover:text-oro transition-colors">
-                            {platillo.nombre}
-                          </span>
-                          <span className="text-[11px] font-mono text-turquesa font-bold">
-                            ${Number(platillo.precio).toFixed(0)} MXN
+          {activeTab === 'bitacora' && (
+            <>
+              <button
+                onClick={() => { setBitacoraFilter('todos'); setCurrentPage(1) }}
+                className={`px-3 py-1.5 rounded-full text-xs font-sans font-bold transition-all ${
+                  bitacoraFilter === 'todos'
+                    ? 'bg-black/10 dark:bg-white/15 text-black dark:text-white font-extrabold'
+                    : 'text-black/60 dark:text-white/60 hover:text-black dark:hover:text-white'
+                }`}
+              >
+                Todos ({movimientos.length})
+              </button>
+              <button
+                onClick={() => { setBitacoraFilter('entrada'); setCurrentPage(1) }}
+                className={`px-3 py-1.5 rounded-full text-xs font-sans font-bold transition-all ${
+                  bitacoraFilter === 'entrada'
+                    ? 'bg-turquesa text-black shadow-sm font-extrabold'
+                    : 'text-black/60 dark:text-white/60 hover:text-turquesa'
+                }`}
+              >
+                ➕ Entradas
+              </button>
+              <button
+                onClick={() => { setBitacoraFilter('salida'); setCurrentPage(1) }}
+                className={`px-3 py-1.5 rounded-full text-xs font-sans font-bold transition-all ${
+                  bitacoraFilter === 'salida'
+                    ? 'bg-coral text-white shadow-sm font-extrabold'
+                    : 'text-black/60 dark:text-white/60 hover:text-coral'
+                }`}
+              >
+                ➖ Salidas / Mermas
+              </button>
+            </>
+          )}
+        </div>
+      </div>
+
+      {/* ── TAB 1: STOCK ACTUAL (LISTA BENTO) ─────────────────────────────────── */}
+      {activeTab === 'stock' && (() => {
+        const totalPages = Math.ceil(filteredInsumos.length / ITEMS_PER_PAGE) || 1
+        const safePage = Math.min(currentPage, totalPages)
+        const paginated = filteredInsumos.slice((safePage - 1) * ITEMS_PER_PAGE, safePage * ITEMS_PER_PAGE)
+
+        return (
+          <div className="bg-white dark:bg-[#111111] border border-black/10 dark:border-white/10 rounded-[28px] overflow-hidden shadow-sm flex flex-col">
+            <div className="divide-y divide-black/5 dark:divide-white/5">
+              {filteredInsumos.length === 0 ? (
+                <div className="p-12 text-center text-black/40 dark:text-white/40 text-xs font-sans">
+                  No se encontraron insumos que coincidan con la búsqueda.
+                </div>
+              ) : (
+                paginated.map((insumo) => {
+                  const isLow = insumo.stock_actual <= insumo.stock_minimo
+                  const percentage = Math.min(
+                    100,
+                    Math.round((insumo.stock_actual / (insumo.stock_minimo * 2.5)) * 100)
+                  )
+
+                  return (
+                    <div
+                      key={insumo.id}
+                      className="p-4 sm:p-5 flex flex-col md:flex-row md:items-center justify-between gap-4 hover:bg-black/[0.02] dark:hover:bg-white/[0.02] transition-colors"
+                    >
+                      <div className="flex items-center gap-3 min-w-0 flex-1">
+                        <div
+                          className={`w-3 h-3 rounded-full shrink-0 ${
+                            isLow ? 'bg-coral shadow-[0_0_8px_#E8430A]' : 'bg-[#16A34B]'
+                          }`}
+                        />
+                        <div className="flex flex-col min-w-0">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <h4 className="font-sans font-bold text-sm sm:text-base text-black dark:text-white truncate">
+                              {insumo.nombre}
+                            </h4>
+                            <span className="text-[10px] font-mono font-bold text-black/50 dark:text-white/50 bg-black/5 dark:bg-white/5 px-2 py-0.5 rounded-md uppercase">
+                              {insumo.unidad}
+                            </span>
+                            {isLow ? (
+                              <span className="text-[10px] font-sans font-bold uppercase px-2.5 py-0.5 rounded-full bg-coral text-white shadow-sm">
+                                Stock Bajo
+                              </span>
+                            ) : (
+                              <span className="text-[10px] font-sans font-bold uppercase px-2.5 py-0.5 rounded-full bg-[#16A34B] text-white shadow-sm">
+                                Óptimo
+                              </span>
+                            )}
+                          </div>
+                          <span className="text-xs font-sans text-black/50 dark:text-white/50 mt-0.5">
+                            Mínimo requerido: {insumo.stock_minimo} {insumo.unidad}
                           </span>
                         </div>
                       </div>
 
-                      <button
-                        onClick={() => handleOpenRecetaModal(platillo)}
-                        className="p-1.5 bg-carbon hover:bg-oro text-arena hover:text-negro border border-arena/20 rounded-lg transition-all"
-                        title="Agregar insumo a este platillo"
-                      >
-                        <Plus className="w-3.5 h-3.5" />
-                      </button>
+                      <div className="flex items-center gap-4 shrink-0 justify-between md:justify-end">
+                        <div className="flex flex-col items-start md:items-end min-w-[120px]">
+                          <div className="flex items-baseline gap-1.5">
+                            <span className="font-display text-2xl sm:text-3xl text-black dark:text-white font-bold">
+                              {insumo.stock_actual}
+                            </span>
+                            <span className="text-xs font-mono font-bold text-black/50 dark:text-white/50">
+                              {insumo.unidad}
+                            </span>
+                          </div>
+                          <div className="w-24 h-1.5 bg-black/5 dark:bg-white/10 rounded-full overflow-hidden mt-1">
+                            <div
+                              className={`h-full rounded-full transition-all ${
+                                isLow ? 'bg-coral' : 'bg-turquesa'
+                              }`}
+                              style={{ width: `${percentage}%` }}
+                            />
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-1.5">
+                          <button
+                            onClick={() => handleOpenMovModal(insumo, 'entrada')}
+                            className="bg-turquesa text-black hover:bg-turquesa/80 font-sans font-bold text-[11px] py-1.5 px-3 rounded-full transition-all flex items-center gap-1 shadow-sm active:scale-95"
+                            title="Registrar Entrada"
+                          >
+                            <Plus className="w-3 h-3 stroke-[3]" />
+                            <span>Entrada</span>
+                          </button>
+
+                          <button
+                            onClick={() => handleOpenMovModal(insumo, 'salida')}
+                            className="bg-coral text-white hover:bg-coral/90 font-sans font-bold text-[11px] py-1.5 px-3 rounded-full transition-all flex items-center gap-1 shadow-sm active:scale-95"
+                            title="Registrar Salida / Merma"
+                          >
+                            <Minus className="w-3 h-3 stroke-[3]" />
+                            <span>Salida</span>
+                          </button>
+
+                          <button
+                            onClick={() => handleOpenEditarModal(insumo)}
+                            className="p-2 text-black/70 dark:text-white/70 hover:text-turquesa bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-full transition-all active:scale-95"
+                            title="Editar Insumo"
+                          >
+                            <Edit2 className="w-3.5 h-3.5" />
+                          </button>
+
+                          <button
+                            onClick={() => handleEliminarInsumo(insumo)}
+                            className="p-2 text-red-500 hover:text-white hover:bg-red-500 bg-red-500/10 border border-red-500/20 rounded-full transition-all active:scale-95"
+                            title="Eliminar Insumo"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  )
+                })
+              )}
+            </div>
+
+            {/* Paginación Homologada */}
+            {filteredInsumos.length > 0 && (
+              <div className="p-3.5 sm:p-4 bg-black/[0.02] dark:bg-white/[0.02] border-t border-black/5 dark:border-white/5 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs font-sans">
+                <span className="text-black/60 dark:text-white/60">
+                  Mostrando <strong className="text-black dark:text-white font-bold">{(safePage - 1) * ITEMS_PER_PAGE + 1}</strong> -{' '}
+                  <strong className="text-black dark:text-white font-bold">{Math.min(safePage * ITEMS_PER_PAGE, filteredInsumos.length)}</strong> de{' '}
+                  <strong className="text-black dark:text-white font-bold">{filteredInsumos.length}</strong> insumos
+                </span>
+
+                {totalPages > 1 && (
+                  <div className="flex items-center gap-1.5">
+                    <button
+                      onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                      disabled={safePage === 1}
+                      className="py-1 px-3 rounded-full bg-black/5 dark:bg-white/5 text-black dark:text-white hover:bg-black/10 dark:hover:bg-white/10 disabled:opacity-30 disabled:pointer-events-none transition-all font-bold text-xs flex items-center gap-1"
+                    >
+                      <ChevronLeft className="w-3.5 h-3.5" />
+                      <span>Anterior</span>
+                    </button>
+
+                    <div className="flex items-center gap-1">
+                      {Array.from({ length: totalPages }, (_, i) => i + 1).map((num) => (
+                        <button
+                          key={num}
+                          onClick={() => setCurrentPage(num)}
+                          className={`w-7 h-7 rounded-full text-xs font-bold transition-all ${
+                            safePage === num
+                              ? 'bg-turquesa text-black shadow-sm font-extrabold'
+                              : 'bg-black/5 dark:bg-white/5 text-black/60 dark:text-white/60 hover:bg-black/10 dark:hover:bg-white/10'
+                          }`}
+                        >
+                          {num}
+                        </button>
+                      ))}
                     </div>
 
-                    {/* Lista de Ingredientes del Escandallo */}
-                    <div className="flex flex-col gap-2">
-                      <span className="text-[10px] font-sans font-bold text-arena/60 uppercase tracking-widest">
-                        Ingredientes por porción:
-                      </span>
+                    <button
+                      onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                      disabled={safePage === totalPages}
+                      className="py-1 px-3 rounded-full bg-black/5 dark:bg-white/5 text-black dark:text-white hover:bg-black/10 dark:hover:bg-white/10 disabled:opacity-30 disabled:pointer-events-none transition-all font-bold text-xs flex items-center gap-1"
+                    >
+                      <span>Siguiente</span>
+                      <ChevronRight className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        )
+      })()}
 
-                      {ingredientesPlatillo.length > 0 ? (
-                        <div className="flex flex-col gap-1.5 divide-y divide-arena/5">
-                          {ingredientesPlatillo.map((rec) => {
-                            const insumoName = rec.insumo?.nombre || insumos.find((i) => i.id === rec.insumo_id)?.nombre || `Insumo #${rec.insumo_id}`
-                            const insumoUnidad = rec.insumo?.unidad || insumos.find((i) => i.id === rec.insumo_id)?.unidad || ''
+      {/* ── TAB 2: RECETARIO & ESCANDALLOS (LISTA BENTO) ──────────────────────── */}
+      {activeTab === 'recetas' && (() => {
+        const totalPages = Math.ceil(filteredPlatillos.length / ITEMS_PER_PAGE) || 1
+        const safePage = Math.min(currentPage, totalPages)
+        const paginated = filteredPlatillos.slice((safePage - 1) * ITEMS_PER_PAGE, safePage * ITEMS_PER_PAGE)
 
-                            return (
-                              <div
-                                key={rec.id}
-                                className="pt-1.5 first:pt-0 flex items-center justify-between text-xs"
-                              >
-                                <span className="text-arena font-medium flex items-center gap-1.5">
-                                  <span className="text-coral">▪</span>
-                                  <span>{insumoName}</span>
-                                </span>
+        return (
+          <div className="bg-white dark:bg-[#111111] border border-black/10 dark:border-white/10 rounded-[28px] overflow-hidden shadow-sm flex flex-col">
+            <div className="divide-y divide-black/5 dark:divide-white/5">
+              {filteredPlatillos.length === 0 ? (
+                <div className="p-12 text-center text-black/40 dark:text-white/40 text-xs font-sans">
+                  No se encontraron platillos.
+                </div>
+              ) : (
+                paginated.map((platillo) => {
+                  const ingredientesPlatillo = recetas.filter((r) => r.platillo_id === platillo.id)
 
-                                <div className="flex items-center gap-2">
-                                  <span className="font-mono font-bold text-turquesa bg-turquesa/10 px-2 py-0.5 rounded border border-turquesa/20 text-[11px]">
-                                    {rec.cantidad_por_porcion} {insumoUnidad}
-                                  </span>
+                  return (
+                    <div
+                      key={platillo.id}
+                      className="p-4 sm:p-5 flex flex-col md:flex-row md:items-center justify-between gap-4 hover:bg-black/[0.02] dark:hover:bg-white/[0.02] transition-colors"
+                    >
+                      {/* Info del platillo */}
+                      <div className="flex items-start gap-3 min-w-0 flex-1">
+                        <span className="text-2xl shrink-0 mt-0.5">{platillo.emoji || '🦐'}</span>
+                        <div className="flex flex-col min-w-0 flex-1">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <h4 className="font-sans font-bold text-sm sm:text-base text-black dark:text-white truncate">
+                              {platillo.nombre}
+                            </h4>
+                            <span className="font-mono text-xs font-bold text-coral">
+                              ${Number(platillo.precio).toFixed(0)} MXN
+                            </span>
+                            <span className="text-[10px] font-sans font-bold uppercase px-2 py-0.5 rounded-md bg-black/5 dark:bg-white/5 text-black/60 dark:text-white/60">
+                              {ingredientesPlatillo.length} insumos
+                            </span>
+                          </div>
 
-                                  <button
-                                    onClick={() => handleEliminarIngrediente(rec.id)}
-                                    className="text-arena/40 hover:text-coral transition-colors p-1"
-                                    title="Quitar de receta"
+                          {/* Chips de Ingredientes en Escandallo */}
+                          <div className="flex items-center gap-1.5 flex-wrap mt-2">
+                            {ingredientesPlatillo.length > 0 ? (
+                              ingredientesPlatillo.map((rec) => {
+                                const insumoName =
+                                  rec.insumo?.nombre ||
+                                  insumos.find((i) => i.id === rec.insumo_id)?.nombre ||
+                                  `Insumo #${rec.insumo_id}`
+                                const insumoUnidad =
+                                  rec.insumo?.unidad ||
+                                  insumos.find((i) => i.id === rec.insumo_id)?.unidad ||
+                                  ''
+
+                                return (
+                                  <span
+                                    key={rec.id}
+                                    className="inline-flex items-center gap-1.5 bg-black/[0.04] dark:bg-white/[0.06] border border-black/10 dark:border-white/10 rounded-full px-2.5 py-1 text-[11px] font-sans text-black/80 dark:text-white/80"
                                   >
-                                    <Trash2 className="w-3 h-3" />
-                                  </button>
-                                </div>
-                              </div>
-                            )
-                          })}
+                                    <span className="font-bold text-black dark:text-white">{insumoName}:</span>
+                                    <strong className="text-turquesa font-mono">
+                                      {rec.cantidad_por_porcion} {insumoUnidad}
+                                    </strong>
+                                    <button
+                                      onClick={() => handleEliminarIngrediente(rec.id)}
+                                      className="text-black/40 dark:text-white/40 hover:text-red-500 transition-colors ml-0.5"
+                                      title="Quitar ingrediente"
+                                    >
+                                      <X className="w-3 h-3" />
+                                    </button>
+                                  </span>
+                                )
+                              })
+                            ) : (
+                              <span className="text-xs font-sans text-black/40 dark:text-white/40">
+                                Sin ingredientes configurados para auto-descuento
+                              </span>
+                            )}
+                          </div>
                         </div>
-                      ) : (
-                        <div className="p-3 bg-carbon/50 rounded-xl border border-dashed border-arena/20 text-center flex flex-col items-center gap-1">
-                          <Utensils className="w-4 h-4 text-arena/40" />
-                          <span className="text-[11px] font-serif italic text-arena/50">
-                            Sin receta configurada aún
+                      </div>
+
+                      {/* Botón Vincular Ingrediente */}
+                      <div className="shrink-0 flex items-center justify-end">
+                        <button
+                          onClick={() => handleOpenRecetaModal(platillo)}
+                          className="bg-oro text-black hover:bg-oro/90 font-sans font-bold text-xs py-2 px-4 rounded-full transition-all flex items-center gap-1.5 shadow-sm active:scale-95"
+                        >
+                          <Plus className="w-3.5 h-3.5 stroke-[3]" />
+                          <span>+ Ingrediente</span>
+                        </button>
+                      </div>
+                    </div>
+                  )
+                })
+              )}
+            </div>
+
+            {/* Paginación */}
+            {filteredPlatillos.length > 0 && (
+              <div className="p-3.5 sm:p-4 bg-black/[0.02] dark:bg-white/[0.02] border-t border-black/5 dark:border-white/5 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs font-sans">
+                <span className="text-black/60 dark:text-white/60">
+                  Mostrando <strong className="text-black dark:text-white font-bold">{(safePage - 1) * ITEMS_PER_PAGE + 1}</strong> -{' '}
+                  <strong className="text-black dark:text-white font-bold">{Math.min(safePage * ITEMS_PER_PAGE, filteredPlatillos.length)}</strong> de{' '}
+                  <strong className="text-black dark:text-white font-bold">{filteredPlatillos.length}</strong> platillos
+                </span>
+
+                {totalPages > 1 && (
+                  <div className="flex items-center gap-1.5">
+                    <button
+                      onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                      disabled={safePage === 1}
+                      className="py-1 px-3 rounded-full bg-black/5 dark:bg-white/5 text-black dark:text-white hover:bg-black/10 dark:hover:bg-white/10 disabled:opacity-30 disabled:pointer-events-none transition-all font-bold text-xs flex items-center gap-1"
+                    >
+                      <ChevronLeft className="w-3.5 h-3.5" />
+                      <span>Anterior</span>
+                    </button>
+
+                    <div className="flex items-center gap-1">
+                      {Array.from({ length: totalPages }, (_, i) => i + 1).map((num) => (
+                        <button
+                          key={num}
+                          onClick={() => setCurrentPage(num)}
+                          className={`w-7 h-7 rounded-full text-xs font-bold transition-all ${
+                            safePage === num
+                              ? 'bg-oro text-black shadow-sm font-extrabold'
+                              : 'bg-black/5 dark:bg-white/5 text-black/60 dark:text-white/60 hover:bg-black/10 dark:hover:bg-white/10'
+                          }`}
+                        >
+                          {num}
+                        </button>
+                      ))}
+                    </div>
+
+                    <button
+                      onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                      disabled={safePage === totalPages}
+                      className="py-1 px-3 rounded-full bg-black/5 dark:bg-white/5 text-black dark:text-white hover:bg-black/10 dark:hover:bg-white/10 disabled:opacity-30 disabled:pointer-events-none transition-all font-bold text-xs flex items-center gap-1"
+                    >
+                      <span>Siguiente</span>
+                      <ChevronRight className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        )
+      })()}
+
+      {/* ── TAB 3: PROYECCIÓN DE COMPRAS (TABLA BENTO) ────────────────────────── */}
+      {activeTab === 'proyeccion' && (() => {
+        const totalPages = Math.ceil(filteredProyeccion.length / ITEMS_PER_PAGE) || 1
+        const safePage = Math.min(currentPage, totalPages)
+        const paginated = filteredProyeccion.slice((safePage - 1) * ITEMS_PER_PAGE, safePage * ITEMS_PER_PAGE)
+
+        return (
+          <div className="bg-white dark:bg-[#111111] border border-black/10 dark:border-white/10 rounded-[28px] overflow-hidden shadow-sm flex flex-col">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs font-sans">
+                <thead>
+                  <tr className="border-b border-black/10 dark:border-white/10 text-black/50 dark:text-white/50 uppercase text-[10px] tracking-wider bg-black/[0.01] dark:bg-white/[0.01]">
+                    <th className="p-4">Insumo</th>
+                    <th className="p-4 text-center">Stock Actual</th>
+                    <th className="p-4 text-center">Consumo Estimado (Fin de Semana)</th>
+                    <th className="p-4 text-center">Stock Mínimo</th>
+                    <th className="p-4 text-center">Sugerencia de Compra</th>
+                    <th className="p-4 text-right">Estado / Urgencia</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-black/5 dark:divide-white/5">
+                  {filteredProyeccion.length === 0 ? (
+                    <tr>
+                      <td colSpan={6} className="p-12 text-center text-black/40 dark:text-white/40 text-xs font-sans">
+                        No hay insumos para la proyección seleccionada.
+                      </td>
+                    </tr>
+                  ) : (
+                    paginated.map((insumo) => {
+                      const demandaEstimada = Number(insumo.stock_minimo) * 1.8
+                      const sugerido = Math.max(
+                        0,
+                        Math.ceil(demandaEstimada + Number(insumo.stock_minimo) - Number(insumo.stock_actual))
+                      )
+                      const isLow = insumo.stock_actual <= insumo.stock_minimo
+
+                      return (
+                        <tr key={insumo.id} className="hover:bg-black/[0.02] dark:hover:bg-white/[0.02] transition-colors">
+                          <td className="p-4 font-bold text-sm text-black dark:text-white">
+                            {insumo.nombre}
+                          </td>
+                          <td className="p-4 text-center font-mono font-bold text-turquesa">
+                            {insumo.stock_actual} {insumo.unidad}
+                          </td>
+                          <td className="p-4 text-center font-mono text-black/70 dark:text-white/70">
+                            ~{demandaEstimada.toFixed(1)} {insumo.unidad}
+                          </td>
+                          <td className="p-4 text-center font-mono text-black/50 dark:text-white/50">
+                            {insumo.stock_minimo} {insumo.unidad}
+                          </td>
+                          <td className="p-4 text-center">
+                            {sugerido > 0 ? (
+                              <span className="font-display text-lg text-coral font-bold bg-coral/10 px-3 py-1 rounded-full border border-coral/20">
+                                Pedir +{sugerido} {insumo.unidad}
+                              </span>
+                            ) : (
+                              <span className="text-[#16A34B] font-sans font-bold bg-[#16A34B]/10 px-3 py-1 rounded-full text-xs">
+                                Cubierto ✓
+                              </span>
+                            )}
+                          </td>
+                          <td className="p-4 text-right">
+                            {isLow ? (
+                              <span className="text-[10px] font-bold text-white bg-coral px-2.5 py-1 rounded-full uppercase shadow-sm">
+                                🔴 Crítico
+                              </span>
+                            ) : sugerido > 0 ? (
+                              <span className="text-[10px] font-bold text-[#3A2D00] bg-[#ECC94B] px-2.5 py-1 rounded-full uppercase shadow-sm">
+                                🟡 Surtir
+                              </span>
+                            ) : (
+                              <span className="text-[10px] font-bold text-white bg-[#16A34B] px-2.5 py-1 rounded-full uppercase shadow-sm">
+                                🟢 Óptimo
+                              </span>
+                            )}
+                          </td>
+                        </tr>
+                      )
+                    })
+                  )}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Paginación */}
+            {filteredProyeccion.length > 0 && (
+              <div className="p-3.5 sm:p-4 bg-black/[0.02] dark:bg-white/[0.02] border-t border-black/5 dark:border-white/5 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs font-sans">
+                <span className="text-black/60 dark:text-white/60">
+                  Mostrando <strong className="text-black dark:text-white font-bold">{(safePage - 1) * ITEMS_PER_PAGE + 1}</strong> -{' '}
+                  <strong className="text-black dark:text-white font-bold">{Math.min(safePage * ITEMS_PER_PAGE, filteredProyeccion.length)}</strong> de{' '}
+                  <strong className="text-black dark:text-white font-bold">{filteredProyeccion.length}</strong> insumos
+                </span>
+
+                {totalPages > 1 && (
+                  <div className="flex items-center gap-1.5">
+                    <button
+                      onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                      disabled={safePage === 1}
+                      className="py-1 px-3 rounded-full bg-black/5 dark:bg-white/5 text-black dark:text-white hover:bg-black/10 dark:hover:bg-white/10 disabled:opacity-30 disabled:pointer-events-none transition-all font-bold text-xs flex items-center gap-1"
+                    >
+                      <ChevronLeft className="w-3.5 h-3.5" />
+                      <span>Anterior</span>
+                    </button>
+
+                    <div className="flex items-center gap-1">
+                      {Array.from({ length: totalPages }, (_, i) => i + 1).map((num) => (
+                        <button
+                          key={num}
+                          onClick={() => setCurrentPage(num)}
+                          className={`w-7 h-7 rounded-full text-xs font-bold transition-all ${
+                            safePage === num
+                              ? 'bg-coral text-white shadow-sm font-extrabold'
+                              : 'bg-black/5 dark:bg-white/5 text-black/60 dark:text-white/60 hover:bg-black/10 dark:hover:bg-white/10'
+                          }`}
+                        >
+                          {num}
+                        </button>
+                      ))}
+                    </div>
+
+                    <button
+                      onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                      disabled={safePage === totalPages}
+                      className="py-1 px-3 rounded-full bg-black/5 dark:bg-white/5 text-black dark:text-white hover:bg-black/10 dark:hover:bg-white/10 disabled:opacity-30 disabled:pointer-events-none transition-all font-bold text-xs flex items-center gap-1"
+                    >
+                      <span>Siguiente</span>
+                      <ChevronRight className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        )
+      })()}
+
+      {/* ── TAB 4: BITÁCORA DE MOVIMIENTOS (LISTA BENTO) ───────────────────────── */}
+      {activeTab === 'bitacora' && (() => {
+        const totalPages = Math.ceil(filteredMovimientos.length / ITEMS_PER_PAGE) || 1
+        const safePage = Math.min(currentPage, totalPages)
+        const paginated = filteredMovimientos.slice((safePage - 1) * ITEMS_PER_PAGE, safePage * ITEMS_PER_PAGE)
+
+        return (
+          <div className="bg-white dark:bg-[#111111] border border-black/10 dark:border-white/10 rounded-[28px] overflow-hidden shadow-sm flex flex-col">
+            <div className="divide-y divide-black/5 dark:divide-white/5">
+              {filteredMovimientos.length === 0 ? (
+                <div className="p-12 text-center text-black/40 dark:text-white/40 text-xs font-sans">
+                  No hay movimientos registrados en la bitácora.
+                </div>
+              ) : (
+                paginated.map((mov) => {
+                  const insumoNombre = mov.insumo?.nombre || `Insumo #${mov.insumo_id}`
+                  const isEntrada = mov.tipo === 'entrada'
+
+                  return (
+                    <div
+                      key={mov.id}
+                      className="p-4 sm:p-5 flex flex-col md:flex-row md:items-center justify-between gap-3 hover:bg-black/[0.02] dark:hover:bg-white/[0.02] transition-colors"
+                    >
+                      <div className="flex items-center gap-3 min-w-0 flex-1">
+                        <div
+                          className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs shrink-0 ${
+                            isEntrada ? 'bg-turquesa text-black' : 'bg-coral text-white'
+                          }`}
+                        >
+                          {isEntrada ? '+' : '-'}
+                        </div>
+
+                        <div className="flex flex-col min-w-0">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <h4 className="font-sans font-bold text-sm sm:text-base text-black dark:text-white truncate">
+                              {insumoNombre}
+                            </h4>
+                            <span
+                              className={`text-[10px] font-sans font-bold uppercase px-2.5 py-0.5 rounded-full ${
+                                isEntrada ? 'bg-turquesa text-black' : 'bg-coral text-white'
+                              }`}
+                            >
+                              {isEntrada ? 'Entrada' : 'Salida / Merma'}
+                            </span>
+                          </div>
+                          <span className="text-xs font-sans font-medium text-black/60 dark:text-white/60 mt-0.5">
+                            {mov.motivo || 'Ajuste operativo'}
                           </span>
                         </div>
-                      )}
+                      </div>
+
+                      <div className="flex items-center gap-4 shrink-0 justify-between md:justify-end">
+                        <span
+                          className={`font-display text-xl sm:text-2xl font-bold ${
+                            isEntrada ? 'text-turquesa' : 'text-coral'
+                          }`}
+                        >
+                          {isEntrada ? '+' : '-'}
+                          {mov.cantidad} {mov.insumo?.unidad || ''}
+                        </span>
+
+                        <div className="flex flex-col items-end text-right text-[11px] font-mono text-black/50 dark:text-white/50">
+                          <span>
+                            {mov.created_at
+                              ? new Date(mov.created_at).toLocaleString('es-MX', {
+                                  timeZone: 'America/Mazatlan',
+                                  hour: '2-digit',
+                                  minute: '2-digit',
+                                  day: '2-digit',
+                                  month: 'short',
+                                })
+                              : 'Hoy'}
+                          </span>
+                          <span className="text-[10px] text-black/40 dark:text-white/40 font-sans">
+                            {mov.created_by ? 'Administrador' : 'Sistema'}
+                          </span>
+                        </div>
+                      </div>
                     </div>
-                  </div>
-
-                  <div className="border-t border-arena/10 pt-3 flex items-center justify-between text-[10px] text-arena/60">
-                    <span>{ingredientesPlatillo.length} insumos asignados</span>
-                    <span className="text-turquesa font-bold">Auto-descuento activo ✓</span>
-                  </div>
-                </div>
-              )
-            })}
-          </div>
-        </div>
-      )}
-
-      {/* BITÁCORA DE MOVIMIENTOS RECIENTES (SOLO EN TAB STOCK) */}
-      {activeTab === 'stock' && (
-        <div className="flex flex-col gap-4 mt-6">
-          <div className="flex items-center gap-2 border-b border-arena/10 pb-3">
-            <History className="w-5 h-5 text-oro" />
-            <h3 className="font-display text-2xl text-blanco tracking-wide">
-              HISTORIAL DE MOVIMIENTOS Y MERMA
-            </h3>
-          </div>
-
-          {movimientos.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {movimientos.map((mov) => {
-                const insumoNombre = mov.insumo?.nombre || `Insumo #${mov.insumo_id}`
-                const isEntrada = mov.tipo === 'entrada'
-
-                return (
-                  <NarrativeCard
-                    key={mov.id}
-                    urgent={!isEntrada}
-                    title={`${isEntrada ? '➕ Entrada' : '➖ Salida'}: ${insumoNombre}`}
-                    badgeText={`${isEntrada ? '+' : '-'}${mov.cantidad} ${mov.insumo?.unidad || ''}`}
-                    timestamp={mov.created_at ? new Date(mov.created_at).toLocaleString('es-MX', { timeZone: 'America/Mazatlan', hour: '2-digit', minute: '2-digit', day: '2-digit', month: 'short' }) : 'Hoy'}
-                    narrativeText={mov.motivo || 'Movimiento de inventario operativo.'}
-                    author={mov.created_by ? 'Administración' : 'Sistema Marea Negra'}
-                  />
-                )
-              })}
+                  )
+                })
+              )}
             </div>
-          ) : (
-            <div className="p-8 text-center bg-carbon/40 rounded-xl border border-arena/5">
-              <p className="font-serif italic text-sm text-arena/60">
-                No hay movimientos de inventario registrados en la bitácora.
-              </p>
-            </div>
-          )}
-        </div>
-      )}
 
-      {/* MODAL REGISTRAR MOVIMIENTO (ENTRADA / SALIDA CON SOPORTE PARA FRACCIONES 0.5, 1.5, ENTEROS) */}
+            {/* Paginación */}
+            {filteredMovimientos.length > 0 && (
+              <div className="p-3.5 sm:p-4 bg-black/[0.02] dark:bg-white/[0.02] border-t border-black/5 dark:border-white/5 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs font-sans">
+                <span className="text-black/60 dark:text-white/60">
+                  Mostrando <strong className="text-black dark:text-white font-bold">{(safePage - 1) * ITEMS_PER_PAGE + 1}</strong> -{' '}
+                  <strong className="text-black dark:text-white font-bold">{Math.min(safePage * ITEMS_PER_PAGE, filteredMovimientos.length)}</strong> de{' '}
+                  <strong className="text-black dark:text-white font-bold">{filteredMovimientos.length}</strong> movimientos
+                </span>
+
+                {totalPages > 1 && (
+                  <div className="flex items-center gap-1.5">
+                    <button
+                      onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                      disabled={safePage === 1}
+                      className="py-1 px-3 rounded-full bg-black/5 dark:bg-white/5 text-black dark:text-white hover:bg-black/10 dark:hover:bg-white/10 disabled:opacity-30 disabled:pointer-events-none transition-all font-bold text-xs flex items-center gap-1"
+                    >
+                      <ChevronLeft className="w-3.5 h-3.5" />
+                      <span>Anterior</span>
+                    </button>
+
+                    <div className="flex items-center gap-1">
+                      {Array.from({ length: totalPages }, (_, i) => i + 1).map((num) => (
+                        <button
+                          key={num}
+                          onClick={() => setCurrentPage(num)}
+                          className={`w-7 h-7 rounded-full text-xs font-bold transition-all ${
+                            safePage === num
+                              ? 'bg-black dark:bg-white text-white dark:text-black shadow-sm font-extrabold'
+                              : 'bg-black/5 dark:bg-white/5 text-black/60 dark:text-white/60 hover:bg-black/10 dark:hover:bg-white/10'
+                          }`}
+                        >
+                          {num}
+                        </button>
+                      ))}
+                    </div>
+
+                    <button
+                      onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                      disabled={safePage === totalPages}
+                      className="py-1 px-3 rounded-full bg-black/5 dark:bg-white/5 text-black dark:text-white hover:bg-black/10 dark:hover:bg-white/10 disabled:opacity-30 disabled:pointer-events-none transition-all font-bold text-xs flex items-center gap-1"
+                    >
+                      <span>Siguiente</span>
+                      <ChevronRight className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        )
+      })()}
+
+      {/* ── MODAL REGISTRAR MOVIMIENTO ────────────────────────────────────────── */}
       {activeModal === 'movimiento' && selectedInsumo && (
-        <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4">
-          <div className="bg-[#050404] bg-dots-pattern border border-oro/30 rounded-2xl w-full max-w-md p-6 gold-border-corner shadow-2xl relative text-blanco">
+        <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-[#111111] border border-black/10 dark:border-white/10 rounded-[32px] w-full max-w-md p-6 md:p-8 shadow-2xl relative text-black dark:text-white flex flex-col gap-5">
             <button
               onClick={() => setActiveModal(null)}
-              className="absolute top-4 right-4 p-2 text-arena/60 hover:text-blanco rounded-full hover:bg-carbon"
+              className="absolute top-6 right-6 p-2 text-black/50 dark:text-white/50 hover:text-black dark:hover:text-white rounded-full hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
             >
               <X className="w-5 h-5" />
             </button>
 
-            <div className="mb-4">
-              <span className="text-xs font-sans font-semibold tracking-widest text-turquesa uppercase">
+            <div>
+              <span className="text-[10px] font-sans font-bold tracking-widest text-turquesa uppercase">
                 AJUSTE DE INVENTARIO
               </span>
-              <h2 className="font-display text-2xl text-blanco">
+              <h2 className="font-display text-2xl sm:text-3xl text-black dark:text-white">
                 REGISTRAR {tipoMov === 'entrada' ? 'ENTRADA' : 'SALIDA'}: {selectedInsumo.nombre}
               </h2>
             </div>
 
             <form onSubmit={handleMovSubmit} className="flex flex-col gap-4">
-              {/* Atajos de cantidad rápida en fracciones y enteros */}
+              {/* Atajos Rápidos */}
               <div className="flex flex-col gap-1.5">
-                <label className="text-xs font-sans text-arena uppercase">
-                  Atajos Rápidos de Cantidad:
+                <label className="text-xs font-sans text-black/70 dark:text-white/70 uppercase font-bold">
+                  Atajos Rápidos ({selectedInsumo.unidad}):
                 </label>
                 <div className="grid grid-cols-6 gap-1.5">
                   {[0.25, 0.5, 0.75, 1, 2, 5].map((val) => (
@@ -781,10 +1334,10 @@ export function InventoryManager({
                       key={val}
                       type="button"
                       onClick={() => setCantidad(val)}
-                      className={`py-2 text-xs font-sans font-bold rounded-lg border transition-all ${
+                      className={`py-2 text-xs font-sans font-bold rounded-xl border transition-all ${
                         cantidad === val
-                          ? 'bg-turquesa text-negro border-turquesa shadow-md'
-                          : 'bg-carbon text-arena/80 border-arena/20 hover:border-turquesa hover:text-blanco'
+                          ? 'bg-turquesa text-black border-turquesa shadow-sm'
+                          : 'bg-black/5 dark:bg-white/5 text-black/70 dark:text-white/70 border-black/10 dark:border-white/10 hover:bg-black/10 dark:hover:bg-white/10'
                       }`}
                     >
                       {val}
@@ -793,9 +1346,9 @@ export function InventoryManager({
                 </div>
               </div>
 
-              <div className="flex flex-col gap-1">
-                <label className="text-xs font-sans text-arena uppercase">
-                  Cantidad Personalizada ({selectedInsumo.unidad}) *
+              <div className="flex flex-col gap-1.5">
+                <label className="text-xs font-sans text-black/70 dark:text-white/70 uppercase font-bold">
+                  Cantidad ({selectedInsumo.unidad}) *
                 </label>
                 <input
                   type="number"
@@ -805,15 +1358,12 @@ export function InventoryManager({
                   placeholder="Ej. 1, 0.5 o 2.5"
                   value={cantidad}
                   onChange={(e) => setCantidad(e.target.value)}
-                  className="bg-carbon border border-arena/20 rounded-lg px-4 py-3 text-base text-blanco font-bold focus:border-turquesa focus:outline-none"
+                  className="bg-black/[0.03] dark:bg-white/[0.05] border border-black/10 dark:border-white/10 rounded-2xl px-4 py-3 text-base text-black dark:text-white font-bold focus:border-turquesa focus:outline-none transition-all"
                 />
-                <span className="text-[11px] font-serif italic text-arena/60">
-                  Puedes escribir números enteros (ej. 1, 2) o decimales (ej. 0.5, 1.5, 0.25).
-                </span>
               </div>
 
-              <div className="flex flex-col gap-1">
-                <label className="text-xs font-sans text-arena uppercase">
+              <div className="flex flex-col gap-1.5">
+                <label className="text-xs font-sans text-black/70 dark:text-white/70 uppercase font-bold">
                   Motivo / Observaciones
                 </label>
                 <textarea
@@ -821,17 +1371,17 @@ export function InventoryManager({
                   placeholder="Ej. Consumo de cocina o resurtido..."
                   value={motivo}
                   onChange={(e) => setMotivo(e.target.value)}
-                  className="bg-carbon border border-arena/20 rounded-lg p-3 text-xs text-blanco focus:border-turquesa focus:outline-none"
+                  className="bg-black/[0.03] dark:bg-white/[0.05] border border-black/10 dark:border-white/10 rounded-2xl p-3 text-xs text-black dark:text-white focus:border-turquesa focus:outline-none transition-all"
                 />
               </div>
 
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className={`font-sans font-bold text-xs tracking-wider py-4 px-4 rounded-xl transition-all flex items-center justify-center gap-2 shadow-lg ${
+                className={`font-sans font-bold text-xs tracking-wider py-4 px-4 rounded-full transition-all flex items-center justify-center gap-2 shadow-lg ${
                   tipoMov === 'entrada'
-                    ? 'bg-turquesa text-negro hover:bg-blanco'
-                    : 'bg-coral text-blanco hover:bg-coral/80'
+                    ? 'bg-turquesa text-black hover:bg-turquesa/90'
+                    : 'bg-coral text-white hover:bg-coral/90'
                 }`}
               >
                 {isSubmitting ? (
@@ -842,7 +1392,9 @@ export function InventoryManager({
                 ) : (
                   <>
                     <Check className="w-4 h-4 stroke-[3]" />
-                    <span>CONFIRMAR {tipoMov.toUpperCase()} ({cantidad || 0} {selectedInsumo.unidad})</span>
+                    <span>
+                      CONFIRMAR {tipoMov.toUpperCase()} ({cantidad || 0} {selectedInsumo.unidad})
+                    </span>
                   </>
                 )}
               </button>
@@ -851,23 +1403,25 @@ export function InventoryManager({
         </div>
       )}
 
-      {/* MODAL CREAR / EDITAR INSUMO */}
+      {/* ── MODAL CREAR / EDITAR INSUMO ───────────────────────────────────────── */}
       {(activeModal === 'nuevo' || activeModal === 'editar') && (
-        <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4">
-          <div className="bg-[#050404] bg-dots-pattern border border-oro/30 rounded-2xl w-full max-w-md p-6 gold-border-corner shadow-2xl relative text-blanco">
+        <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-[#111111] border border-black/10 dark:border-white/10 rounded-[32px] w-full max-w-md p-6 md:p-8 shadow-2xl relative text-black dark:text-white flex flex-col gap-5">
             <button
               onClick={() => setActiveModal(null)}
-              className="absolute top-4 right-4 p-2 text-arena/60 hover:text-blanco rounded-full hover:bg-carbon"
+              className="absolute top-6 right-6 p-2 text-black/50 dark:text-white/50 hover:text-black dark:hover:text-white rounded-full hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
             >
               <X className="w-5 h-5" />
             </button>
 
-            <div className="mb-4">
-              <span className="text-xs font-sans font-semibold tracking-widest text-turquesa uppercase">
-                CATÁLOGO DE INGREDIENTES
+            <div>
+              <span className="text-[10px] font-sans font-bold tracking-widest text-turquesa uppercase">
+                CATÁLOGO DE INSUMOS
               </span>
-              <h2 className="font-display text-2xl text-blanco">
-                {activeModal === 'nuevo' ? 'AGREGAR NUEVO INSUMO' : `EDITAR: ${selectedInsumo?.nombre}`}
+              <h2 className="font-display text-2xl sm:text-3xl text-black dark:text-white">
+                {activeModal === 'nuevo'
+                  ? 'AGREGAR NUEVO INSUMO'
+                  : `EDITAR: ${selectedInsumo?.nombre}`}
               </h2>
             </div>
 
@@ -875,8 +1429,8 @@ export function InventoryManager({
               onSubmit={activeModal === 'nuevo' ? handleCrearInsumoSubmit : handleEditarInsumoSubmit}
               className="flex flex-col gap-4"
             >
-              <div className="flex flex-col gap-1">
-                <label className="text-xs font-sans text-arena uppercase">
+              <div className="flex flex-col gap-1.5">
+                <label className="text-xs font-sans text-black/70 dark:text-white/70 uppercase font-bold">
                   Nombre del Insumo *
                 </label>
                 <input
@@ -885,17 +1439,19 @@ export function InventoryManager({
                   placeholder="Ej. Camarón Fresco 41/50"
                   value={formNombre}
                   onChange={(e) => setFormNombre(e.target.value)}
-                  className="bg-carbon border border-arena/20 rounded-lg px-4 py-2.5 text-sm text-blanco focus:border-turquesa focus:outline-none"
+                  className="bg-black/[0.03] dark:bg-white/[0.05] border border-black/10 dark:border-white/10 rounded-2xl px-4 py-3 text-sm text-black dark:text-white focus:border-turquesa focus:outline-none transition-all"
                 />
               </div>
 
               <div className="grid grid-cols-3 gap-3">
-                <div className="flex flex-col gap-1">
-                  <label className="text-xs font-sans text-arena uppercase">Unidad</label>
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-xs font-sans text-black/70 dark:text-white/70 uppercase font-bold">
+                    Unidad
+                  </label>
                   <select
                     value={formUnidad}
                     onChange={(e) => setFormUnidad(e.target.value)}
-                    className="bg-carbon border border-arena/20 rounded-lg px-2 py-2.5 text-xs text-blanco focus:border-turquesa focus:outline-none"
+                    className="bg-black/[0.03] dark:bg-white/[0.05] border border-black/10 dark:border-white/10 rounded-2xl px-2 py-3 text-xs text-black dark:text-white focus:border-turquesa focus:outline-none transition-all cursor-pointer"
                   >
                     <option value="kg">kg</option>
                     <option value="gr">gr</option>
@@ -905,8 +1461,10 @@ export function InventoryManager({
                   </select>
                 </div>
 
-                <div className="flex flex-col gap-1">
-                  <label className="text-xs font-sans text-arena uppercase">Stock Actual</label>
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-xs font-sans text-black/70 dark:text-white/70 uppercase font-bold">
+                    Stock Actual
+                  </label>
                   <input
                     type="number"
                     step="any"
@@ -914,12 +1472,14 @@ export function InventoryManager({
                     placeholder="0"
                     value={formStockActual}
                     onChange={(e) => setFormStockActual(e.target.value)}
-                    className="bg-carbon border border-arena/20 rounded-lg px-3 py-2.5 text-xs text-blanco focus:border-turquesa focus:outline-none"
+                    className="bg-black/[0.03] dark:bg-white/[0.05] border border-black/10 dark:border-white/10 rounded-2xl px-3 py-3 text-xs text-black dark:text-white focus:border-turquesa focus:outline-none transition-all"
                   />
                 </div>
 
-                <div className="flex flex-col gap-1">
-                  <label className="text-xs font-sans text-arena uppercase">Stock Mínimo</label>
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-xs font-sans text-black/70 dark:text-white/70 uppercase font-bold">
+                    Stock Mínimo
+                  </label>
                   <input
                     type="number"
                     step="any"
@@ -927,7 +1487,7 @@ export function InventoryManager({
                     placeholder="0"
                     value={formStockMinimo}
                     onChange={(e) => setFormStockMinimo(e.target.value)}
-                    className="bg-carbon border border-arena/20 rounded-lg px-3 py-2.5 text-xs text-blanco focus:border-turquesa focus:outline-none"
+                    className="bg-black/[0.03] dark:bg-white/[0.05] border border-black/10 dark:border-white/10 rounded-2xl px-3 py-3 text-xs text-black dark:text-white focus:border-turquesa focus:outline-none transition-all"
                   />
                 </div>
               </div>
@@ -935,7 +1495,7 @@ export function InventoryManager({
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="bg-turquesa text-negro hover:bg-blanco font-sans font-bold text-xs tracking-wider py-4 px-4 rounded-xl transition-all flex items-center justify-center gap-2 shadow-lg mt-2"
+                className="bg-turquesa text-black hover:bg-turquesa/90 font-sans font-bold text-xs tracking-wider py-4 px-4 rounded-full transition-all flex items-center justify-center gap-2 shadow-lg mt-2 disabled:opacity-50"
               >
                 {isSubmitting ? (
                   <>
@@ -945,7 +1505,9 @@ export function InventoryManager({
                 ) : (
                   <>
                     <Check className="w-4 h-4 stroke-[3]" />
-                    <span>{activeModal === 'nuevo' ? 'CREAR INSUMO' : 'GUARDAR CAMBIOS'}</span>
+                    <span>
+                      {activeModal === 'nuevo' ? 'CREAR INSUMO' : 'GUARDAR CAMBIOS'}
+                    </span>
                   </>
                 )}
               </button>
@@ -954,40 +1516,40 @@ export function InventoryManager({
         </div>
       )}
 
-      {/* MODAL: CONFIGURAR INGREDIENTE EN RECETA */}
+      {/* ── MODAL CONFIGURAR INGREDIENTE EN RECETA ─────────────────────────────── */}
       {activeModal === 'receta' && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="bg-[#0D0907] border border-oro/30 rounded-3xl p-6 max-w-md w-full shadow-2xl relative">
+        <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-[#111111] border border-black/10 dark:border-white/10 rounded-[32px] w-full max-w-md p-6 md:p-8 shadow-2xl relative text-black dark:text-white flex flex-col gap-5">
             <button
               onClick={() => setActiveModal(null)}
-              className="absolute top-4 right-4 p-2 text-arena hover:text-coral rounded-full hover:bg-carbon transition-colors"
+              className="absolute top-6 right-6 p-2 text-black/50 dark:text-white/50 hover:text-black dark:hover:text-white rounded-full hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
             >
               <X className="w-5 h-5" />
             </button>
 
-            <div className="flex items-center gap-3 border-b border-arena/10 pb-4 mb-4">
-              <div className="p-2.5 bg-oro/10 border border-oro/30 rounded-xl text-oro">
+            <div className="flex items-center gap-3 border-b border-black/10 dark:border-white/10 pb-3">
+              <div className="w-10 h-10 rounded-full bg-oro/10 dark:bg-oro/20 text-oro flex items-center justify-center shrink-0">
                 <ChefHat className="w-5 h-5" />
               </div>
               <div>
-                <span className="text-xs font-sans font-bold text-turquesa uppercase tracking-widest">
+                <span className="text-[10px] font-sans font-bold text-turquesa uppercase tracking-widest">
                   ESCANDALLO DE COCINA
                 </span>
-                <h3 className="font-display text-2xl text-blanco tracking-wide">
+                <h3 className="font-display text-2xl text-black dark:text-white">
                   AGREGAR INGREDIENTE
                 </h3>
               </div>
             </div>
 
             <form onSubmit={handleGuardarReceta} className="flex flex-col gap-4">
-              <div className="flex flex-col gap-1">
-                <label className="text-xs font-sans text-arena uppercase font-bold">
+              <div className="flex flex-col gap-1.5">
+                <label className="text-xs font-sans text-black/70 dark:text-white/70 uppercase font-bold">
                   Platillo
                 </label>
                 <select
                   value={recetaPlatilloId}
                   onChange={(e) => setRecetaPlatilloId(Number(e.target.value))}
-                  className="bg-carbon border border-arena/20 rounded-xl px-3 py-3 text-sm text-blanco focus:border-oro focus:outline-none"
+                  className="bg-black/[0.03] dark:bg-white/[0.05] border border-black/10 dark:border-white/10 rounded-2xl px-4 py-3 text-sm text-black dark:text-white focus:border-oro focus:outline-none transition-all cursor-pointer"
                 >
                   {platillos.map((p) => (
                     <option key={p.id} value={p.id}>
@@ -997,14 +1559,14 @@ export function InventoryManager({
                 </select>
               </div>
 
-              <div className="flex flex-col gap-1">
-                <label className="text-xs font-sans text-arena uppercase font-bold">
+              <div className="flex flex-col gap-1.5">
+                <label className="text-xs font-sans text-black/70 dark:text-white/70 uppercase font-bold">
                   Insumo a Descontar
                 </label>
                 <select
                   value={recetaInsumoId}
                   onChange={(e) => setRecetaInsumoId(Number(e.target.value))}
-                  className="bg-carbon border border-arena/20 rounded-xl px-3 py-3 text-sm text-blanco focus:border-turquesa focus:outline-none"
+                  className="bg-black/[0.03] dark:bg-white/[0.05] border border-black/10 dark:border-white/10 rounded-2xl px-4 py-3 text-sm text-black dark:text-white focus:border-turquesa focus:outline-none transition-all cursor-pointer"
                 >
                   {insumos.map((i) => (
                     <option key={i.id} value={i.id}>
@@ -1014,12 +1576,11 @@ export function InventoryManager({
                 </select>
               </div>
 
-              <div className="flex flex-col gap-1">
-                <label className="text-xs font-sans text-arena uppercase font-bold flex justify-between">
+              <div className="flex flex-col gap-1.5">
+                <label className="text-xs font-sans text-black/70 dark:text-white/70 uppercase font-bold flex justify-between">
                   <span>Cantidad por Porción</span>
                   <span className="text-turquesa">
-                    Unidad:{' '}
-                    {insumos.find((i) => i.id === recetaInsumoId)?.unidad || 'kg'}
+                    Unidad: {insumos.find((i) => i.id === recetaInsumoId)?.unidad || 'kg'}
                   </span>
                 </label>
                 <input
@@ -1030,17 +1591,14 @@ export function InventoryManager({
                   placeholder="Ej. 0.250"
                   value={recetaCantidad}
                   onChange={(e) => setRecetaCantidad(e.target.value)}
-                  className="bg-carbon border border-arena/20 rounded-xl px-4 py-3 text-base font-mono text-blanco focus:border-turquesa focus:outline-none"
+                  className="bg-black/[0.03] dark:bg-white/[0.05] border border-black/10 dark:border-white/10 rounded-2xl px-4 py-3 text-sm font-mono text-black dark:text-white focus:border-turquesa focus:outline-none transition-all"
                 />
-                <span className="text-[11px] font-serif italic text-arena/60">
-                  Ejemplo: 0.250 para 250 gramos de camarón, 1 para 1 pieza de tostada/aguacate.
-                </span>
               </div>
 
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="bg-oro text-negro hover:bg-blanco font-sans font-bold text-xs tracking-wider py-4 px-4 rounded-xl transition-all flex items-center justify-center gap-2 shadow-lg mt-2 disabled:opacity-50"
+                className="bg-oro text-black hover:bg-oro/90 font-sans font-bold text-xs tracking-wider py-4 px-4 rounded-full transition-all flex items-center justify-center gap-2 shadow-lg mt-2 disabled:opacity-50"
               >
                 {isSubmitting ? (
                   <>
@@ -1050,7 +1608,7 @@ export function InventoryManager({
                 ) : (
                   <>
                     <Check className="w-4 h-4 stroke-[3]" />
-                    <span>VINCULAR INGREDIENTE A PLATILLO</span>
+                    <span>VINCULAR INGREDIENTE</span>
                   </>
                 )}
               </button>

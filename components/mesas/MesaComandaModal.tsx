@@ -2,7 +2,6 @@
 
 import React, { useState } from 'react'
 import dynamic from 'next/dynamic'
-import Image from 'next/image'
 import { Mesa, Platillo, MetodoPago, NivelPicor } from '@/lib/types/database'
 import {
   abrirComandaMesa,
@@ -21,6 +20,7 @@ const TicketTermicoModal = dynamic(
   () => import('@/components/print/TicketTermicoModal').then((mod) => mod.TicketTermicoModal),
   { ssr: false }
 )
+
 import {
   X,
   Check,
@@ -30,7 +30,6 @@ import {
   Printer,
   DollarSign,
   UtensilsCrossed,
-  Sparkles,
   Loader2,
   Clock,
   User,
@@ -38,11 +37,11 @@ import {
   Flame,
   FileText,
   Trash2,
-  ChevronRight,
-  Info,
   QrCode,
   Award,
-  Crown,
+  CreditCard,
+  Banknote,
+  Smartphone,
 } from 'lucide-react'
 
 interface MesaComandaModalProps {
@@ -61,10 +60,10 @@ interface ItemConfigurado {
 }
 
 const PICOR_OPTIONS: { id: NivelPicor; label: string; desc: string; color: string; flames: number }[] = [
-  { id: 'sin_chile', label: 'Sin Chile', desc: 'Mariscos al natural con limón', color: 'border-arena/40 text-arena bg-arena/10', flames: 0 },
-  { id: 'suave', label: 'Suave', desc: 'Toque leve de picante', color: 'border-turquesa text-turquesa bg-turquesa/10', flames: 1 },
-  { id: 'medio', label: 'Medio', desc: 'Picor tradicional de la casa', color: 'border-oro text-oro bg-oro/10', flames: 2 },
-  { id: 'bravo', label: 'Bravo', desc: 'Sabor intenso para conocedores', color: 'border-coral text-coral bg-coral/10', flames: 3 },
+  { id: 'sin_chile', label: 'Sin Chile', desc: 'Mariscos al natural con limón', color: 'bg-black/5 dark:bg-white/10 text-negro dark:text-blanco border-black/10 dark:border-white/10', flames: 0 },
+  { id: 'suave', label: 'Suave', desc: 'Toque leve de picante', color: 'bg-turquesa/15 text-turquesa border-turquesa/30', flames: 1 },
+  { id: 'medio', label: 'Medio', desc: 'Picor tradicional de la casa', color: 'bg-[#ECC94B]/20 text-[#8B6E00] dark:text-[#ECC94B] border-[#ECC94B]/30', flames: 2 },
+  { id: 'bravo', label: 'Bravo', desc: 'Sabor intenso para conocedores', color: 'bg-coral/20 text-coral border-coral/30', flames: 3 },
 ]
 
 export function MesaComandaModal({
@@ -83,6 +82,7 @@ export function MesaComandaModal({
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [metodoPago, setMetodoPago] = useState<MetodoPago>('efectivo')
   const [descuento, setDescuento] = useState<number>(0)
+  const [showTicketModal, setShowTicketModal] = useState(false)
 
   // Estado del Modal de Configuración Individual de Platillo
   const [configuringPlatillo, setConfiguringPlatillo] = useState<Platillo | null>(null)
@@ -149,7 +149,6 @@ export function MesaComandaModal({
     setClienteNombre(socio.nombreCliente)
     setClienteTelefono(socio.telefono)
 
-    // Si la mesa ya está abierta, asociar en la base de datos de inmediato
     if (pedidoActivo) {
       try {
         await asignarSocioAPedidoMesa({
@@ -255,12 +254,6 @@ export function MesaComandaModal({
     }
   }
 
-  const [showTicketModal, setShowTicketModal] = useState(false)
-
-  const handlePrintPrecuenta = () => {
-    setShowTicketModal(true)
-  }
-
   const filteredDishes = platillos.filter((p) =>
     p.nombre.toLowerCase().includes(dishQuery.toLowerCase())
   )
@@ -277,7 +270,7 @@ export function MesaComandaModal({
   }
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/85 flex items-center justify-center p-3 sm:p-4">
+    <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 animate-in fade-in duration-200">
       {/* Estilos para impresión de Precuenta Térmica */}
       <style jsx global>{`
         @media print {
@@ -329,39 +322,40 @@ export function MesaComandaModal({
         </div>
       </div>
 
-      <div className="bg-[#050404] bg-dots-pattern border-2 border-oro/40 rounded-3xl w-full max-w-3xl max-h-[92vh] overflow-y-auto p-5 sm:p-7 gold-border-corner shadow-2xl relative text-blanco flex flex-col gap-5">
+      <div className="bg-white dark:bg-[#111111] border border-black/10 dark:border-white/10 rounded-[32px] w-full max-w-3xl max-h-[92vh] overflow-y-auto p-5 sm:p-7 shadow-2xl relative text-negro dark:text-blanco flex flex-col gap-5">
         {/* Header Comanda */}
-        <div className="flex items-start justify-between border-b border-arena/15 pb-4">
+        <div className="flex items-start justify-between border-b border-black/5 dark:border-white/5 pb-4">
           <div className="flex flex-col">
             <div className="flex items-center gap-2">
-              <span className="bg-turquesa/20 text-turquesa border border-turquesa/30 text-xs font-mono font-bold px-2.5 py-0.5 rounded-full uppercase">
+              <span className="bg-turquesa text-negro text-xs font-mono font-bold px-3 py-0.5 rounded-full uppercase shadow-sm">
                 {mesa.nombre}
               </span>
               <span
-                className={`text-[10px] font-sans font-bold px-2 py-0.5 rounded-full border uppercase ${
+                className={`text-[10px] font-mono font-bold px-2.5 py-0.5 rounded-full uppercase shadow-sm ${
                   mesa.estado === 'libre'
-                    ? 'bg-emerald-900/30 text-emerald-400 border-emerald-500/30'
+                    ? 'bg-[#16A34B] text-white'
                     : mesa.estado === 'ocupada'
-                    ? 'bg-coral/20 text-coral border-coral/30'
-                    : 'bg-oro/20 text-oro border-oro/30'
+                    ? 'bg-coral text-white'
+                    : 'bg-[#ECC94B] text-[#3A2D00]'
                 }`}
               >
                 {mesa.estado === 'libre'
-                  ? '🟢 LIBRE'
+                  ? 'Libre'
                   : mesa.estado === 'ocupada'
-                  ? '🔴 OCUPADA / COMIENDO'
-                  : '🟡 CUENTA PEDIDA'}
+                  ? 'Ocupada · Comiendo'
+                  : 'Cuenta Pedida'}
               </span>
             </div>
 
-            <h3 className="font-display text-3xl text-blanco mt-1">
-              COMANDERO DE SALÓN
+            <h3 className="font-sans font-black text-2xl sm:text-3xl text-negro dark:text-blanco tracking-tight mt-1.5">
+              Comandero de Salón
             </h3>
           </div>
 
           <button
+            type="button"
             onClick={onClose}
-            className="p-2 text-arena/60 hover:text-blanco rounded-full hover:bg-carbon border border-arena/20"
+            className="p-2 text-negro/40 dark:text-arena/50 hover:text-negro dark:hover:text-blanco rounded-full hover:bg-black/5 dark:hover:bg-white/10 transition-colors cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>
@@ -369,36 +363,39 @@ export function MesaComandaModal({
 
         {/* TABS DE CONTROL (Si está ocupada) */}
         {mesa.estado !== 'libre' && (
-          <div className="grid grid-cols-3 gap-2 bg-carbon p-1.5 rounded-2xl border border-arena/15">
+          <div className="grid grid-cols-3 gap-1.5 bg-black/5 dark:bg-white/5 p-1 rounded-full border border-black/5 dark:border-white/5">
             <button
+              type="button"
               onClick={() => setActiveTab('comanda')}
-              className={`py-2 px-3 rounded-xl text-xs font-sans font-bold transition-all ${
+              className={`py-2 px-3 rounded-full text-xs font-sans font-bold transition-all cursor-pointer ${
                 activeTab === 'comanda'
-                  ? 'bg-turquesa text-negro shadow-md'
-                  : 'text-arena/70 hover:text-blanco'
+                  ? 'bg-white dark:bg-[#222222] text-negro dark:text-blanco shadow-sm'
+                  : 'text-negro/60 dark:text-arena/60 hover:text-negro dark:hover:text-blanco'
               }`}
             >
-              📋 CUENTA (${subtotalActual.toFixed(0)})
+              📋 Cuenta (${subtotalActual.toFixed(0)})
             </button>
             <button
+              type="button"
               onClick={() => setActiveTab('agregar_ronda')}
-              className={`py-2 px-3 rounded-xl text-xs font-sans font-bold transition-all ${
+              className={`py-2 px-3 rounded-full text-xs font-sans font-bold transition-all cursor-pointer ${
                 activeTab === 'agregar_ronda'
-                  ? 'bg-coral text-blanco shadow-md'
-                  : 'text-arena/70 hover:text-blanco'
+                  ? 'bg-coral text-white shadow-sm'
+                  : 'text-negro/60 dark:text-arena/60 hover:text-coral'
               }`}
             >
-              ➕ AGREGAR RONDA
+              ➕ Ronda Extra
             </button>
             <button
+              type="button"
               onClick={() => setActiveTab('cobro')}
-              className={`py-2 px-3 rounded-xl text-xs font-sans font-bold transition-all ${
+              className={`py-2 px-3 rounded-full text-xs font-sans font-bold transition-all cursor-pointer ${
                 activeTab === 'cobro'
-                  ? 'bg-oro text-negro shadow-md'
-                  : 'text-arena/70 hover:text-blanco'
+                  ? 'bg-[#16A34B] text-white shadow-sm'
+                  : 'text-negro/60 dark:text-arena/60 hover:text-[#16A34B]'
               }`}
             >
-              💳 COBRAR Y LIBERAR
+              💳 Cobro & Cierre
             </button>
           </div>
         )}
@@ -408,30 +405,30 @@ export function MesaComandaModal({
           <form onSubmit={handleAbrirMesaSubmit} className="flex flex-col gap-5">
             <div className="flex flex-col gap-2">
               <div className="flex items-center justify-between">
-                <label className="text-xs font-sans text-arena uppercase font-bold flex items-center gap-1.5">
+                <label className="text-xs font-sans text-negro/70 dark:text-arena/70 font-bold flex items-center gap-1.5">
                   <User className="w-3.5 h-3.5 text-turquesa" />
-                  <span>Nombre de Comensal / Identificador</span>
+                  <span>Nombre del Comensal / Identificador</span>
                 </label>
                 <button
                   type="button"
                   onClick={() => setIsScannerOpen(true)}
-                  className="text-xs font-sans font-bold text-oro hover:text-blanco bg-oro/10 hover:bg-oro/20 border border-oro/30 px-3 py-1 rounded-xl transition-all flex items-center gap-1.5 shadow-sm"
+                  className="text-xs font-sans font-bold text-oro bg-oro/10 hover:bg-oro/20 px-3 py-1 rounded-full transition-all flex items-center gap-1.5 cursor-pointer"
                 >
                   <QrCode className="w-3.5 h-3.5" />
-                  <span>📷 ESCANEAR QR SOCIO VIP</span>
+                  <span>Escanear Socio VIP</span>
                 </button>
               </div>
 
               <input
                 type="text"
-                placeholder={`Ej. Familia Ramírez, Barra (${mesa.nombre})`}
+                placeholder={`Ej. Familia Ramírez, Amigos (${mesa.nombre})`}
                 value={clienteNombre}
                 onChange={(e) => setClienteNombre(e.target.value)}
-                className="bg-carbon border border-arena/20 rounded-xl px-4 py-2.5 text-sm text-blanco focus:border-turquesa focus:outline-none"
+                className="bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-2xl px-4 py-2.5 text-sm text-negro dark:text-blanco focus:outline-none focus:ring-2 focus:ring-turquesa"
               />
 
               {clienteTelefono && (
-                <div className="bg-turquesa/10 border border-turquesa/30 px-3 py-1.5 rounded-xl flex items-center justify-between text-xs text-turquesa">
+                <div className="bg-[#16A34B]/10 border border-[#16A34B]/30 px-3 py-2 rounded-2xl flex items-center justify-between text-xs text-[#16A34B]">
                   <span className="flex items-center gap-1.5 font-bold">
                     <Award className="w-4 h-4" />
                     <span>Socio VIP Vinculado: +52 {clienteTelefono}</span>
@@ -442,7 +439,7 @@ export function MesaComandaModal({
                       setClienteTelefono('')
                       setClienteNombre('')
                     }}
-                    className="text-[10px] text-arena hover:text-coral font-bold"
+                    className="text-[10px] text-coral hover:underline font-bold"
                   >
                     Desvincular
                   </button>
@@ -453,7 +450,7 @@ export function MesaComandaModal({
             {/* Selector de Platillos para la Comanda Inicial */}
             <div className="flex flex-col gap-3">
               <div className="flex justify-between items-center">
-                <span className="text-xs font-sans text-arena uppercase font-bold">
+                <span className="text-xs font-sans text-negro/70 dark:text-arena/70 font-bold">
                   Seleccionar Platillos del Menú:
                 </span>
                 <span className="font-mono text-xs text-turquesa font-bold">
@@ -462,13 +459,13 @@ export function MesaComandaModal({
               </div>
 
               <div className="relative">
-                <Search className="w-4 h-4 absolute left-3.5 top-3.5 text-arena/50" />
+                <Search className="w-4 h-4 absolute left-3.5 top-3 text-negro/40 dark:text-arena/50" />
                 <input
                   type="text"
-                  placeholder="Buscar platillo o bebida..."
+                  placeholder="Buscar platillo, aguachile o bebida..."
                   value={dishQuery}
                   onChange={(e) => setDishQuery(e.target.value)}
-                  className="bg-carbon border border-arena/20 rounded-xl pl-10 pr-4 py-2.5 text-xs text-blanco w-full focus:border-turquesa focus:outline-none"
+                  className="bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-2xl pl-10 pr-4 py-2 text-xs text-negro dark:text-blanco w-full focus:outline-none focus:ring-2 focus:ring-turquesa"
                 />
               </div>
 
@@ -478,19 +475,19 @@ export function MesaComandaModal({
                   <div
                     key={platillo.id}
                     onClick={() => handleOpenConfig(platillo)}
-                    className="bg-carbon border border-arena/15 hover:border-turquesa p-3 rounded-xl cursor-pointer flex items-center justify-between transition-all group"
+                    className="bg-black/[0.02] dark:bg-white/[0.02] border border-black/5 dark:border-white/5 hover:border-turquesa p-3 rounded-2xl cursor-pointer flex items-center justify-between transition-all group shadow-sm hover:shadow active:scale-95"
                   >
                     <div className="flex flex-col min-w-0 pr-2">
-                      <span className="font-bold text-xs text-blanco truncate group-hover:text-turquesa transition-colors">
+                      <span className="font-sans font-bold text-xs text-negro dark:text-blanco truncate group-hover:text-turquesa transition-colors">
                         {platillo.nombre}
                       </span>
-                      <span className="font-display text-sm text-coral">
+                      <span className="font-sans font-black text-xs text-coral">
                         ${platillo.precio} MXN
                       </span>
                     </div>
                     <button
                       type="button"
-                      className="p-1.5 bg-turquesa/10 group-hover:bg-turquesa text-turquesa group-hover:text-negro rounded-lg border border-turquesa/30 transition-all shrink-0"
+                      className="p-1.5 bg-turquesa/10 group-hover:bg-turquesa text-turquesa group-hover:text-negro rounded-xl transition-all shrink-0"
                     >
                       <Plus className="w-3.5 h-3.5" />
                     </button>
@@ -500,47 +497,47 @@ export function MesaComandaModal({
 
               {/* Items Seleccionados para Abrir con Picor y Notas */}
               {selectedItems.length > 0 && (
-                <div className="bg-[#111] border border-turquesa/30 rounded-2xl p-4 flex flex-col gap-2.5 shadow-inner">
-                  <span className="text-[10px] font-sans font-bold text-turquesa uppercase tracking-wider">
-                    Platillos y Especificaciones a marchar en cocina:
+                <div className="bg-black/[0.03] dark:bg-white/[0.03] border border-turquesa/30 rounded-2xl p-4 flex flex-col gap-2.5 shadow-sm">
+                  <span className="text-[10px] font-mono font-bold text-turquesa uppercase tracking-wider">
+                    Platillos y Especificaciones a marchar:
                   </span>
-                  <div className="divide-y divide-arena/10 flex flex-col gap-2">
+                  <div className="divide-y divide-black/5 dark:divide-white/5 flex flex-col gap-2">
                     {selectedItems.map((item) => {
                       const picorInfo = PICOR_OPTIONS.find((p) => p.id === item.nivelPicor)
                       return (
                         <div key={item.id} className="pt-2 flex flex-col gap-1 text-xs">
                           <div className="flex justify-between items-center">
                             <div className="flex items-center gap-2">
-                              <span className="bg-turquesa/20 text-turquesa font-mono font-bold px-2 py-0.5 rounded-lg border border-turquesa/30">
+                              <span className="bg-turquesa text-negro font-mono font-bold px-2 py-0.5 rounded-md shadow-sm">
                                 x{item.cantidad}
                               </span>
-                              <span className="text-blanco font-bold text-sm">
+                              <span className="text-negro dark:text-blanco font-sans font-bold text-sm">
                                 {item.platillo.nombre}
                               </span>
                             </div>
                             <div className="flex items-center gap-3">
-                              <span className="font-display text-base text-coral font-bold">
+                              <span className="font-sans font-black text-sm text-coral">
                                 ${(item.platillo.precio * item.cantidad).toFixed(0)}
                               </span>
                               <div className="flex items-center gap-1">
                                 <button
                                   type="button"
                                   onClick={() => handleUpdateSelectedQty(item.id, -1)}
-                                  className="p-1 bg-carbon hover:bg-red-950 text-red-400 rounded"
+                                  className="p-1 bg-black/5 dark:bg-white/10 hover:bg-red-500/20 text-red-500 rounded-lg"
                                 >
                                   <Minus className="w-3 h-3" />
                                 </button>
                                 <button
                                   type="button"
                                   onClick={() => handleUpdateSelectedQty(item.id, 1)}
-                                  className="p-1 bg-carbon hover:bg-turquesa text-turquesa hover:text-negro rounded"
+                                  className="p-1 bg-black/5 dark:bg-white/10 hover:bg-turquesa text-turquesa hover:text-negro rounded-lg"
                                 >
                                   <Plus className="w-3 h-3" />
                                 </button>
                                 <button
                                   type="button"
                                   onClick={() => handleRemoveSelectedItem(item.id)}
-                                  className="p-1 bg-carbon hover:bg-red-900 text-red-400 rounded ml-1"
+                                  className="p-1 bg-black/5 dark:bg-white/10 hover:bg-red-500 text-red-500 hover:text-white rounded-lg ml-1"
                                 >
                                   <Trash2 className="w-3 h-3" />
                                 </button>
@@ -555,7 +552,7 @@ export function MesaComandaModal({
                             </span>
 
                             {item.notasItem && (
-                              <span className="text-[11px] font-serif italic text-arena/80 flex items-center gap-1 bg-carbon px-2 py-0.5 rounded border border-arena/15">
+                              <span className="text-[11px] italic text-negro/70 dark:text-arena/80 flex items-center gap-1 bg-black/5 dark:bg-white/10 px-2 py-0.5 rounded-md">
                                 <FileText className="w-3 h-3 text-turquesa" />
                                 <span>"{item.notasItem}"</span>
                               </span>
@@ -566,9 +563,9 @@ export function MesaComandaModal({
                     })}
                   </div>
 
-                  <div className="flex justify-between items-center pt-3 border-t border-arena/15 font-bold">
-                    <span className="text-xs text-arena/70">TOTAL INICIAL:</span>
-                    <span className="font-display text-2xl text-coral">
+                  <div className="flex justify-between items-center pt-3 border-t border-black/5 dark:border-white/5 font-bold">
+                    <span className="text-xs text-negro/60 dark:text-arena/70">TOTAL INICIAL:</span>
+                    <span className="font-sans font-black text-2xl text-coral">
                       ${subtotalNuevaRonda.toFixed(2)} MXN
                     </span>
                   </div>
@@ -579,17 +576,17 @@ export function MesaComandaModal({
             <button
               type="submit"
               disabled={isSubmitting || selectedItems.length === 0}
-              className="bg-coral text-blanco hover:bg-coral/80 font-sans font-bold text-xs tracking-wider py-4 rounded-xl transition-all flex items-center justify-center gap-2 shadow-lg disabled:opacity-50"
+              className="bg-coral hover:bg-coral/90 text-white font-sans font-bold text-xs tracking-wider py-4 rounded-2xl transition-all flex items-center justify-center gap-2 shadow-md disabled:opacity-50 active:scale-95 cursor-pointer"
             >
               {isSubmitting ? (
                 <>
                   <Loader2 className="w-4 h-4 animate-spin" />
-                  <span>MARCHANDO COMANDA...</span>
+                  <span>Marchando comanda...</span>
                 </>
               ) : (
                 <>
                   <UtensilsCrossed className="w-4 h-4 stroke-[2.5]" />
-                  <span>ABRIR MESA Y ENVIAR A COCINA (${subtotalNuevaRonda.toFixed(0)})</span>
+                  <span>Abrir Mesa y Enviar a Cocina (${subtotalNuevaRonda.toFixed(0)})</span>
                 </>
               )}
             </button>
@@ -600,16 +597,16 @@ export function MesaComandaModal({
         {mesa.estado !== 'libre' && activeTab === 'comanda' && (
           <div className="flex flex-col gap-4">
             {/* Banner de Socio VIP en la mesa */}
-            <div className="bg-carbon border border-arena/20 rounded-2xl p-3.5 flex items-center justify-between">
+            <div className="bg-black/[0.02] dark:bg-white/[0.02] border border-black/10 dark:border-white/10 rounded-2xl p-3.5 flex items-center justify-between">
               <div className="flex items-center gap-2.5">
-                <div className="p-2 bg-oro/10 text-oro rounded-xl border border-oro/30">
+                <div className="p-2 bg-oro/10 text-oro rounded-xl">
                   <Award className="w-4 h-4" />
                 </div>
                 <div className="flex flex-col">
-                  <span className="text-[10px] font-sans font-bold text-turquesa uppercase tracking-wider">
+                  <span className="text-[10px] font-mono font-bold text-turquesa uppercase tracking-wider">
                     Socio VIP de la Mesa:
                   </span>
-                  <span className="text-xs font-sans font-bold text-blanco">
+                  <span className="text-xs font-sans font-bold text-negro dark:text-blanco">
                     {clienteTelefono
                       ? `${clienteNombre || 'Socio Club'} (+52 ${clienteTelefono})`
                       : 'Sin socio asignado'}
@@ -620,23 +617,23 @@ export function MesaComandaModal({
               <button
                 type="button"
                 onClick={() => setIsScannerOpen(true)}
-                className="text-xs font-sans font-bold text-oro hover:text-blanco bg-oro/10 hover:bg-oro/20 border border-oro/30 px-3 py-1.5 rounded-xl transition-all flex items-center gap-1.5"
+                className="text-xs font-sans font-bold text-oro bg-oro/10 hover:bg-oro/20 px-3 py-1.5 rounded-full transition-all flex items-center gap-1.5 cursor-pointer"
               >
                 <QrCode className="w-3.5 h-3.5" />
-                <span>{clienteTelefono ? 'CAMBIAR' : 'ESCANEAR QR'}</span>
+                <span>{clienteTelefono ? 'Cambiar' : 'Escanear QR'}</span>
               </button>
             </div>
 
             <div className="flex items-center justify-between">
-              <span className="text-xs font-sans font-bold uppercase tracking-wider text-arena/80">
-                Detalle de Platillos Consumidos en {mesa.nombre}:
+              <span className="text-xs font-sans font-bold uppercase tracking-wider text-negro/70 dark:text-arena/80">
+                Platillos Consumidos en {mesa.nombre}:
               </span>
-              <span className="text-xs font-mono text-arena/60">
+              <span className="text-xs font-mono text-negro/50 dark:text-arena/50">
                 {itemsActuales.length} partidas
               </span>
             </div>
 
-            <div className="bg-[#111111] border border-arena/10 rounded-2xl overflow-hidden divide-y divide-arena/10">
+            <div className="bg-black/[0.02] dark:bg-white/[0.02] border border-black/10 dark:border-white/10 rounded-2xl overflow-hidden divide-y divide-black/5 dark:divide-white/5">
               {itemsActuales.length > 0 ? (
                 itemsActuales.map((item, i) => {
                   const picorInfo = PICOR_OPTIONS.find((p) => p.id === item.nivel_picor)
@@ -644,19 +641,18 @@ export function MesaComandaModal({
                     <div key={i} className="p-3.5 flex flex-col gap-1.5 text-xs font-sans">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-3">
-                          <span className="bg-turquesa/20 text-turquesa font-mono font-bold px-2 py-0.5 rounded-lg border border-turquesa/30">
+                          <span className="bg-turquesa text-negro font-mono font-bold px-2 py-0.5 rounded-md shadow-sm">
                             x{item.cantidad}
                           </span>
-                          <span className="font-bold text-blanco text-sm">
+                          <span className="font-bold text-negro dark:text-blanco text-sm">
                             {item.nombre_platillo}
                           </span>
                         </div>
-                        <span className="font-display text-base text-coral font-bold">
+                        <span className="font-sans font-black text-base text-coral">
                           ${((item.precio_unitario || 0) * item.cantidad).toFixed(2)}
                         </span>
                       </div>
 
-                      {/* Badge de Picor y Especificación guardada */}
                       <div className="flex flex-wrap items-center gap-2 pl-8">
                         {item.nivel_picor && (
                           <span className={`px-2 py-0.5 rounded-full border text-[10px] font-bold flex items-center gap-1 ${picorInfo?.color || 'text-arena'}`}>
@@ -666,7 +662,7 @@ export function MesaComandaModal({
                         )}
 
                         {item.notas_item && (
-                          <span className="text-[11px] font-serif italic text-arena/80 flex items-center gap-1 bg-carbon px-2 py-0.5 rounded border border-arena/15">
+                          <span className="text-[11px] italic text-negro/70 dark:text-arena/80 flex items-center gap-1 bg-black/5 dark:bg-white/10 px-2 py-0.5 rounded-md">
                             <FileText className="w-3 h-3 text-turquesa" />
                             <span>Nota: "{item.notas_item}"</span>
                           </span>
@@ -676,62 +672,60 @@ export function MesaComandaModal({
                   )
                 })
               ) : (
-                <p className="text-xs text-arena/50 p-4 italic text-center">
+                <p className="text-xs text-negro/40 dark:text-arena/50 p-4 italic text-center">
                   Sin platillos registrados en la comanda.
                 </p>
               )}
             </div>
 
             {/* Total acumulado */}
-            <div className="bg-carbon/80 border border-oro/30 rounded-2xl p-4 flex items-center justify-between shadow-lg">
+            <div className="bg-black/[0.02] dark:bg-white/[0.02] border border-black/10 dark:border-white/10 rounded-2xl p-4 flex items-center justify-between shadow-sm">
               <div className="flex flex-col">
-                <span className="text-[10px] font-sans font-bold text-arena/60 uppercase">
-                  SUBTOTAL ACUMULADO
+                <span className="text-[10px] font-mono font-bold text-negro/50 dark:text-arena/60 uppercase">
+                  Subtotal Acumulado
                 </span>
-                <span className="font-display text-3xl text-oro">
+                <span className="font-sans font-black text-2xl sm:text-3xl text-negro dark:text-blanco">
                   ${subtotalActual.toFixed(2)} MXN
                 </span>
               </div>
 
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={handlePrintPrecuenta}
-                  className="bg-oro text-negro font-sans font-bold text-xs py-3 px-4 rounded-xl hover:bg-blanco transition-all flex items-center gap-1.5 shadow-md"
-                >
-                  <Printer className="w-4 h-4" />
-                  <span>IMPRIMIR PRE-CUENTA</span>
-                </button>
-              </div>
+              <button
+                type="button"
+                onClick={() => setShowTicketModal(true)}
+                className="bg-black/5 dark:bg-white/10 hover:bg-black/10 dark:hover:bg-white/15 text-negro dark:text-blanco font-sans font-bold text-xs py-3 px-4 rounded-2xl transition-all flex items-center gap-1.5 cursor-pointer active:scale-95 shadow-sm"
+              >
+                <Printer className="w-4 h-4 text-oro" />
+                <span>Imprimir Pre-cuenta</span>
+              </button>
             </div>
 
-            <div className="flex items-center gap-2 pt-2 border-t border-arena/10">
+            <div className="flex items-center gap-2 pt-2 border-t border-black/5 dark:border-white/5">
               <button
                 type="button"
                 onClick={() => cambiarEstadoMesa(mesa.id, mesa.estado === 'cuenta_pedida' ? 'ocupada' : 'cuenta_pedida')}
-                className="flex-1 bg-carbon border border-arena/20 text-arena hover:text-blanco hover:border-oro py-3 px-3 rounded-xl text-xs font-sans font-bold transition-all"
+                className="flex-1 bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 text-negro dark:text-blanco py-3 px-3 rounded-2xl text-xs font-sans font-bold transition-all cursor-pointer"
               >
-                {mesa.estado === 'cuenta_pedida' ? '↩️ MARCAR COMO COMIENDO' : '🟡 MARCAR: PIDIENDO CUENTA'}
+                {mesa.estado === 'cuenta_pedida' ? '↩️ Marcar como Comiendo' : '🟡 Marcar: Pidiendo Cuenta'}
               </button>
             </div>
           </div>
         )}
 
-        {/* CASO 3: TAB 'AGREGAR RONDA' (Platillos extra a mesa ocupada con especificaciones) */}
+        {/* CASO 3: TAB 'AGREGAR RONDA' */}
         {mesa.estado !== 'libre' && activeTab === 'agregar_ronda' && (
           <form onSubmit={handleAgregarRondaSubmit} className="flex flex-col gap-4">
-            <span className="text-xs font-sans text-arena uppercase font-bold">
+            <span className="text-xs font-sans text-negro/70 dark:text-arena/70 font-bold">
               Marchar Ronda Extra a {mesa.nombre}:
             </span>
 
             <div className="relative">
-              <Search className="w-4 h-4 absolute left-3.5 top-3.5 text-arena/50" />
+              <Search className="w-4 h-4 absolute left-3.5 top-3 text-negro/40 dark:text-arena/50" />
               <input
                 type="text"
                 placeholder="Buscar platillo o bebida extra..."
                 value={dishQuery}
                 onChange={(e) => setDishQuery(e.target.value)}
-                className="bg-carbon border border-arena/20 rounded-xl pl-10 pr-4 py-2.5 text-xs text-blanco w-full focus:border-turquesa focus:outline-none"
+                className="bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-2xl pl-10 pr-4 py-2 text-xs text-negro dark:text-blanco w-full focus:outline-none focus:ring-2 focus:ring-coral"
               />
             </div>
 
@@ -741,19 +735,19 @@ export function MesaComandaModal({
                 <div
                   key={platillo.id}
                   onClick={() => handleOpenConfig(platillo)}
-                  className="bg-carbon border border-arena/15 hover:border-coral p-3 rounded-xl cursor-pointer flex items-center justify-between transition-all group"
+                  className="bg-black/[0.02] dark:bg-white/[0.02] border border-black/5 dark:border-white/5 hover:border-coral p-3 rounded-2xl cursor-pointer flex items-center justify-between transition-all group shadow-sm hover:shadow active:scale-95"
                 >
                   <div className="flex flex-col min-w-0 pr-2">
-                    <span className="font-bold text-xs text-blanco truncate group-hover:text-coral transition-colors">
+                    <span className="font-sans font-bold text-xs text-negro dark:text-blanco truncate group-hover:text-coral transition-colors">
                       {platillo.nombre}
                     </span>
-                    <span className="font-display text-sm text-coral">
+                    <span className="font-sans font-black text-xs text-coral">
                       ${platillo.precio} MXN
                     </span>
                   </div>
                   <button
                     type="button"
-                    className="p-1.5 bg-coral/10 group-hover:bg-coral text-coral group-hover:text-blanco rounded-lg border border-coral/30 transition-all shrink-0"
+                    className="p-1.5 bg-coral/10 group-hover:bg-coral text-coral group-hover:text-white rounded-xl transition-all shrink-0"
                   >
                     <Plus className="w-3.5 h-3.5" />
                   </button>
@@ -762,47 +756,47 @@ export function MesaComandaModal({
             </div>
 
             {selectedItems.length > 0 && (
-              <div className="bg-[#111] border border-coral/30 rounded-2xl p-4 flex flex-col gap-2.5">
-                <span className="text-[10px] font-sans font-bold text-coral uppercase tracking-wider">
-                  Nuevos items y especificaciones a marchar en esta ronda:
+              <div className="bg-black/[0.03] dark:bg-white/[0.03] border border-coral/30 rounded-2xl p-4 flex flex-col gap-2.5 shadow-sm">
+                <span className="text-[10px] font-mono font-bold text-coral uppercase tracking-wider">
+                  Nuevos items y especificaciones de esta ronda:
                 </span>
-                <div className="divide-y divide-arena/10 flex flex-col gap-2">
+                <div className="divide-y divide-black/5 dark:divide-white/5 flex flex-col gap-2">
                   {selectedItems.map((item) => {
                     const picorInfo = PICOR_OPTIONS.find((p) => p.id === item.nivelPicor)
                     return (
                       <div key={item.id} className="pt-2 flex flex-col gap-1 text-xs">
                         <div className="flex justify-between items-center">
                           <div className="flex items-center gap-2">
-                            <span className="bg-coral/20 text-coral font-mono font-bold px-2 py-0.5 rounded-lg border border-coral/30">
+                            <span className="bg-coral text-white font-mono font-bold px-2 py-0.5 rounded-md shadow-sm">
                               x{item.cantidad}
                             </span>
-                            <span className="text-blanco font-bold text-sm">
+                            <span className="text-negro dark:text-blanco font-sans font-bold text-sm">
                               {item.platillo.nombre}
                             </span>
                           </div>
                           <div className="flex items-center gap-3">
-                            <span className="font-display text-base text-coral font-bold">
+                            <span className="font-sans font-black text-sm text-coral">
                               ${(item.platillo.precio * item.cantidad).toFixed(0)}
                             </span>
                             <div className="flex items-center gap-1">
                               <button
                                 type="button"
                                 onClick={() => handleUpdateSelectedQty(item.id, -1)}
-                                className="p-1 bg-carbon hover:bg-red-950 text-red-400 rounded"
+                                className="p-1 bg-black/5 dark:bg-white/10 hover:bg-red-500/20 text-red-500 rounded-lg"
                               >
                                 <Minus className="w-3 h-3" />
                               </button>
                               <button
                                 type="button"
                                 onClick={() => handleUpdateSelectedQty(item.id, 1)}
-                                className="p-1 bg-carbon hover:bg-coral text-coral hover:text-blanco rounded"
+                                className="p-1 bg-black/5 dark:bg-white/10 hover:bg-coral text-coral hover:text-white rounded-lg"
                               >
                                 <Plus className="w-3 h-3" />
                               </button>
                               <button
                                 type="button"
                                 onClick={() => handleRemoveSelectedItem(item.id)}
-                                className="p-1 bg-carbon hover:bg-red-900 text-red-400 rounded ml-1"
+                                className="p-1 bg-black/5 dark:bg-white/10 hover:bg-red-500 text-red-500 hover:text-white rounded-lg ml-1"
                               >
                                 <Trash2 className="w-3 h-3" />
                               </button>
@@ -817,7 +811,7 @@ export function MesaComandaModal({
                           </span>
 
                           {item.notasItem && (
-                            <span className="text-[11px] font-serif italic text-arena/80 flex items-center gap-1 bg-carbon px-2 py-0.5 rounded border border-arena/15">
+                            <span className="text-[11px] italic text-negro/70 dark:text-arena/80 flex items-center gap-1 bg-black/5 dark:bg-white/10 px-2 py-0.5 rounded-md">
                               <FileText className="w-3 h-3 text-turquesa" />
                               <span>"{item.notasItem}"</span>
                             </span>
@@ -831,7 +825,7 @@ export function MesaComandaModal({
             )}
 
             <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-sans text-arena uppercase">
+              <label className="text-xs font-sans text-negro/70 dark:text-arena/70">
                 Instrucciones Generales de la Mesa / Notas de Ronda
               </label>
               <input
@@ -839,24 +833,24 @@ export function MesaComandaModal({
                 placeholder="Ej. Llevar primero las bebidas, salsas extra..."
                 value={notasRonda}
                 onChange={(e) => setNotasRonda(e.target.value)}
-                className="bg-carbon border border-arena/20 rounded-xl px-4 py-2.5 text-xs text-blanco focus:border-coral focus:outline-none"
+                className="bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-2xl px-4 py-2.5 text-xs text-negro dark:text-blanco focus:outline-none focus:ring-2 focus:ring-coral"
               />
             </div>
 
             <button
               type="submit"
               disabled={isSubmitting || selectedItems.length === 0}
-              className="bg-coral text-blanco hover:bg-coral/80 font-sans font-bold text-xs tracking-wider py-4 rounded-xl transition-all flex items-center justify-center gap-2 shadow-lg disabled:opacity-50"
+              className="bg-coral hover:bg-coral/90 text-white font-sans font-bold text-xs tracking-wider py-4 rounded-2xl transition-all flex items-center justify-center gap-2 shadow-md disabled:opacity-50 active:scale-95 cursor-pointer"
             >
               {isSubmitting ? (
                 <>
                   <Loader2 className="w-4 h-4 animate-spin" />
-                  <span>ENVIANDO RONDA...</span>
+                  <span>Enviando ronda...</span>
                 </>
               ) : (
                 <>
                   <Plus className="w-4 h-4 stroke-[3]" />
-                  <span>MARCHAR RONDA EXTRA (+${subtotalNuevaRonda.toFixed(0)})</span>
+                  <span>Marchar Ronda Extra (+${subtotalNuevaRonda.toFixed(0)})</span>
                 </>
               )}
             </button>
@@ -866,50 +860,50 @@ export function MesaComandaModal({
         {/* CASO 4: TAB 'COBRAR Y LIBERAR' */}
         {mesa.estado !== 'libre' && activeTab === 'cobro' && (
           <form onSubmit={handleCobrarSubmit} className="flex flex-col gap-5">
-            <div className="bg-carbon/80 border border-arena/20 rounded-2xl p-4 flex flex-col gap-3">
+            <div className="bg-black/[0.02] dark:bg-white/[0.02] border border-black/10 dark:border-white/10 rounded-2xl p-4 flex flex-col gap-3">
               <div className="flex justify-between items-center text-xs">
-                <span className="text-arena/70">Subtotal de la mesa:</span>
-                <span className="font-mono font-bold text-blanco">${subtotalActual.toFixed(2)}</span>
+                <span className="text-negro/60 dark:text-arena/70">Subtotal de la mesa:</span>
+                <span className="font-mono font-bold text-negro dark:text-blanco">${subtotalActual.toFixed(2)}</span>
               </div>
 
               <div className="flex items-center justify-between gap-4">
-                <label className="text-xs font-sans text-arena">Descuento aplicado ($):</label>
+                <label className="text-xs font-sans text-negro/70 dark:text-arena/70 font-bold">Descuento aplicado ($):</label>
                 <input
                   type="number"
                   min="0"
                   step="any"
                   value={descuento}
                   onChange={(e) => setDescuento(parseFloat(e.target.value) || 0)}
-                  className="bg-[#111] border border-arena/20 rounded-lg px-3 py-1.5 text-right text-sm font-mono text-coral w-32 focus:border-turquesa focus:outline-none"
+                  className="bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-xl px-3 py-1.5 text-right text-sm font-mono font-bold text-coral w-32 focus:outline-none focus:ring-2 focus:ring-[#16A34B]"
                 />
               </div>
 
-              <div className="flex justify-between items-center pt-2 border-t border-arena/15 font-bold">
-                <span className="text-sm text-blanco">TOTAL FINAL A COBRAR:</span>
-                <span className="font-display text-2xl text-oro">
+              <div className="flex justify-between items-center pt-2 border-t border-black/5 dark:border-white/5 font-bold">
+                <span className="text-sm text-negro dark:text-blanco">Total a Cobrar:</span>
+                <span className="font-sans font-black text-2xl text-oro">
                   ${totalParaCobro.toFixed(2)} MXN
                 </span>
               </div>
             </div>
 
             <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-sans text-arena uppercase font-bold">
+              <label className="text-xs font-sans text-negro/70 dark:text-arena/70 uppercase font-bold">
                 Método de Pago Recibido
               </label>
               <div className="grid grid-cols-3 gap-2">
                 {[
-                  { id: 'efectivo', label: '💵 EFECTIVO' },
-                  { id: 'transferencia', label: '📱 SPEI / TRANSF' },
-                  { id: 'oxxo', label: '🏪 TARJETA / OXXO' },
+                  { id: 'efectivo', label: '💵 Efectivo' },
+                  { id: 'transferencia', label: '📱 SPEI / Transf' },
+                  { id: 'oxxo', label: '🏪 Tarjeta / OXXO' },
                 ].map((mp) => (
                   <button
                     key={mp.id}
                     type="button"
                     onClick={() => setMetodoPago(mp.id as MetodoPago)}
-                    className={`py-3 px-2 rounded-xl text-xs font-sans font-bold border transition-all ${
+                    className={`py-3 px-2 rounded-2xl text-xs font-sans font-bold transition-all cursor-pointer ${
                       metodoPago === mp.id
-                        ? 'bg-turquesa text-negro border-turquesa shadow-md'
-                        : 'bg-carbon text-arena/70 border-arena/20 hover:border-turquesa'
+                        ? 'bg-[#16A34B] text-white shadow-sm'
+                        : 'bg-black/5 dark:bg-white/5 text-negro/70 dark:text-arena/70 hover:bg-black/10 dark:hover:bg-white/10'
                     }`}
                   >
                     {mp.label}
@@ -921,17 +915,17 @@ export function MesaComandaModal({
             <button
               type="submit"
               disabled={isSubmitting}
-              className="bg-emerald-600 hover:bg-emerald-500 text-blanco font-sans font-bold text-xs tracking-wider py-4 rounded-xl transition-all flex items-center justify-center gap-2 shadow-lg"
+              className="bg-[#16A34B] hover:bg-[#16A34B]/90 text-white font-sans font-bold text-xs tracking-wider py-4 rounded-2xl transition-all flex items-center justify-center gap-2 shadow-md active:scale-95 cursor-pointer"
             >
               {isSubmitting ? (
                 <>
                   <Loader2 className="w-4 h-4 animate-spin" />
-                  <span>PROCESANDO COBRO...</span>
+                  <span>Procesando cobro...</span>
                 </>
               ) : (
                 <>
                   <Check className="w-4 h-4 stroke-[3]" />
-                  <span>REGISTRAR COBRO Y LIBERAR {mesa.nombre.toUpperCase()}</span>
+                  <span>Registrar Cobro y Liberar {mesa.nombre}</span>
                 </>
               )}
             </button>
@@ -941,46 +935,47 @@ export function MesaComandaModal({
 
       {/* SUB-MODAL DE CONFIGURACIÓN INDIVIDUAL DE PLATILLO (PICOR, NOTAS, CANTIDAD) */}
       {configuringPlatillo && (
-        <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-3 sm:p-4">
-          <div className="bg-[#080808] bg-dots-pattern border-2 border-oro/40 rounded-3xl w-full max-w-lg p-5 sm:p-6 gold-border-corner shadow-2xl relative text-blanco flex flex-col gap-4 max-h-[92vh] overflow-y-auto">
+        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 animate-in fade-in duration-150">
+          <div className="bg-white dark:bg-[#111111] border border-black/10 dark:border-white/10 rounded-[32px] w-full max-w-lg p-5 sm:p-6 shadow-2xl relative text-negro dark:text-blanco flex flex-col gap-4 max-h-[92vh] overflow-y-auto">
             <button
+              type="button"
               onClick={() => setConfiguringPlatillo(null)}
-              className="absolute top-4 right-4 p-2 text-arena/60 hover:text-blanco rounded-full hover:bg-carbon border border-arena/20"
+              className="absolute top-4 right-4 p-2 text-negro/40 dark:text-arena/50 hover:text-negro dark:hover:text-blanco rounded-full hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
             >
               <X className="w-5 h-5" />
             </button>
 
             {/* Cabecera del Platillo */}
             <div>
-              <span className="text-[10px] font-sans font-bold tracking-widest text-turquesa uppercase block">
-                ESPECIFICACIONES DE COMANDA
+              <span className="text-[10px] font-mono font-bold tracking-wider text-turquesa uppercase block">
+                Especificaciones de Comanda
               </span>
-              <h3 className="font-display text-2xl sm:text-3xl text-blanco mt-0.5">
+              <h3 className="font-sans font-black text-2xl text-negro dark:text-blanco mt-0.5">
                 {configuringPlatillo.nombre}
               </h3>
               {configuringPlatillo.descripcion && (
-                <p className="font-serif italic text-xs text-arena/70 mt-1 line-clamp-2">
+                <p className="text-xs text-negro/60 dark:text-arena/70 mt-1 line-clamp-2 font-normal">
                   {configuringPlatillo.descripcion}
                 </p>
               )}
             </div>
 
             {/* Selector de Cantidad */}
-            <div className="flex justify-between items-center bg-carbon p-3 rounded-2xl border border-arena/20">
-              <span className="text-xs font-sans uppercase font-bold text-arena">Porciones:</span>
+            <div className="flex justify-between items-center bg-black/[0.02] dark:bg-white/[0.02] border border-black/5 dark:border-white/5 p-3.5 rounded-2xl">
+              <span className="text-xs font-sans uppercase font-bold text-negro/70 dark:text-arena/70">Porciones:</span>
               <div className="flex items-center gap-3">
                 <button
                   type="button"
                   onClick={() => setConfigQty(Math.max(1, configQty - 1))}
-                  className="w-8 h-8 rounded-lg bg-[#181818] border border-arena/20 text-blanco flex items-center justify-center font-bold text-base hover:bg-coral transition-colors"
+                  className="w-8 h-8 rounded-xl bg-black/5 dark:bg-white/10 text-negro dark:text-blanco flex items-center justify-center font-bold text-base hover:bg-coral hover:text-white transition-colors"
                 >
                   -
                 </button>
-                <span className="font-display text-2xl px-2 text-oro">{configQty}</span>
+                <span className="font-sans font-black text-2xl px-2 text-negro dark:text-blanco">{configQty}</span>
                 <button
                   type="button"
                   onClick={() => setConfigQty(configQty + 1)}
-                  className="w-8 h-8 rounded-lg bg-turquesa text-negro flex items-center justify-center font-bold text-base hover:bg-blanco transition-colors"
+                  className="w-8 h-8 rounded-xl bg-turquesa text-negro flex items-center justify-center font-bold text-base hover:bg-turquesa/90 transition-colors"
                 >
                   +
                 </button>
@@ -1000,17 +995,17 @@ export function MesaComandaModal({
                     key={picor.id}
                     type="button"
                     onClick={() => setConfigPicor(picor.id)}
-                    className={`p-2.5 rounded-xl border text-left flex flex-col gap-0.5 transition-all ${
+                    className={`p-2.5 rounded-2xl border text-left flex flex-col gap-0.5 transition-all cursor-pointer ${
                       configPicor === picor.id
-                        ? `${picor.color} shadow-md ring-2 ring-turquesa/50 font-bold`
-                        : 'bg-carbon border-arena/20 text-arena/70 hover:border-turquesa/40'
+                        ? `${picor.color} shadow-sm ring-2 ring-turquesa/50 font-bold`
+                        : 'bg-black/[0.02] dark:bg-white/[0.02] border-black/10 dark:border-white/10 text-negro/70 dark:text-arena/70 hover:border-turquesa/40'
                     }`}
                   >
                     <div className="flex items-center justify-between">
                       <span className="text-xs">{picor.label}</span>
                       {renderFlames(picor.flames)}
                     </div>
-                    <span className="text-[10px] opacity-70 truncate font-serif italic">
+                    <span className="text-[10px] opacity-70 truncate">
                       {picor.desc}
                     </span>
                   </button>
@@ -1020,7 +1015,7 @@ export function MesaComandaModal({
 
             {/* Especificaciones / Notas de Preparación */}
             <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-sans uppercase font-bold text-arena flex items-center gap-1.5">
+              <label className="text-xs font-sans uppercase font-bold text-negro/70 dark:text-arena/70 flex items-center gap-1.5">
                 <FileText className="w-3.5 h-3.5 text-turquesa" />
                 <span>Notas de Preparación / Exclusiones</span>
               </label>
@@ -1029,7 +1024,7 @@ export function MesaComandaModal({
                 placeholder="Ej. Sin cebolla, limón extra, salsas aparte..."
                 value={configNotas}
                 onChange={(e) => setConfigNotas(e.target.value)}
-                className="bg-carbon border border-arena/20 rounded-xl p-3 text-xs text-blanco focus:border-turquesa focus:outline-none"
+                className="bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-2xl p-3 text-xs text-negro dark:text-blanco focus:outline-none focus:ring-2 focus:ring-turquesa"
               />
             </div>
 
@@ -1037,11 +1032,11 @@ export function MesaComandaModal({
             <button
               type="button"
               onClick={handleConfirmConfig}
-              className="bg-turquesa text-negro hover:bg-blanco font-sans font-bold text-xs tracking-wider py-4 rounded-xl transition-all flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(42,191,191,0.3)] mt-2"
+              className="bg-coral hover:bg-coral/90 text-white font-sans font-bold text-xs tracking-wider py-4 rounded-2xl transition-all flex items-center justify-center gap-2 shadow-md mt-2 active:scale-95 cursor-pointer"
             >
               <Check className="w-4 h-4 stroke-[3]" />
               <span>
-                AGREGAR A LA COMANDA (${(configuringPlatillo.precio * configQty).toFixed(0)} MXN)
+                Agregar a la Comanda (${(configuringPlatillo.precio * configQty).toFixed(0)} MXN)
               </span>
             </button>
           </div>

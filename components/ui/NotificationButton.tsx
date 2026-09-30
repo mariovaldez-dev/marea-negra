@@ -27,9 +27,9 @@ export function NotificationButton() {
       <button
         onClick={handleActivate}
         disabled={isLoading}
-        className="flex items-center w-full gap-2 px-3 py-2 mt-4 text-sm font-medium transition-colors border rounded-md text-turquesa border-turquesa/30 bg-turquesa/5 hover:bg-turquesa/10 disabled:opacity-50"
+        className="flex items-center w-full gap-2 px-3 py-2 text-xs font-sans font-semibold transition-all border rounded-xl text-turquesa border-turquesa/30 bg-turquesa/5 hover:bg-turquesa/10 disabled:opacity-50 active:scale-[0.98]"
       >
-        {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <BellRing className="w-4 h-4" />}
+        {isLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <BellRing className="w-3.5 h-3.5" />}
         <span>Actualizar Push</span>
       </button>
     )
@@ -39,10 +39,11 @@ export function NotificationButton() {
     <button
       onClick={handleActivate}
       disabled={isLoading}
-      className="flex items-center w-full gap-2 px-3 py-2 mt-4 text-sm font-medium transition-colors border rounded-md text-coral border-coral/30 bg-coral/5 hover:bg-coral/10 disabled:opacity-50"
+      className="flex items-center w-full gap-2 px-3 py-2 text-xs font-sans font-semibold transition-all border rounded-xl text-coral border-coral/30 bg-coral/5 hover:bg-coral/10 disabled:opacity-50 active:scale-[0.98]"
     >
-      {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <BellOff className="w-4 h-4" />}
+      {isLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <BellOff className="w-3.5 h-3.5" />}
       <span>Activar notificaciones</span>
     </button>
   )
 }
+

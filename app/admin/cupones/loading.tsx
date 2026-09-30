@@ -1,83 +1,60 @@
 import React from 'react'
-import { Sparkles, Ticket, Award, Plus } from 'lucide-react'
+import { Ticket, Award } from 'lucide-react'
 
 export default function CuponesLoadingSkeleton() {
   return (
-    <div className="flex flex-col gap-8 w-full max-w-7xl mx-auto p-4 md:p-6 text-blanco animate-pulse">
-      {/* SECCIÓN 1: CUPONES PROMOCIONALES TRADICIONALES */}
-      <div className="bg-[#050404] bg-dots-pattern border-2 border-arena/20 rounded-3xl p-6 md:p-8 gold-border-corner shadow-2xl flex flex-col gap-6">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-arena/15 pb-5">
-          <div className="flex items-center gap-3">
-            <div className="p-3 bg-coral/10 border border-coral/30 rounded-2xl text-coral">
-              <Ticket className="w-6 h-6" />
-            </div>
-            <div className="flex flex-col gap-1">
-              <div className="w-32 h-3 bg-coral/30 rounded-full" />
-              <div className="w-64 h-8 bg-carbon border border-arena/20 rounded-xl" />
-            </div>
-          </div>
-          <div className="w-48 h-11 bg-coral/30 rounded-full shrink-0" />
+    <div className="flex flex-col gap-6 max-w-7xl mx-auto pb-12 animate-pulse">
+      {/* Header Skeleton */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-black/[0.08] dark:border-white/[0.08]">
+        <div className="flex flex-col gap-2">
+          <div className="w-28 h-5 bg-black/10 dark:bg-white/10 rounded-full" />
+          <div className="w-64 sm:w-80 h-9 bg-black/10 dark:bg-white/10 rounded-2xl" />
         </div>
-
-        <div className="w-full h-4 bg-arena/10 rounded-full max-w-lg" />
-
-        {/* GRID DE CUPONES PROMOCIONALES */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {[1, 2, 3].map((i) => (
-            <div
-              key={i}
-              className="bg-[#111111] border border-arena/15 rounded-2xl p-5 flex flex-col justify-between h-48 shadow-lg gap-3"
-            >
-              <div className="flex justify-between items-start">
-                <div className="w-24 h-6 bg-turquesa/20 rounded-full" />
-                <div className="w-16 h-8 bg-coral/20 rounded-xl" />
-              </div>
-              <div className="w-36 h-4 bg-arena/20 rounded-md" />
-              <div className="w-48 h-3 bg-arena/10 rounded-md" />
-              <div className="flex justify-between items-center pt-3 border-t border-arena/10 mt-auto">
-                <div className="w-16 h-6 bg-turquesa/15 rounded-full" />
-                <div className="w-16 h-6 bg-arena/15 rounded-lg" />
-              </div>
-            </div>
-          ))}
-        </div>
+        <div className="w-48 h-11 bg-black/10 dark:bg-white/10 rounded-2xl" />
       </div>
 
-      {/* SECCIÓN 2: PLAN DE LEALTAD Y RECOMPENSAS MULTI-TIPO */}
-      <div className="bg-[#050404] bg-dots-pattern border-2 border-oro/30 rounded-3xl p-6 md:p-8 gold-border-corner shadow-2xl flex flex-col gap-6">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-arena/15 pb-5">
-          <div className="flex items-center gap-3">
-            <div className="p-3 bg-oro/15 border border-oro/30 rounded-2xl text-oro">
-              <Award className="w-6 h-6" />
+      {/* 3 KPIs Bento */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        {[1, 2, 3].map((i) => (
+          <div
+            key={i}
+            className="bg-white dark:bg-[#111317] border border-black/[0.08] dark:border-white/[0.08] rounded-[24px] p-5 flex flex-col justify-between min-h-[140px]"
+          >
+            <div className="flex justify-between items-start mb-2">
+              <div className="w-24 h-3.5 bg-black/10 dark:bg-white/10 rounded-full" />
+              <div className="w-8 h-8 rounded-xl bg-black/10 dark:bg-white/10" />
             </div>
-            <div className="flex flex-col gap-1">
-              <div className="w-48 h-3 bg-oro/30 rounded-full" />
-              <div className="w-72 h-8 bg-carbon border border-arena/20 rounded-xl" />
+            <div className="flex flex-col gap-1.5">
+              <div className="w-20 h-8 bg-black/10 dark:bg-white/10 rounded-xl" />
+              <div className="w-32 h-3 bg-black/5 dark:bg-white/5 rounded-full" />
             </div>
           </div>
-          <div className="w-56 h-11 bg-oro/30 rounded-full shrink-0" />
+        ))}
+      </div>
+
+      {/* Search Bar */}
+      <div className="w-full h-12 bg-white dark:bg-[#111317] border border-black/[0.08] dark:border-white/[0.08] rounded-2xl" />
+
+      {/* Table 1: Cupones */}
+      <div className="bg-white dark:bg-[#111317] border border-black/[0.08] dark:border-white/[0.08] rounded-[28px] p-5 flex flex-col gap-4">
+        <div className="flex justify-between items-center pb-3 border-b border-black/[0.08] dark:border-white/[0.08]">
+          <div className="w-48 h-6 bg-black/10 dark:bg-white/10 rounded-xl" />
+          <div className="w-24 h-4 bg-black/10 dark:bg-white/10 rounded-full" />
         </div>
-
-        <div className="w-full h-4 bg-arena/10 rounded-full max-w-xl" />
-
-        {/* GRID DE RECOMPENSAS DE LEALTAD */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {[1, 2, 3].map((i) => (
-            <div
-              key={i}
-              className="bg-[#111111] border border-oro/20 rounded-2xl p-5 flex flex-col justify-between h-52 shadow-lg gap-3"
-            >
-              <div className="flex justify-between items-start">
-                <div className="w-36 h-5 bg-oro/20 rounded-full" />
-                <div className="w-16 h-7 bg-coral/20 rounded-xl" />
+        <div className="flex flex-col divide-y divide-black/5 dark:divide-white/5">
+          {[1, 2, 3, 4, 5].map((row) => (
+            <div key={row} className="py-3.5 flex items-center justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-xl bg-black/10 dark:bg-white/10 shrink-0" />
+                <div className="flex flex-col gap-1.5">
+                  <div className="w-32 h-4 bg-black/10 dark:bg-white/10 rounded-md" />
+                  <div className="w-24 h-3 bg-black/5 dark:bg-white/5 rounded-md" />
+                </div>
               </div>
-              <div className="w-28 h-4 bg-turquesa/20 rounded-md" />
-              <div className="w-44 h-5 bg-arena/20 rounded-lg" />
-              <div className="w-32 h-6 bg-oro/10 rounded-lg border border-oro/20" />
-              <div className="flex justify-between items-center pt-3 border-t border-arena/10 mt-auto">
-                <div className="w-16 h-6 bg-turquesa/15 rounded-full" />
-                <div className="w-16 h-6 bg-arena/15 rounded-lg" />
-              </div>
+              <div className="w-20 h-6 bg-black/10 dark:bg-white/10 rounded-xl" />
+              <div className="w-28 h-4 bg-black/10 dark:bg-white/10 rounded-md hidden md:block" />
+              <div className="w-20 h-6 bg-black/10 dark:bg-white/10 rounded-full" />
+              <div className="w-20 h-7 bg-black/5 dark:bg-white/5 rounded-xl" />
             </div>
           ))}
         </div>

@@ -1,10 +1,9 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useMemo } from 'react'
 import dynamic from 'next/dynamic'
 import { ClienteAdminSummary, deleteClienteClub } from '@/lib/actions/clientesAdmin'
 import { generarCopysMarketing, checkGeminiStatus, CopyGenerado, GenerarCopyOptions } from '@/lib/actions/aiMarketing'
-import { LuxuryCard } from '@/components/ui/LuxuryCard'
 import { AdminRestablecerPasswordClienteModal } from '@/components/admin/AdminRestablecerPasswordClienteModal'
 
 const CustomerQrScannerModal = dynamic(
@@ -36,6 +35,11 @@ import {
   RefreshCw,
   ShieldCheck,
   Zap,
+  ChevronLeft,
+  ChevronRight,
+  TrendingUp,
+  Receipt,
+  DollarSign,
 } from 'lucide-react'
 
 interface ClientesManagerProps {
@@ -44,11 +48,15 @@ interface ClientesManagerProps {
 
 type MarketingSegmento = 'todos' | 'cumpleanos' | 'inactivos' | 'premios' | 'vip'
 
+const ITEMS_PER_PAGE = 10
+
 export function ClientesManager({ initialClientes }: ClientesManagerProps) {
   const [activeTab, setActiveTab] = useState<'crm' | 'marketing'>('crm')
   const [showScannerModal, setShowScannerModal] = useState(false)
   const [clientes, setClientes] = useState<ClienteAdminSummary[]>(initialClientes)
   const [searchTerm, setSearchTerm] = useState('')
+  const [crmPage, setCrmPage] = useState(1)
+  const [marketingPage, setMarketingPage] = useState(1)
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [feedbackMsg, setFeedbackMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
   const [selectedClientForPassword, setSelectedClientForPassword] = useState<{
@@ -104,15 +112,24 @@ export function ClientesManager({ initialClientes }: ClientesManagerProps) {
   }
 
   // Filtrado de clientes para la pestaña CRM
-  const filteredClientes = clientes.filter((c) => {
+  const filteredClientes = useMemo(() => {
     const term = searchTerm.toLowerCase().trim()
-    return (
-      c.nombre.toLowerCase().includes(term) ||
-      c.telefono.includes(term) ||
-      c.codigo_referido.toLowerCase().includes(term) ||
-      (c.email && c.email.toLowerCase().includes(term))
-    )
-  })
+    return clientes.filter((c) => {
+      return (
+        c.nombre.toLowerCase().includes(term) ||
+        c.telefono.includes(term) ||
+        c.codigo_referido.toLowerCase().includes(term) ||
+        (c.email && c.email.toLowerCase().includes(term))
+      )
+    })
+  }, [clientes, searchTerm])
+
+  // Paginación CRM
+  const totalCrmPages = Math.max(1, Math.ceil(filteredClientes.length / ITEMS_PER_PAGE))
+  const paginatedCrmClientes = useMemo(() => {
+    const start = (crmPage - 1) * ITEMS_PER_PAGE
+    return filteredClientes.slice(start, start + ITEMS_PER_PAGE)
+  }, [filteredClientes, crmPage])
 
   // Segmentación Inteligente para Marketing
   const getSegmentedMarketingClientes = (): ClienteAdminSummary[] => {
@@ -131,6 +148,11 @@ export function ClientesManager({ initialClientes }: ClientesManagerProps) {
   }
 
   const marketingTargetList = getSegmentedMarketingClientes()
+  const totalMarketingPages = Math.max(1, Math.ceil(marketingTargetList.length / ITEMS_PER_PAGE))
+  const paginatedMarketingClientes = useMemo(() => {
+    const start = (marketingPage - 1) * ITEMS_PER_PAGE
+    return marketingTargetList.slice(start, start + ITEMS_PER_PAGE)
+  }, [marketingTargetList, marketingPage])
 
   // Generar copys con IA de Gemini o Motor Local
   const handleGenerateAiCopies = async () => {
@@ -152,7 +174,7 @@ export function ClientesManager({ initialClientes }: ClientesManagerProps) {
     }
   }
 
-  // Generar URL personalizada para cada cliente (reemplazo seguro 100% LOCAL)
+  // Generar URL personalizada para cada cliente
   const buildPersonalizedWhatsAppUrl = (cliente: ClienteAdminSummary) => {
     const origin = typeof window !== 'undefined' ? window.location.origin : 'https://marea-negra.com'
     const enlaceMenu = `${origin}/pedir`
@@ -160,7 +182,7 @@ export function ClientesManager({ initialClientes }: ClientesManagerProps) {
     const nombrePila = cliente.nombre.trim().split(' ')[0] || cliente.nombre
     const cleanPhone = (cliente.telefono || '').replace(/\D/g, '')
 
-    let msg = selectedMessage
+    const msg = selectedMessage
       .replace(/{nombre}/g, nombrePila)
       .replace(/{sellos}/g, String(cliente.sellos_actuales || 0))
       .replace(/{puntos}/g, String(cliente.total_gastado || 0))
@@ -169,7 +191,6 @@ export function ClientesManager({ initialClientes }: ClientesManagerProps) {
       .replace(/{enlace_tarjeta}/g, enlaceTarjeta)
       .replace(/{enlace_google_maps}/g, 'https://maps.google.com/?q=Marea+Negra+Aguachiles')
 
-    // Formato de enlace compatible con emojis en WhatsApp Web y Móvil
     return `https://api.whatsapp.com/send?phone=52${cleanPhone}&text=${encodeURIComponent(msg)}`
   }
 
@@ -191,21 +212,21 @@ export function ClientesManager({ initialClientes }: ClientesManagerProps) {
     switch (nivel) {
       case 'Leyenda Marea Negra':
         return (
-          <span className="px-3 py-1 text-xs font-sans font-bold uppercase rounded-full bg-oro/20 text-oro border border-oro/40 flex items-center gap-1 shadow-sm">
-            <Award className="w-3.5 h-3.5 text-oro" />
+          <span className="px-3 py-1 text-xs font-sans font-bold uppercase rounded-full bg-[#C9A84C] text-black flex items-center gap-1 shadow-sm">
+            <Award className="w-3.5 h-3.5" />
             <span>Leyenda VIP 🏆</span>
           </span>
         )
       case 'Capitán Aguachile':
         return (
-          <span className="px-3 py-1 text-xs font-sans font-bold uppercase rounded-full bg-turquesa/20 text-turquesa border border-turquesa/40 flex items-center gap-1">
-            <Award className="w-3.5 h-3.5 text-turquesa" />
+          <span className="px-3 py-1 text-xs font-sans font-bold uppercase rounded-full bg-[#2ABFBF] text-black flex items-center gap-1 shadow-sm">
+            <Award className="w-3.5 h-3.5" />
             <span>Capitán 🥈</span>
           </span>
         )
       default:
         return (
-          <span className="px-3 py-1 text-xs font-sans uppercase rounded-full bg-arena/20 dark:bg-carbon text-negro/80 dark:text-arena/80 border border-arena/30 dark:border-arena/20">
+          <span className="px-3 py-1 text-xs font-sans font-bold uppercase rounded-full bg-black/5 dark:bg-white/10 text-negro/80 dark:text-arena/80 border border-black/10 dark:border-white/10">
             Socio Marea 🥉
           </span>
         )
@@ -213,15 +234,19 @@ export function ClientesManager({ initialClientes }: ClientesManagerProps) {
   }
 
   return (
-    <div className="flex flex-col gap-6 w-full max-w-7xl mx-auto p-4 sm:p-6 text-negro dark:text-blanco transition-colors">
-      {/* HEADER PRINCIPAL CON BOTÓN DE ESCÁNER Y PESTAÑAS */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-arena/30 dark:border-arena/10 pb-5">
-        <div className="flex flex-col">
-          <span className="text-xs font-mono text-turquesa uppercase tracking-widest font-bold flex items-center gap-1.5">
-            <Users className="w-4 h-4" />
-            <span>CRM & CLUB DE LEALTAD</span>
-          </span>
-          <h1 className="font-display text-4xl sm:text-5xl text-negro dark:text-blanco mt-1">
+    <div className="flex flex-col gap-6 w-full max-w-7xl mx-auto pb-12 text-negro dark:text-blanco transition-colors">
+      {/* HEADER PRINCIPAL CON BOTÓN DE ESCÁNER */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-black/[0.08] dark:border-white/[0.08] pb-4">
+        <div>
+          <div className="flex items-center gap-2 mb-1">
+            <span className="text-[11px] font-sans uppercase tracking-wider font-bold bg-[#2ABFBF] text-black px-2.5 py-0.5 rounded-full">
+              Fidelización & CRM
+            </span>
+            <span className="text-xs text-negro/60 dark:text-arena/60 font-sans font-medium">
+              Socios VIP & Difusión
+            </span>
+          </div>
+          <h1 className="font-display text-3xl md:text-4xl text-negro dark:text-blanco tracking-wide">
             CLIENTES & MARKETING VIP
           </h1>
         </div>
@@ -230,22 +255,22 @@ export function ClientesManager({ initialClientes }: ClientesManagerProps) {
           <button
             type="button"
             onClick={() => setShowScannerModal(true)}
-            className="bg-oro text-negro hover:bg-blanco font-sans font-bold text-xs tracking-wider py-3.5 px-5 rounded-2xl shadow-lg transition-all flex items-center gap-2 border border-oro/40"
+            className="bg-[#C9A84C] text-black hover:bg-[#C9A84C]/90 font-sans font-bold text-xs tracking-wider py-3 px-5 rounded-2xl shadow-md transition-all flex items-center gap-2"
           >
             <Camera className="w-4 h-4 stroke-[2.5]" />
-            <span>📷 ESCANEAR QR DE SOCIO</span>
+            <span>ESCANEAR QR DE SOCIO</span>
           </button>
         </div>
       </div>
 
       {/* PESTAÑAS PRINCIPALES: CRM vs WHATSAPP MARKETING */}
-      <div className="grid grid-cols-2 gap-3 bg-[#EAE5D9] dark:bg-carbon p-1.5 rounded-2xl border border-arena/30 dark:border-arena/20">
+      <div className="grid grid-cols-2 gap-2 bg-black/[0.03] dark:bg-white/[0.03] p-1.5 rounded-[22px] border border-black/[0.08] dark:border-white/[0.08]">
         <button
           type="button"
           onClick={() => setActiveTab('crm')}
-          className={`py-3 px-4 rounded-xl text-xs sm:text-sm font-sans font-bold transition-all flex items-center justify-center gap-2 ${
+          className={`py-3 px-4 rounded-2xl text-xs sm:text-sm font-sans font-bold transition-all flex items-center justify-center gap-2 ${
             activeTab === 'crm'
-              ? 'bg-turquesa text-negro shadow-md'
+              ? 'bg-[#2ABFBF] text-negro shadow-sm'
               : 'text-negro/70 dark:text-arena/70 hover:text-negro dark:hover:text-blanco'
           }`}
         >
@@ -256,31 +281,31 @@ export function ClientesManager({ initialClientes }: ClientesManagerProps) {
         <button
           type="button"
           onClick={() => setActiveTab('marketing')}
-          className={`py-3 px-4 rounded-xl text-xs sm:text-sm font-sans font-bold transition-all flex items-center justify-center gap-2 ${
+          className={`py-3 px-4 rounded-2xl text-xs sm:text-sm font-sans font-bold transition-all flex items-center justify-center gap-2 ${
             activeTab === 'marketing'
-              ? 'bg-gradient-to-r from-coral to-amber-600 text-blanco shadow-md'
+              ? 'bg-gradient-to-r from-coral to-amber-600 text-white shadow-sm'
               : 'text-negro/70 dark:text-arena/70 hover:text-negro dark:hover:text-blanco'
           }`}
         >
-          <Sparkles className="w-4 h-4 text-oro animate-pulse" />
+          <Sparkles className="w-4 h-4 text-[#C9A84C] animate-pulse" />
           <span>WHATSAPP MARKETING & IA</span>
         </button>
       </div>
 
       {feedbackMsg && (
         <div
-          className={`p-4 rounded-2xl border text-sm flex items-center gap-3 shadow-lg ${
+          className={`p-4 rounded-2xl border text-sm flex items-center gap-3 shadow-sm ${
             feedbackMsg.type === 'success'
-              ? 'bg-emerald-900/20 dark:bg-emerald-950/40 border-emerald-500/40 text-emerald-800 dark:text-emerald-300'
-              : 'bg-coral/20 dark:bg-coral/20 border-coral/40 text-coral dark:text-coral'
+              ? 'bg-[#16A34B]/10 border-[#16A34B]/30 text-[#16A34B]'
+              : 'bg-coral/10 border-coral/30 text-coral'
           }`}
         >
           {feedbackMsg.type === 'success' ? (
-            <CheckCircle2 className="w-5 h-5 text-emerald-500 shrink-0" />
+            <CheckCircle2 className="w-5 h-5 shrink-0" />
           ) : (
-            <AlertCircle className="w-5 h-5 text-coral shrink-0" />
+            <AlertCircle className="w-5 h-5 shrink-0" />
           )}
-          <span className="font-sans font-medium">{feedbackMsg.text}</span>
+          <span className="font-sans font-bold">{feedbackMsg.text}</span>
         </div>
       )}
 
@@ -289,131 +314,394 @@ export function ClientesManager({ initialClientes }: ClientesManagerProps) {
       {/* ======================================================== */}
       {activeTab === 'crm' && (
         <div className="flex flex-col gap-6">
-          {/* 4 KPIS PRINCIPALES */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <LuxuryCard
-              eyebrow="COMUNIDAD"
-              title="Total Registrados"
-              kpiValue={totalClientes}
-              subtext="Socios en el Club"
-            />
+          {/* 4 KPIS BENTO PRINCIPALES */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="bg-white dark:bg-[#111317] border border-black/[0.08] dark:border-white/[0.08] rounded-[24px] p-5 shadow-sm relative overflow-hidden flex flex-col justify-between min-h-[140px]">
+              <div className="flex justify-between items-start mb-2">
+                <span className="text-[11px] font-sans font-bold uppercase tracking-wider text-negro/50 dark:text-arena/50">
+                  Total Registrados
+                </span>
+                <div className="p-2 rounded-xl bg-[#2ABFBF]/10 text-[#2ABFBF]">
+                  <Users className="w-4 h-4" />
+                </div>
+              </div>
+              <div>
+                <div className="font-display text-3xl text-negro dark:text-blanco font-bold">
+                  {totalClientes}
+                </div>
+                <div className="text-[11px] text-negro/60 dark:text-arena/60 font-sans font-medium mt-1">
+                  Socios en el Club
+                </div>
+              </div>
+            </div>
 
-            <LuxuryCard
-              eyebrow="FIDELIDAD"
-              title="Socios VIP"
-              kpiValue={clientesVip}
-              subtext="Capitanes y Leyendas"
-            />
+            <div className="bg-white dark:bg-[#111317] border border-black/[0.08] dark:border-white/[0.08] rounded-[24px] p-5 shadow-sm relative overflow-hidden flex flex-col justify-between min-h-[140px]">
+              <div className="flex justify-between items-start mb-2">
+                <span className="text-[11px] font-sans font-bold uppercase tracking-wider text-[#C9A84C]">
+                  Socios VIP
+                </span>
+                <div className="p-2 rounded-xl bg-[#C9A84C]/10 text-[#C9A84C]">
+                  <Award className="w-4 h-4" />
+                </div>
+              </div>
+              <div>
+                <div className="font-display text-3xl text-[#C9A84C] font-bold">
+                  {clientesVip}
+                </div>
+                <div className="text-[11px] text-negro/60 dark:text-arena/60 font-sans font-medium mt-1">
+                  Capitanes y Leyendas
+                </div>
+              </div>
+            </div>
 
-            <LuxuryCard
-              eyebrow="INGRESOS"
-              title="Ventas Club"
-              kpiValue={`$${totalInvertido.toLocaleString('es-MX')}`}
-              subtext="Consumos acumulados"
-            />
+            <div className="bg-white dark:bg-[#111317] border border-black/[0.08] dark:border-white/[0.08] rounded-[24px] p-5 shadow-sm relative overflow-hidden flex flex-col justify-between min-h-[140px]">
+              <div className="flex justify-between items-start mb-2">
+                <span className="text-[11px] font-sans font-bold uppercase tracking-wider text-coral">
+                  Ventas Club
+                </span>
+                <div className="p-2 rounded-xl bg-coral/10 text-coral">
+                  <DollarSign className="w-4 h-4" />
+                </div>
+              </div>
+              <div>
+                <div className="font-display text-3xl text-coral font-bold">
+                  ${totalInvertido.toLocaleString('es-MX')}
+                </div>
+                <div className="text-[11px] text-negro/60 dark:text-arena/60 font-sans font-medium mt-1">
+                  Consumos acumulados
+                </div>
+              </div>
+            </div>
 
-            <LuxuryCard
-              eyebrow="TICKET"
-              title="Ticket Promedio"
-              kpiValue={`$${promedioGasto}`}
-              subtext="Por socio registrado"
-            />
+            <div className="bg-white dark:bg-[#111317] border border-black/[0.08] dark:border-white/[0.08] rounded-[24px] p-5 shadow-sm relative overflow-hidden flex flex-col justify-between min-h-[140px]">
+              <div className="flex justify-between items-start mb-2">
+                <span className="text-[11px] font-sans font-bold uppercase tracking-wider text-negro/60 dark:text-arena/60">
+                  Ticket Promedio
+                </span>
+                <div className="p-2 rounded-xl bg-[#16A34B]/10 text-[#16A34B]">
+                  <TrendingUp className="w-4 h-4" />
+                </div>
+              </div>
+              <div>
+                <div className="font-display text-3xl text-[#16A34B] font-bold">
+                  ${promedioGasto}
+                </div>
+                <div className="text-[11px] text-negro/60 dark:text-arena/60 font-sans font-medium mt-1">
+                  Por socio registrado
+                </div>
+              </div>
+            </div>
           </div>
 
           {/* BUSCADOR */}
           <div className="relative w-full">
-            <Search className="w-5 h-5 absolute left-4 top-3.5 text-arena/60" />
+            <Search className="w-5 h-5 absolute left-4 top-3.5 text-negro/40 dark:text-arena/40" />
             <input
               type="text"
               placeholder="Buscar socio por nombre, teléfono o código referido..."
               value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="bg-white dark:bg-[#050404] border border-arena/30 dark:border-oro/30 rounded-2xl pl-12 pr-4 py-3.5 text-sm text-negro dark:text-blanco w-full focus:border-oro focus:outline-none shadow-md font-sans"
+              onChange={(e) => {
+                setSearchTerm(e.target.value)
+                setCrmPage(1)
+              }}
+              className="bg-white dark:bg-[#111317] border border-black/[0.08] dark:border-white/[0.08] rounded-2xl pl-12 pr-4 py-3.5 text-sm text-negro dark:text-blanco w-full focus:border-[#2ABFBF] focus:outline-none shadow-sm font-sans font-medium"
             />
           </div>
 
-          {/* LISTA DE SOCIOS */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {filteredClientes.map((cliente) => (
-              <div
-                key={cliente.id}
-                className="bg-white dark:bg-[#050404] bg-dots-pattern border border-arena/30 dark:border-oro/30 rounded-2xl p-5 shadow-xl flex flex-col justify-between gap-4 hover:border-turquesa transition-all relative group"
-              >
-                <div className="flex flex-col gap-2">
-                  <div className="flex items-start justify-between">
-                    <div className="flex flex-col">
-                      <span className="text-[10px] font-mono text-arena/70">
-                        N° {cliente.codigo_referido}
-                      </span>
-                      <h3 className="font-display text-2xl text-negro dark:text-blanco">
-                        {cliente.nombre}
-                      </h3>
-                      <span className="text-xs font-mono text-turquesa font-bold">
-                        +52 {cliente.telefono}
-                      </span>
-                    </div>
-                    {getNivelBadge(cliente.nivel_lealtad)}
-                  </div>
+          {/* TABLA DE LISTA DE SOCIOS CON PAGINACIÓN DE 10 */}
+          {filteredClientes.length > 0 ? (
+            <div className="flex flex-col gap-4">
+              <div className="bg-white dark:bg-[#111317] border border-black/[0.08] dark:border-white/[0.08] rounded-[24px] shadow-sm overflow-hidden">
+                {/* VISTA DESKTOP (TABLA) */}
+                <div className="hidden md:block overflow-x-auto">
+                  <table className="w-full text-left border-collapse">
+                    <thead>
+                      <tr className="border-b border-black/[0.08] dark:border-white/[0.08] bg-black/[0.02] dark:bg-white/[0.02] text-[11px] font-sans font-bold uppercase tracking-wider text-negro/50 dark:text-arena/50">
+                        <th className="py-4 px-5">Socio / Cliente</th>
+                        <th className="py-4 px-4">Contacto</th>
+                        <th className="py-4 px-4">Nivel & Fidelidad</th>
+                        <th className="py-4 px-4">Consumo Acumulado</th>
+                        <th className="py-4 px-4">Último Pedido</th>
+                        <th className="py-4 px-5 text-right">Acciones</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-black/[0.05] dark:divide-white/[0.05] font-sans text-xs">
+                      {paginatedCrmClientes.map((cliente) => {
+                        const inicial = (cliente.nombre || 'C').charAt(0).toUpperCase()
+                        return (
+                          <tr
+                            key={cliente.id}
+                            className="hover:bg-black/[0.02] dark:hover:bg-white/[0.02] transition-colors group"
+                          >
+                            {/* SOCIO / CLIENTE */}
+                            <td className="py-4 px-5">
+                              <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 rounded-2xl bg-black/5 dark:bg-white/10 text-negro dark:text-blanco font-bold font-sans flex items-center justify-center text-sm shrink-0 border border-black/10 dark:border-white/10 group-hover:border-[#2ABFBF] transition-colors">
+                                  {inicial}
+                                </div>
+                                <div className="flex flex-col min-w-0">
+                                  <div className="flex items-center gap-2">
+                                    <span className="font-bold text-sm text-negro dark:text-blanco truncate">
+                                      {cliente.nombre}
+                                    </span>
+                                    {cliente.es_mes_cumpleanos && (
+                                      <span
+                                        className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-coral/15 text-coral border border-coral/30 flex items-center gap-1"
+                                        title="Cumpleañero del mes"
+                                      >
+                                        <Cake className="w-3 h-3" />
+                                        <span>Mes Cumple</span>
+                                      </span>
+                                    )}
+                                  </div>
+                                  <div className="flex items-center gap-2 text-[11px] text-negro/50 dark:text-arena/50">
+                                    <span>Ref: #{cliente.codigo_referido}</span>
+                                    {cliente.email && (
+                                      <>
+                                        <span>•</span>
+                                        <span className="truncate max-w-[140px]">{cliente.email}</span>
+                                      </>
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
+                            </td>
 
-                  <div className="grid grid-cols-2 gap-2 bg-[#F4F0E8] dark:bg-carbon p-2.5 rounded-xl border border-arena/20 text-xs">
-                    <div className="flex flex-col">
-                      <span className="text-[9px] text-arena/70 uppercase">Consumos:</span>
-                      <span className="font-bold">{cliente.total_pedidos} pedidos</span>
-                    </div>
-                    <div className="flex flex-col">
-                      <span className="text-[9px] text-arena/70 uppercase">Total Gastado:</span>
-                      <span className="font-bold text-coral">${cliente.total_gastado.toFixed(0)} MXN</span>
-                    </div>
-                  </div>
+                            {/* CONTACTO */}
+                            <td className="py-4 px-4">
+                              <div className="flex flex-col gap-0.5">
+                                <a
+                                  href={`https://wa.me/52${cliente.telefono.replace(/\D/g, '')}`}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className="font-bold text-[#2ABFBF] hover:underline flex items-center gap-1.5"
+                                >
+                                  <Phone className="w-3.5 h-3.5" />
+                                  <span>+52 {cliente.telefono}</span>
+                                </a>
+                                <span className="text-[10px] text-negro/50 dark:text-arena/50">
+                                  Registrado: {new Date(cliente.created_at).toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric' })}
+                                </span>
+                              </div>
+                            </td>
+
+                            {/* NIVEL & FIDELIDAD */}
+                            <td className="py-4 px-4">
+                              <div className="flex flex-col items-start gap-1">
+                                {getNivelBadge(cliente.nivel_lealtad)}
+                                <div className="flex items-center gap-2 text-[11px] text-negro/60 dark:text-arena/60 font-medium">
+                                  <span>{cliente.sellos_actuales}/6 sellos</span>
+                                  {cliente.canjes_disponibles > 0 && (
+                                    <span className="text-amber-500 font-bold">
+                                      • {cliente.canjes_disponibles} premio(s)
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                            </td>
+
+                            {/* CONSUMO ACUMULADO */}
+                            <td className="py-4 px-4">
+                              <div className="flex flex-col gap-0.5">
+                                <span className="font-bold text-sm text-coral">
+                                  ${cliente.total_gastado.toLocaleString('es-MX', { minimumFractionDigits: 0 })} MXN
+                                </span>
+                                <span className="text-[11px] text-negro/60 dark:text-arena/60 font-medium">
+                                  {cliente.total_pedidos} {cliente.total_pedidos === 1 ? 'pedido' : 'pedidos'}
+                                </span>
+                              </div>
+                            </td>
+
+                            {/* ÚLTIMO PEDIDO */}
+                            <td className="py-4 px-4">
+                              <div className="flex flex-col gap-0.5">
+                                {cliente.ultimo_pedido ? (
+                                  <>
+                                    <span className="font-medium text-negro dark:text-blanco">
+                                      {new Date(cliente.ultimo_pedido).toLocaleDateString('es-MX', { day: '2-digit', month: 'short' })}
+                                    </span>
+                                    <span className={`text-[10px] font-bold ${
+                                      (cliente.dias_sin_pedir || 0) >= 15 ? 'text-coral' : 'text-negro/50 dark:text-arena/50'
+                                    }`}>
+                                      {(cliente.dias_sin_pedir || 0) === 0
+                                        ? 'Hoy'
+                                        : `Hace ${cliente.dias_sin_pedir} días`}
+                                    </span>
+                                  </>
+                                ) : (
+                                  <span className="text-[11px] text-negro/40 dark:text-arena/40 italic">
+                                    Sin pedidos
+                                  </span>
+                                )}
+                              </div>
+                            </td>
+
+                            {/* ACCIONES */}
+                            <td className="py-4 px-5 text-right">
+                              <div className="flex items-center justify-end gap-1.5">
+                                <a
+                                  href={buildPersonalizedWhatsAppUrl(cliente)}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className="bg-[#25D366] text-white hover:bg-[#1EBE5D] text-xs font-bold px-3 py-1.5 rounded-xl transition-all flex items-center gap-1 shadow-sm"
+                                  title="Enviar mensaje por WhatsApp"
+                                >
+                                  <MessageCircle className="w-3.5 h-3.5 fill-current" />
+                                  <span>WhatsApp</span>
+                                </a>
+
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    setSelectedClientForPassword({
+                                      id: cliente.id,
+                                      nombre: cliente.nombre,
+                                      telefono: cliente.telefono,
+                                    })
+                                  }
+                                  className="bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 text-negro dark:text-blanco border border-black/10 dark:border-white/10 text-xs font-bold px-2.5 py-1.5 rounded-xl transition-all flex items-center gap-1"
+                                  title="Restablecer o Asignar Contraseña"
+                                >
+                                  <KeyRound className="w-3.5 h-3.5 text-[#C9A84C]" />
+                                  <span>Clave</span>
+                                </button>
+
+                                <button
+                                  type="button"
+                                  onClick={() => handleDeleteCustomer(cliente)}
+                                  disabled={deletingId === cliente.id}
+                                  className="p-1.5 text-negro/40 dark:text-arena/40 hover:text-red-500 rounded-xl hover:bg-red-500/10 transition-colors"
+                                  title="Eliminar socio del club"
+                                >
+                                  {deletingId === cliente.id ? (
+                                    <Loader2 className="w-4 h-4 animate-spin text-coral" />
+                                  ) : (
+                                    <Trash2 className="w-4 h-4" />
+                                  )}
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        )
+                      })}
+                    </tbody>
+                  </table>
                 </div>
 
-                <div className="flex items-center justify-between border-t border-arena/20 pt-3 gap-2">
-                  <div className="flex items-center gap-1.5">
-                    <a
-                      href={buildPersonalizedWhatsAppUrl(cliente)}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="bg-[#25D366] text-white hover:bg-[#1EBE5D] text-xs font-sans font-bold px-3 py-2 rounded-xl transition-all flex items-center gap-1.5 shadow-sm"
-                      title="Chatear por WhatsApp"
-                    >
-                      <MessageCircle className="w-3.5 h-3.5 fill-current" />
-                      <span>WhatsApp</span>
-                    </a>
+                {/* VISTA MOBILE (LISTA DE FILAS COMPACTAS) */}
+                <div className="block md:hidden divide-y divide-black/[0.08] dark:divide-white/[0.08]">
+                  {paginatedCrmClientes.map((cliente) => (
+                    <div key={cliente.id} className="p-4 flex flex-col gap-3">
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="flex flex-col min-w-0">
+                          <span className="text-[10px] font-sans font-bold text-negro/50 dark:text-arena/50 uppercase">
+                            #{cliente.codigo_referido}
+                          </span>
+                          <h3 className="font-bold text-base text-negro dark:text-blanco truncate">
+                            {cliente.nombre}
+                          </h3>
+                          <span className="text-xs font-bold text-[#2ABFBF]">
+                            +52 {cliente.telefono}
+                          </span>
+                        </div>
+                        {getNivelBadge(cliente.nivel_lealtad)}
+                      </div>
 
-                    <button
-                      type="button"
-                      onClick={() =>
-                        setSelectedClientForPassword({
-                          id: cliente.id,
-                          nombre: cliente.nombre,
-                          telefono: cliente.telefono,
-                        })
-                      }
-                      className="bg-carbon hover:bg-black text-arena hover:text-oro border border-arena/20 hover:border-oro/40 text-xs font-sans font-bold px-2.5 py-2 rounded-xl transition-all flex items-center gap-1 shadow-sm"
-                      title="Restablecer o Asignar Contraseña"
-                    >
-                      <KeyRound className="w-3.5 h-3.5 text-oro" />
-                      <span className="hidden sm:inline">Clave</span>
-                    </button>
-                  </div>
+                      <div className="grid grid-cols-2 gap-2 bg-black/[0.02] dark:bg-white/[0.02] p-2.5 rounded-xl text-xs font-sans">
+                        <div>
+                          <span className="text-[10px] text-negro/50 dark:text-arena/50 uppercase font-bold block">Consumo:</span>
+                          <span className="font-bold text-coral">${cliente.total_gastado.toFixed(0)} MXN</span>
+                          <span className="text-[10px] text-negro/60 dark:text-arena/60 ml-1">({cliente.total_pedidos} ped)</span>
+                        </div>
+                        <div>
+                          <span className="text-[10px] text-negro/50 dark:text-arena/50 uppercase font-bold block">Sellos:</span>
+                          <span className="font-bold text-negro dark:text-blanco">{cliente.sellos_actuales}/6</span>
+                        </div>
+                      </div>
 
-                  <button
-                    type="button"
-                    onClick={() => handleDeleteCustomer(cliente)}
-                    disabled={deletingId === cliente.id}
-                    className="p-2 text-arena/40 hover:text-red-400 rounded-lg hover:bg-red-950/30 transition-colors"
-                    title="Eliminar del club"
-                  >
-                    {deletingId === cliente.id ? (
-                      <Loader2 className="w-4 h-4 animate-spin text-coral" />
-                    ) : (
-                      <Trash2 className="w-4 h-4" />
-                    )}
-                  </button>
+                      <div className="flex items-center justify-between pt-1 gap-2">
+                        <div className="flex items-center gap-2">
+                          <a
+                            href={buildPersonalizedWhatsAppUrl(cliente)}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="bg-[#25D366] text-white text-xs font-bold px-3 py-1.5 rounded-xl flex items-center gap-1.5 shadow-sm"
+                          >
+                            <MessageCircle className="w-3.5 h-3.5 fill-current" />
+                            <span>WhatsApp</span>
+                          </a>
+
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setSelectedClientForPassword({
+                                id: cliente.id,
+                                nombre: cliente.nombre,
+                                telefono: cliente.telefono,
+                              })
+                            }
+                            className="bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 text-xs font-bold px-2.5 py-1.5 rounded-xl flex items-center gap-1"
+                          >
+                            <KeyRound className="w-3.5 h-3.5 text-[#C9A84C]" />
+                            <span>Clave</span>
+                          </button>
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteCustomer(cliente)}
+                          disabled={deletingId === cliente.id}
+                          className="p-1.5 text-negro/40 dark:text-arena/40 hover:text-red-500 rounded-xl"
+                        >
+                          {deletingId === cliente.id ? (
+                            <Loader2 className="w-4 h-4 animate-spin text-coral" />
+                          ) : (
+                            <Trash2 className="w-4 h-4" />
+                          )}
+                        </button>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
-            ))}
-          </div>
+
+              {/* Paginador CRM */}
+              {totalCrmPages > 1 && (
+                <div className="flex items-center justify-between pt-2 border-t border-black/[0.08] dark:border-white/[0.08]">
+                  <span className="text-xs font-sans font-medium text-negro/60 dark:text-arena/60">
+                    Mostrando página {crmPage} de {totalCrmPages} ({filteredClientes.length} socios registrados)
+                  </span>
+                  <div className="flex items-center gap-1.5">
+                    <button
+                      type="button"
+                      onClick={() => setCrmPage((p) => Math.max(1, p - 1))}
+                      disabled={crmPage === 1}
+                      className="p-2 rounded-xl border border-black/10 dark:border-white/10 disabled:opacity-30 hover:bg-black/5 dark:hover:bg-white/5 transition-all text-xs font-bold"
+                    >
+                      <ChevronLeft className="w-4 h-4" />
+                    </button>
+                    <span className="text-xs font-sans font-bold px-2 text-negro dark:text-blanco">
+                      {crmPage} / {totalCrmPages}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setCrmPage((p) => Math.min(totalCrmPages, p + 1))}
+                      disabled={crmPage === totalCrmPages}
+                      className="p-2 rounded-xl border border-black/10 dark:border-white/10 disabled:opacity-30 hover:bg-black/5 dark:hover:bg-white/5 transition-all text-xs font-bold"
+                    >
+                      <ChevronRight className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="p-8 text-center bg-black/[0.02] dark:bg-white/[0.02] rounded-2xl border border-dashed border-black/10 dark:border-white/10">
+              <p className="font-sans font-medium text-sm text-negro/60 dark:text-arena/60">
+                No se encontraron socios registrados que coincidan con la búsqueda.
+              </p>
+            </div>
+          )}
         </div>
       )}
 
@@ -421,17 +709,17 @@ export function ClientesManager({ initialClientes }: ClientesManagerProps) {
       {/* VISTA 2: WHATSAPP MARKETING & IA (TAB 2)                  */}
       {/* ======================================================== */}
       {activeTab === 'marketing' && (
-        <div className="flex flex-col gap-6 animate-in fade-in zoom-in-95 duration-200">
+        <div className="flex flex-col gap-6">
           {/* AVISO DE PRIVACIDAD TOTAL Y ESTADO DE GEMINI */}
           <div className="flex flex-col gap-2">
-            <div className="bg-emerald-950/30 border border-emerald-500/40 text-emerald-300 text-xs p-4 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-lg">
+            <div className="bg-[#16A34B]/10 border border-[#16A34B]/30 text-[#16A34B] text-xs p-4 rounded-[24px] flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-sm">
               <div className="flex items-center gap-3">
-                <ShieldCheck className="w-5 h-5 text-emerald-400 shrink-0" />
+                <ShieldCheck className="w-5 h-5 text-[#16A34B] shrink-0" />
                 <div>
-                  <span className="font-bold text-sm text-blanco block">
+                  <span className="font-bold text-sm text-negro dark:text-blanco block">
                     Privacidad & Seguridad Garantizada (Zero Data Leak)
                   </span>
-                  <p className="text-emerald-300/80 text-xs mt-0.5">
+                  <p className="text-negro/70 dark:text-arena/80 text-xs mt-0.5 font-sans font-medium">
                     Los datos de tus clientes nunca se envían a la IA. La redacción se genera mediante plantillas y el reemplazo de nombres se ejecuta 100% de manera LOCAL en tu servidor.
                   </p>
                 </div>
@@ -439,46 +727,37 @@ export function ClientesManager({ initialClientes }: ClientesManagerProps) {
 
               <div className="flex items-center gap-2 shrink-0">
                 {geminiStatus?.connected ? (
-                  <span className="text-[10px] font-mono bg-oro/20 text-oro font-bold px-3 py-1.5 rounded-full border border-oro/40 flex items-center gap-1.5 shadow">
-                    <Sparkles className="w-3.5 h-3.5 text-oro animate-pulse" />
+                  <span className="text-[10px] font-sans bg-[#C9A84C] text-black font-bold px-3 py-1.5 rounded-full shadow-sm flex items-center gap-1.5">
+                    <Sparkles className="w-3.5 h-3.5 animate-pulse" />
                     <span>GEMINI AI CONECTADO</span>
                   </span>
                 ) : (
-                  <span className="text-[10px] font-mono bg-turquesa/20 text-turquesa font-bold px-3 py-1.5 rounded-full border border-turquesa/40 flex items-center gap-1.5 shadow">
-                    <Zap className="w-3.5 h-3.5 text-turquesa" />
+                  <span className="text-[10px] font-sans bg-[#2ABFBF] text-black font-bold px-3 py-1.5 rounded-full shadow-sm flex items-center gap-1.5">
+                    <Zap className="w-3.5 h-3.5" />
                     <span>MOTOR LOCAL ACTIVO</span>
                   </span>
                 )}
               </div>
             </div>
-
-            {geminiStatus && !geminiStatus.connected && (
-              <div className="bg-amber-950/30 border border-amber-500/30 text-amber-200 text-xs p-3 rounded-xl flex items-center gap-2">
-                <AlertCircle className="w-4 h-4 text-amber-400 shrink-0" />
-                <span>
-                  <strong>Nota:</strong> Si acabas de guardar tu clave en el archivo de entorno, recuerda reiniciar tu terminal dev (<code>Control + C</code> y luego <code>npm run dev</code>) para que Next.js cargue la nueva variable en memoria. Mientras tanto, el motor local funciona al 100%.
-                </span>
-              </div>
-            )}
           </div>
 
           {/* PASO 1: SEGMENTACIÓN INTELIGENTE */}
-          <div className="bg-white dark:bg-[#050404] bg-dots-pattern border border-arena/30 dark:border-oro/30 rounded-3xl p-6 shadow-xl flex flex-col gap-4">
-            <div className="flex items-center justify-between border-b border-arena/20 pb-3">
-              <div className="flex items-center gap-2">
-                <span className="p-2 bg-turquesa/10 text-turquesa rounded-xl border border-turquesa/30 font-bold">1</span>
+          <div className="bg-white dark:bg-[#111317] border border-black/[0.08] dark:border-white/[0.08] rounded-[28px] p-6 shadow-sm flex flex-col gap-4">
+            <div className="flex items-center justify-between border-b border-black/[0.08] dark:border-white/[0.08] pb-3">
+              <div className="flex items-center gap-2.5">
+                <span className="w-7 h-7 bg-[#2ABFBF]/15 text-[#2ABFBF] rounded-xl flex items-center justify-center font-bold text-xs">1</span>
                 <div>
                   <h3 className="font-display text-2xl text-negro dark:text-blanco">
                     SELECCIONA EL SEGMENTO DE CLIENTES
                   </h3>
-                  <span className="text-xs font-serif italic text-arena/70">
+                  <span className="text-xs font-sans font-medium text-negro/60 dark:text-arena/60">
                     Elige a quién quieres dirigir esta campaña de WhatsApp
                   </span>
                 </div>
               </div>
 
-              <span className="font-mono text-sm bg-turquesa text-negro font-bold px-3 py-1 rounded-xl shadow">
-                {marketingTargetList.length} Clientes Seleccionados
+              <span className="font-sans text-xs bg-[#2ABFBF] text-black font-bold px-3 py-1 rounded-full shadow-sm">
+                {marketingTargetList.length} Clientes
               </span>
             </div>
 
@@ -486,101 +765,116 @@ export function ClientesManager({ initialClientes }: ClientesManagerProps) {
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
               <button
                 type="button"
-                onClick={() => setMarketingSegmento('todos')}
+                onClick={() => {
+                  setMarketingSegmento('todos')
+                  setMarketingPage(1)
+                }}
                 className={`p-3.5 rounded-2xl border text-left flex flex-col gap-1 transition-all ${
                   marketingSegmento === 'todos'
-                    ? 'bg-turquesa text-negro border-turquesa font-bold shadow-lg scale-102'
-                    : 'bg-[#F4F0E8] dark:bg-carbon border-arena/20 text-negro dark:text-arena hover:border-turquesa'
+                    ? 'bg-[#2ABFBF] text-black border-[#2ABFBF] font-bold shadow-md'
+                    : 'bg-black/[0.02] dark:bg-white/[0.02] border-black/[0.08] dark:border-white/[0.08] text-negro dark:text-arena hover:border-[#2ABFBF]/40'
                 }`}
               >
                 <div className="flex items-center justify-between">
                   <Users className="w-4 h-4" />
-                  <span className="text-xs font-mono font-bold">({clientes.length})</span>
+                  <span className="text-xs font-sans font-bold">({clientes.length})</span>
                 </div>
                 <span className="text-xs font-bold mt-1">Todos los Socios</span>
-                <span className="text-[10px] opacity-70">Base de clientes completa</span>
+                <span className="text-[10px] opacity-70">Base completa</span>
               </button>
 
               <button
                 type="button"
-                onClick={() => setMarketingSegmento('cumpleanos')}
+                onClick={() => {
+                  setMarketingSegmento('cumpleanos')
+                  setMarketingPage(1)
+                }}
                 className={`p-3.5 rounded-2xl border text-left flex flex-col gap-1 transition-all ${
                   marketingSegmento === 'cumpleanos'
-                    ? 'bg-oro text-negro border-oro font-bold shadow-lg scale-102'
-                    : 'bg-[#F4F0E8] dark:bg-carbon border-arena/20 text-negro dark:text-arena hover:border-oro'
+                    ? 'bg-[#C9A84C] text-black border-[#C9A84C] font-bold shadow-md'
+                    : 'bg-black/[0.02] dark:bg-white/[0.02] border-black/[0.08] dark:border-white/[0.08] text-negro dark:text-arena hover:border-[#C9A84C]/40'
                 }`}
               >
                 <div className="flex items-center justify-between">
                   <Cake className="w-4 h-4 text-coral" />
-                  <span className="text-xs font-mono font-bold">({clientes.filter((c) => c.es_mes_cumpleanos).length})</span>
+                  <span className="text-xs font-sans font-bold">({clientes.filter((c) => c.es_mes_cumpleanos).length})</span>
                 </div>
                 <span className="text-xs font-bold mt-1">🎂 Cumpleañeros</span>
-                <span className="text-[10px] opacity-70">Festejo del mes en curso</span>
+                <span className="text-[10px] opacity-70">Festejo del mes</span>
               </button>
 
               <button
                 type="button"
-                onClick={() => setMarketingSegmento('inactivos')}
+                onClick={() => {
+                  setMarketingSegmento('inactivos')
+                  setMarketingPage(1)
+                }}
                 className={`p-3.5 rounded-2xl border text-left flex flex-col gap-1 transition-all ${
                   marketingSegmento === 'inactivos'
-                    ? 'bg-coral text-blanco border-coral font-bold shadow-lg scale-102'
-                    : 'bg-[#F4F0E8] dark:bg-carbon border-arena/20 text-negro dark:text-arena hover:border-coral'
+                    ? 'bg-coral text-white border-coral font-bold shadow-md'
+                    : 'bg-black/[0.02] dark:bg-white/[0.02] border-black/[0.08] dark:border-white/[0.08] text-negro dark:text-arena hover:border-coral/40'
                 }`}
               >
                 <div className="flex items-center justify-between">
                   <Clock className="w-4 h-4 text-amber-400" />
-                  <span className="text-xs font-mono font-bold">({clientes.filter((c) => (c.dias_sin_pedir || 0) >= 15).length})</span>
+                  <span className="text-xs font-sans font-bold">({clientes.filter((c) => (c.dias_sin_pedir || 0) >= 15).length})</span>
                 </div>
-                <span className="text-xs font-bold mt-1">😴 Clientes Inactivos</span>
+                <span className="text-xs font-bold mt-1">😴 Inactivos</span>
                 <span className="text-[10px] opacity-70">+15 días sin ordenar</span>
               </button>
 
               <button
                 type="button"
-                onClick={() => setMarketingSegmento('premios')}
+                onClick={() => {
+                  setMarketingSegmento('premios')
+                  setMarketingPage(1)
+                }}
                 className={`p-3.5 rounded-2xl border text-left flex flex-col gap-1 transition-all ${
                   marketingSegmento === 'premios'
-                    ? 'bg-amber-500 text-negro border-amber-500 font-bold shadow-lg scale-102'
-                    : 'bg-[#F4F0E8] dark:bg-carbon border-arena/20 text-negro dark:text-arena hover:border-amber-500'
+                    ? 'bg-amber-500 text-black border-amber-500 font-bold shadow-md'
+                    : 'bg-black/[0.02] dark:bg-white/[0.02] border-black/[0.08] dark:border-white/[0.08] text-negro dark:text-arena hover:border-amber-500/40'
                 }`}
               >
                 <div className="flex items-center justify-between">
-                  <Gift className="w-4 h-4 text-turquesa" />
-                  <span className="text-xs font-mono font-bold">({clientes.filter((c) => c.canjes_disponibles > 0).length})</span>
+                  <Gift className="w-4 h-4 text-[#2ABFBF]" />
+                  <span className="text-xs font-sans font-bold">({clientes.filter((c) => c.canjes_disponibles > 0).length})</span>
                 </div>
-                <span className="text-xs font-bold mt-1">🎁 Premio Disponible</span>
-                <span className="text-[10px] opacity-70">Platillo gratis listo</span>
+                <span className="text-xs font-bold mt-1">🎁 Premio Listo</span>
+                <span className="text-[10px] opacity-70">Platillo gratis</span>
               </button>
 
               <button
                 type="button"
-                onClick={() => setMarketingSegmento('vip')}
+                onClick={() => {
+                  setMarketingSegmento('vip')
+                  setMarketingPage(1)
+                }}
                 className={`p-3.5 rounded-2xl border text-left flex flex-col gap-1 transition-all ${
                   marketingSegmento === 'vip'
-                    ? 'bg-purple-600 text-blanco border-purple-600 font-bold shadow-lg scale-102'
-                    : 'bg-[#F4F0E8] dark:bg-carbon border-arena/20 text-negro dark:text-arena hover:border-purple-600'
+                    ? 'bg-purple-600 text-white border-purple-600 font-bold shadow-md'
+                    : 'bg-black/[0.02] dark:bg-white/[0.02] border-black/[0.08] dark:border-white/[0.08] text-negro dark:text-arena hover:border-purple-600/40'
                 }`}
               >
                 <div className="flex items-center justify-between">
-                  <Award className="w-4 h-4 text-oro" />
-                  <span className="text-xs font-mono font-bold">({clientesVip})</span>
+                  <Award className="w-4 h-4 text-[#C9A84C]" />
+                  <span className="text-xs font-sans font-bold">({clientesVip})</span>
                 </div>
                 <span className="text-xs font-bold mt-1">⭐ Socios VIP</span>
-                <span className="text-[10px] opacity-70">Capitanes y Leyendas</span>
+                <span className="text-[10px] opacity-70">Capitanes & Leyendas</span>
               </button>
             </div>
           </div>
 
           {/* PASO 2: REDACCIÓN CON INTELIGENCIA ARTIFICIAL */}
-          <div className="bg-white dark:bg-[#050404] bg-dots-pattern border border-arena/30 dark:border-oro/30 rounded-3xl p-6 shadow-xl flex flex-col gap-5">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-arena/20 pb-3">
-              <div className="flex items-center gap-2">
-                <span className="p-2 bg-oro/10 text-oro rounded-xl border border-oro/30 font-bold">2</span>
+          <div className="bg-white dark:bg-[#111317] border border-black/[0.08] dark:border-white/[0.08] rounded-[28px] p-6 shadow-sm flex flex-col gap-5">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-black/[0.08] dark:border-white/[0.08] pb-3">
+              <div className="flex items-center gap-2.5">
+                <span className="w-7 h-7 bg-[#C9A84C]/15 text-[#C9A84C] rounded-xl flex items-center justify-center font-bold text-xs">2</span>
                 <div>
                   <h3 className="font-display text-2xl text-negro dark:text-blanco">
                     ASISTENTE DE REDACCIÓN CON IA & PLANTILLAS
                   </h3>
-                  <span className="text-xs font-serif italic text-arena/70">
+                  <span className="text-xs font-sans font-medium text-negro/60 dark:text-arena/60">
                     Genera copys persuasivos con sabor sinaloense listos para enviar
                   </span>
                 </div>
@@ -590,7 +884,7 @@ export function ClientesManager({ initialClientes }: ClientesManagerProps) {
                 type="button"
                 onClick={handleGenerateAiCopies}
                 disabled={isGeneratingAi}
-                className="bg-gradient-to-r from-oro via-amber-400 to-yellow-500 text-negro hover:brightness-110 font-sans font-bold text-xs tracking-wider py-3 px-5 rounded-2xl shadow-lg transition-all flex items-center justify-center gap-2"
+                className="bg-[#C9A84C] text-black hover:bg-[#C9A84C]/90 font-sans font-bold text-xs tracking-wider py-3 px-5 rounded-2xl shadow-sm transition-all flex items-center justify-center gap-2"
               >
                 {isGeneratingAi ? (
                   <>
@@ -600,7 +894,7 @@ export function ClientesManager({ initialClientes }: ClientesManagerProps) {
                 ) : (
                   <>
                     <Sparkles className="w-4 h-4" />
-                    <span>✨ GENERAR OPCIONES CON IA</span>
+                    <span>GENERAR CON IA</span>
                   </>
                 )}
               </button>
@@ -609,11 +903,11 @@ export function ClientesManager({ initialClientes }: ClientesManagerProps) {
             {/* OPCIONES DE OBJETIVO Y TONO */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
               <div className="flex flex-col gap-1.5">
-                <label className="text-xs font-sans font-bold uppercase text-arena/80">Objetivo de la Campaña</label>
+                <label className="text-xs font-sans font-bold uppercase text-negro/70 dark:text-arena/70">Objetivo de la Campaña</label>
                 <select
                   value={marketingObjetivo}
                   onChange={(e) => setMarketingObjetivo(e.target.value as any)}
-                  className="bg-[#F4F0E8] dark:bg-carbon border border-arena/30 dark:border-arena/20 rounded-xl p-3 text-xs text-negro dark:text-blanco focus:border-oro focus:outline-none font-sans font-bold"
+                  className="bg-black/[0.02] dark:bg-white/[0.02] border border-black/[0.08] dark:border-white/[0.08] rounded-xl p-3 text-xs text-negro dark:text-blanco focus:border-[#C9A84C] focus:outline-none font-sans font-bold"
                 >
                   <option value="antojo_fin_de_semana">🦐 Antojo Sinaloense de Fin de Semana</option>
                   <option value="cumpleanos">🎂 Festejo de Cumpleaños (Cortesía)</option>
@@ -626,11 +920,11 @@ export function ClientesManager({ initialClientes }: ClientesManagerProps) {
               </div>
 
               <div className="flex flex-col gap-1.5">
-                <label className="text-xs font-sans font-bold uppercase text-arena/80">Tono del Mensaje</label>
+                <label className="text-xs font-sans font-bold uppercase text-negro/70 dark:text-arena/70">Tono del Mensaje</label>
                 <select
                   value={marketingTono}
                   onChange={(e) => setMarketingTono(e.target.value as any)}
-                  className="bg-[#F4F0E8] dark:bg-carbon border border-arena/30 dark:border-arena/20 rounded-xl p-3 text-xs text-negro dark:text-blanco focus:border-oro focus:outline-none font-sans font-bold"
+                  className="bg-black/[0.02] dark:bg-white/[0.02] border border-black/[0.08] dark:border-white/[0.08] rounded-xl p-3 text-xs text-negro dark:text-blanco focus:border-[#C9A84C] focus:outline-none font-sans font-bold"
                 >
                   <option value="sinaloense_autentico">🦐 Sinaloense Auténtico y Antojador</option>
                   <option value="urgente_promo">⚡ Urgente / Promo por Tiempo Limitado</option>
@@ -640,13 +934,13 @@ export function ClientesManager({ initialClientes }: ClientesManagerProps) {
 
               {marketingObjetivo === 'personalizado' && (
                 <div className="flex flex-col gap-1.5 col-span-1 sm:col-span-2 lg:col-span-1">
-                  <label className="text-xs font-sans font-bold uppercase text-arena/80">¿Qué quieres promocionar?</label>
+                  <label className="text-xs font-sans font-bold uppercase text-negro/70 dark:text-arena/70">¿Qué quieres promocionar?</label>
                   <input
                     type="text"
                     placeholder="Ej. Tostada de Callo a $49 solo hoy..."
                     value={customPrompt}
                     onChange={(e) => setCustomPrompt(e.target.value)}
-                    className="bg-[#F4F0E8] dark:bg-carbon border border-arena/30 dark:border-arena/20 rounded-xl p-3 text-xs text-negro dark:text-blanco focus:border-oro focus:outline-none"
+                    className="bg-black/[0.02] dark:bg-white/[0.02] border border-black/[0.08] dark:border-white/[0.08] rounded-xl p-3 text-xs text-negro dark:text-blanco font-sans font-medium focus:border-[#C9A84C] focus:outline-none"
                   />
                 </div>
               )}
@@ -661,17 +955,17 @@ export function ClientesManager({ initialClientes }: ClientesManagerProps) {
                     onClick={() => setSelectedMessage(copy.mensaje)}
                     className={`p-4 rounded-2xl border cursor-pointer transition-all flex flex-col gap-2 ${
                       selectedMessage === copy.mensaje
-                        ? 'bg-oro/10 border-oro shadow-md ring-2 ring-oro/40'
-                        : 'bg-[#F4F0E8] dark:bg-carbon border-arena/20 hover:border-turquesa'
+                        ? 'bg-[#C9A84C]/10 border-[#C9A84C] shadow-sm ring-2 ring-[#C9A84C]/30'
+                        : 'bg-black/[0.02] dark:bg-white/[0.02] border-black/[0.08] dark:border-white/[0.08] hover:border-[#2ABFBF]'
                     }`}
                   >
                     <div className="flex items-center justify-between">
-                      <span className="text-xs font-bold text-oro">{copy.titulo}</span>
-                      <span className="text-[9px] font-mono text-arena/70 bg-black/30 px-2 py-0.5 rounded">
+                      <span className="text-xs font-bold text-[#C9A84C]">{copy.titulo}</span>
+                      <span className="text-[10px] font-sans font-bold text-negro/60 dark:text-arena/60 bg-black/5 dark:bg-white/10 px-2 py-0.5 rounded-full">
                         {copy.origen === 'gemini_ai' ? '✨ Gemini AI' : '⚡ Motor Local'}
                       </span>
                     </div>
-                    <p className="text-xs font-sans whitespace-pre-line text-negro/80 dark:text-arena/90 line-clamp-3">
+                    <p className="text-xs font-sans whitespace-pre-line text-negro/80 dark:text-arena/90 line-clamp-3 font-medium">
                       {copy.mensaje}
                     </p>
                   </div>
@@ -681,9 +975,9 @@ export function ClientesManager({ initialClientes }: ClientesManagerProps) {
 
             {/* EDITOR Y VISTA PREVIA DEL MENSAJE */}
             <div className="flex flex-col gap-2 pt-2">
-              <label className="text-xs font-sans font-bold uppercase text-arena/80 flex items-center justify-between">
+              <label className="text-xs font-sans font-bold uppercase text-negro/70 dark:text-arena/70 flex items-center justify-between">
                 <span>Mensaje Final a Enviar (Puedes editarlo directamente):</span>
-                <span className="text-[10px] text-turquesa font-mono">
+                <span className="text-[10px] text-[#2ABFBF] font-sans font-bold">
                   Etiquetas: {'{nombre}'}, {'{sellos}'}, {'{premio}'}, {'{enlace_menu}'}
                 </span>
               </label>
@@ -691,21 +985,21 @@ export function ClientesManager({ initialClientes }: ClientesManagerProps) {
                 rows={5}
                 value={selectedMessage}
                 onChange={(e) => setSelectedMessage(e.target.value)}
-                className="bg-[#F4F0E8] dark:bg-carbon border border-arena/30 dark:border-arena/20 rounded-2xl p-4 text-xs sm:text-sm text-negro dark:text-blanco focus:border-oro focus:outline-none font-sans leading-relaxed shadow-inner"
+                className="bg-black/[0.02] dark:bg-white/[0.02] border border-black/[0.08] dark:border-white/[0.08] rounded-2xl p-4 text-xs sm:text-sm text-negro dark:text-blanco focus:border-[#C9A84C] focus:outline-none font-sans font-medium leading-relaxed shadow-inner"
               />
             </div>
           </div>
 
           {/* PASO 3: DISPARADOR Y COLA DE ENVÍO */}
-          <div className="bg-white dark:bg-[#050404] bg-dots-pattern border border-arena/30 dark:border-oro/30 rounded-3xl p-6 shadow-xl flex flex-col gap-4">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-arena/20 pb-3">
-              <div className="flex items-center gap-2">
-                <span className="p-2 bg-coral/10 text-coral rounded-xl border border-coral/30 font-bold">3</span>
+          <div className="bg-white dark:bg-[#111317] border border-black/[0.08] dark:border-white/[0.08] rounded-[28px] p-6 shadow-sm flex flex-col gap-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-black/[0.08] dark:border-white/[0.08] pb-3">
+              <div className="flex items-center gap-2.5">
+                <span className="w-7 h-7 bg-coral/15 text-coral rounded-xl flex items-center justify-center font-bold text-xs">3</span>
                 <div>
                   <h3 className="font-display text-2xl text-negro dark:text-blanco">
                     DISPARADOR DIRECTO & LISTA DE DIFUSIÓN
                   </h3>
-                  <span className="text-xs font-serif italic text-arena/70">
+                  <span className="text-xs font-sans font-medium text-negro/60 dark:text-arena/60">
                     Envía con 1 clic a cada cliente o exporta para WhatsApp Business
                   </span>
                 </div>
@@ -714,11 +1008,11 @@ export function ClientesManager({ initialClientes }: ClientesManagerProps) {
               <button
                 type="button"
                 onClick={handleCopyBroadcastList}
-                className="bg-carbon border border-arena/20 hover:border-turquesa text-arena hover:text-blanco font-sans font-bold text-xs py-3 px-4 rounded-xl transition-all flex items-center gap-2 shadow-sm"
+                className="bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 hover:border-[#2ABFBF] text-negro dark:text-blanco font-sans font-bold text-xs py-3 px-4 rounded-xl transition-all flex items-center gap-2 shadow-sm"
               >
                 {copiedBroadcast ? (
                   <>
-                    <Check className="w-4 h-4 text-turquesa" />
+                    <Check className="w-4 h-4 text-[#2ABFBF]" />
                     <span>¡TELÉFONOS COPIADOS!</span>
                   </>
                 ) : (
@@ -730,36 +1024,152 @@ export function ClientesManager({ initialClientes }: ClientesManagerProps) {
               </button>
             </div>
 
-            {/* LISTA DE DESTINATARIOS CON BOTÓN DE ENVÍO INMEDIATO */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 max-h-96 overflow-y-auto pr-1">
-              {marketingTargetList.map((cliente) => (
-                <div
-                  key={cliente.id}
-                  className="bg-[#F4F0E8] dark:bg-carbon border border-arena/20 rounded-2xl p-4 flex items-center justify-between gap-3 shadow-sm hover:border-oro transition-all"
-                >
-                  <div className="flex flex-col min-w-0">
-                    <span className="font-bold text-sm truncate text-negro dark:text-blanco">
-                      {cliente.nombre}
-                    </span>
-                    <span className="text-xs font-mono text-arena/70">
-                      +52 {cliente.telefono}
-                    </span>
-                    <span className="text-[10px] text-turquesa font-bold mt-0.5">
-                      {cliente.sellos_actuales}/6 Sellos · {cliente.total_pedidos} pedidos
-                    </span>
-                  </div>
+            {/* TABLA DE DESTINATARIOS DE CAMPAÑA CON PAGINACIÓN DE 10 */}
+            <div className="flex flex-col gap-4">
+              <div className="bg-black/[0.02] dark:bg-white/[0.02] border border-black/[0.08] dark:border-white/[0.08] rounded-[24px] overflow-hidden">
+                {/* VISTA DESKTOP */}
+                <div className="hidden md:block overflow-x-auto">
+                  <table className="w-full text-left border-collapse font-sans text-xs">
+                    <thead>
+                      <tr className="border-b border-black/[0.08] dark:border-white/[0.08] bg-black/[0.02] dark:bg-white/[0.02] text-[11px] font-bold uppercase tracking-wider text-negro/50 dark:text-arena/50">
+                        <th className="py-3.5 px-5">Cliente Destinatario</th>
+                        <th className="py-3.5 px-4">Teléfono WhatsApp</th>
+                        <th className="py-3.5 px-4">Estado en el Club</th>
+                        <th className="py-3.5 px-4">Inactividad</th>
+                        <th className="py-3.5 px-5 text-right">Disparo</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-black/[0.05] dark:divide-white/[0.05]">
+                      {paginatedMarketingClientes.map((cliente) => {
+                        const inicial = (cliente.nombre || 'C').charAt(0).toUpperCase()
+                        return (
+                          <tr
+                            key={cliente.id}
+                            className="hover:bg-black/[0.02] dark:hover:bg-white/[0.02] transition-colors"
+                          >
+                            <td className="py-3.5 px-5">
+                              <div className="flex items-center gap-3">
+                                <div className="w-8 h-8 rounded-xl bg-black/5 dark:bg-white/10 text-negro dark:text-blanco font-bold flex items-center justify-center text-xs shrink-0">
+                                  {inicial}
+                                </div>
+                                <div className="flex flex-col min-w-0">
+                                  <span className="font-bold text-sm text-negro dark:text-blanco truncate">
+                                    {cliente.nombre}
+                                  </span>
+                                  <span className="text-[10px] text-negro/50 dark:text-arena/50">
+                                    Ref: #{cliente.codigo_referido}
+                                  </span>
+                                </div>
+                              </div>
+                            </td>
 
-                  <a
-                    href={buildPersonalizedWhatsAppUrl(cliente)}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="bg-[#25D366] text-white hover:bg-[#1EBE5D] text-xs font-sans font-bold py-2.5 px-3 rounded-xl transition-all flex items-center gap-1.5 shadow-md shrink-0"
-                  >
-                    <Send className="w-3.5 h-3.5 fill-current" />
-                    <span>Enviar</span>
-                  </a>
+                            <td className="py-3.5 px-4 font-bold text-[#2ABFBF]">
+                              +52 {cliente.telefono}
+                            </td>
+
+                            <td className="py-3.5 px-4">
+                              <div className="flex flex-col">
+                                <span className="font-bold text-negro dark:text-blanco">
+                                  {cliente.sellos_actuales}/6 Sellos
+                                </span>
+                                <span className="text-[10px] text-negro/60 dark:text-arena/60">
+                                  {cliente.total_pedidos} pedidos acumulados
+                                </span>
+                              </div>
+                            </td>
+
+                            <td className="py-3.5 px-4">
+                              {cliente.ultimo_pedido ? (
+                                <span className={`text-[11px] font-bold ${
+                                  (cliente.dias_sin_pedir || 0) >= 15 ? 'text-coral' : 'text-negro/60 dark:text-arena/60'
+                                }`}>
+                                  {(cliente.dias_sin_pedir || 0) === 0
+                                    ? 'Ordenó hoy'
+                                    : `Hace ${cliente.dias_sin_pedir} días`}
+                                </span>
+                              ) : (
+                                <span className="text-[11px] text-negro/40 dark:text-arena/40 italic">
+                                  Sin pedidos previos
+                                </span>
+                              )}
+                            </td>
+
+                            <td className="py-3.5 px-5 text-right">
+                              <a
+                                href={buildPersonalizedWhatsAppUrl(cliente)}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="inline-flex items-center gap-1.5 bg-[#25D366] text-white hover:bg-[#1EBE5D] text-xs font-bold py-2 px-3.5 rounded-xl transition-all shadow-sm"
+                              >
+                                <Send className="w-3.5 h-3.5 fill-current" />
+                                <span>Enviar WhatsApp</span>
+                              </a>
+                            </td>
+                          </tr>
+                        )
+                      })}
+                    </tbody>
+                  </table>
                 </div>
-              ))}
+
+                {/* VISTA MOBILE */}
+                <div className="block md:hidden divide-y divide-black/[0.08] dark:divide-white/[0.08]">
+                  {paginatedMarketingClientes.map((cliente) => (
+                    <div key={cliente.id} className="p-3.5 flex items-center justify-between gap-3">
+                      <div className="flex flex-col min-w-0 font-sans">
+                        <span className="font-bold text-sm truncate text-negro dark:text-blanco">
+                          {cliente.nombre}
+                        </span>
+                        <span className="text-xs text-[#2ABFBF] font-bold">
+                          +52 {cliente.telefono}
+                        </span>
+                        <span className="text-[10px] text-negro/60 dark:text-arena/60 font-medium">
+                          {cliente.sellos_actuales}/6 Sellos · {cliente.total_pedidos} pedidos
+                        </span>
+                      </div>
+
+                      <a
+                        href={buildPersonalizedWhatsAppUrl(cliente)}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="bg-[#25D366] text-white hover:bg-[#1EBE5D] text-xs font-bold py-2 px-3 rounded-xl transition-all flex items-center gap-1 shadow-sm shrink-0"
+                      >
+                        <Send className="w-3.5 h-3.5 fill-current" />
+                        <span>Enviar</span>
+                      </a>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {totalMarketingPages > 1 && (
+                <div className="flex items-center justify-between pt-2 border-t border-black/[0.08] dark:border-white/[0.08]">
+                  <span className="text-xs font-sans font-medium text-negro/60 dark:text-arena/60">
+                    Página {marketingPage} de {totalMarketingPages} ({marketingTargetList.length} clientes en este segmento)
+                  </span>
+                  <div className="flex items-center gap-1.5">
+                    <button
+                      type="button"
+                      onClick={() => setMarketingPage((p) => Math.max(1, p - 1))}
+                      disabled={marketingPage === 1}
+                      className="p-2 rounded-xl border border-black/10 dark:border-white/10 disabled:opacity-30 hover:bg-black/5 dark:hover:bg-white/5 transition-all text-xs font-bold"
+                    >
+                      <ChevronLeft className="w-4 h-4" />
+                    </button>
+                    <span className="text-xs font-sans font-bold px-2 text-negro dark:text-blanco">
+                      {marketingPage} / {totalMarketingPages}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setMarketingPage((p) => Math.min(totalMarketingPages, p + 1))}
+                      disabled={marketingPage === totalMarketingPages}
+                      className="p-2 rounded-xl border border-black/10 dark:border-white/10 disabled:opacity-30 hover:bg-black/5 dark:hover:bg-white/5 transition-all text-xs font-bold"
+                    >
+                      <ChevronRight className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>

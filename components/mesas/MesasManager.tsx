@@ -1,11 +1,25 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState } from 'react'
 import dynamic from 'next/dynamic'
 import { Mesa, Platillo } from '@/lib/types/database'
-import { LuxuryCard } from '@/components/ui/LuxuryCard'
 import { MesasFloorPlan } from '@/components/mesas/MesasFloorPlan'
 import { getMesasConPedidos } from '@/lib/actions/mesas'
+import { StaffSelectorPill } from '@/components/admin/StaffSelectorPill'
+import {
+  LayoutGrid,
+  Plus,
+  Move,
+  CheckCircle2,
+  Users,
+  Utensils,
+  Percent,
+  DollarSign,
+  QrCode,
+  Printer,
+  Sparkles,
+  MapPin,
+} from 'lucide-react'
 
 const MesaComandaModal = dynamic(
   () => import('@/components/mesas/MesaComandaModal').then((mod) => mod.MesaComandaModal),
@@ -23,19 +37,6 @@ const MesaEditorModal = dynamic(
   () => import('@/components/mesas/MesaEditorModal').then((mod) => mod.MesaEditorModal),
   { ssr: false }
 )
-import {
-  LayoutGrid,
-  Plus,
-  Move,
-  CheckCircle2,
-  Users,
-  Utensils,
-  Percent,
-  DollarSign,
-  QrCode,
-  Sparkles,
-  Printer,
-} from 'lucide-react'
 
 interface MesasManagerProps {
   initialMesas: Mesa[]
@@ -66,126 +67,197 @@ export function MesasManager({ initialMesas, platillos }: MesasManagerProps) {
   // KPIs
   const totalMesas = mesas.length
   const mesasOcupadas = mesas.filter((m) => m.estado !== 'libre').length
+  const mesasLibres = totalMesas - mesasOcupadas
   const porcentajeOcupacion = totalMesas > 0 ? (mesasOcupadas / totalMesas) * 100 : 0
   const totalEnConsumo = mesas
     .filter((m) => m.estado !== 'libre')
     .reduce((acc, m) => acc + Number(m.pedido_activo?.total || 0), 0)
+  const capacidadTotal = mesas.reduce((acc, m) => acc + m.capacidad, 0)
 
   return (
-    <div className="flex flex-col gap-8">
-      {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-arena/20 dark:border-arena/10 pb-4">
+    <div className="w-full flex flex-col gap-6 animate-in fade-in duration-300 pb-12">
+      {/* ========================================================= */}
+      {/* 1. TOP FLOATING NAVIGATION & GREETING                     */}
+      {/* ========================================================= */}
+      <div className="bg-white dark:bg-[#111111] border border-black/10 dark:border-white/10 rounded-[32px] p-5 sm:p-6 shadow-sm flex flex-col lg:flex-row lg:items-center justify-between gap-4">
         <div>
-          <span className="text-xs font-sans font-semibold tracking-widest text-turquesa uppercase">
-            CONTROL DE SALÓN & COMANDAS
-          </span>
-          <h1 className="font-display text-4xl text-negro dark:text-blanco tracking-wide">
-            MAPA DE MESAS & RESTAURANTE
+          <div className="flex items-center gap-2 mb-1">
+            <span className="w-2 h-2 rounded-full bg-[#16A34B] animate-pulse" />
+            <span className="text-[11px] font-mono font-bold tracking-wider text-negro/50 dark:text-arena/60 uppercase">
+              Control de Salón & Comedor · Sinaloa
+            </span>
+          </div>
+          <h1 className="text-2xl sm:text-3xl font-sans font-black tracking-tight text-negro dark:text-blanco uppercase">
+            Mapa de Mesas & Salón
           </h1>
         </div>
 
-        <div className="flex items-center gap-3 flex-wrap">
+        <div className="flex items-center gap-2.5 flex-wrap">
+          <StaffSelectorPill allowedRoles={['admin', 'mesero', 'cajero']} defaultRoleLabel="Mesero" />
+
           <button
             type="button"
             onClick={() => setShowPrintAllQrModal(true)}
-            className="bg-oro text-negro hover:bg-blanco font-sans font-bold text-xs px-5 py-3 rounded-full transition-all flex items-center gap-2 border border-oro/40 shadow-md"
+            className="bg-black/5 dark:bg-white/10 hover:bg-black/10 dark:hover:bg-white/15 text-negro dark:text-blanco font-sans font-bold text-xs px-4 py-2.5 rounded-full transition-all flex items-center gap-2 shadow-sm active:scale-95 cursor-pointer"
           >
-            <Printer className="w-4 h-4" />
-            <span>📄 IMPRIMIR QR DE MESAS</span>
+            <Printer className="w-3.5 h-3.5 text-oro" />
+            <span>Imprimir QRs</span>
           </button>
 
           <button
             type="button"
             onClick={() => setIsEditMode(!isEditMode)}
-            className={`font-sans font-bold text-xs px-5 py-3 rounded-full transition-all flex items-center gap-2 border ${
+            className={`font-sans font-bold text-xs px-4 py-2.5 rounded-full transition-all flex items-center gap-2 shadow-sm active:scale-95 cursor-pointer ${
               isEditMode
-                ? 'bg-oro text-negro border-oro shadow-[0_0_20px_rgba(201,168,76,0.4)]'
-                : 'bg-white text-negro border-arena/30 dark:bg-carbon dark:text-arena dark:border-arena/20 hover:border-oro'
+                ? 'bg-[#ECC94B] text-[#3A2D00]'
+                : 'bg-black/5 dark:bg-white/10 hover:bg-black/10 dark:hover:bg-white/15 text-negro dark:text-blanco'
             }`}
           >
-            <Move className="w-4 h-4" />
-            <span>{isEditMode ? 'TERMINAR DE ACOMODAR' : '✏️ ACOMODAR PLANO'}</span>
+            <Move className="w-3.5 h-3.5" />
+            <span>{isEditMode ? 'Terminar Acomodo' : 'Acomodar Plano'}</span>
           </button>
 
           <button
             type="button"
             onClick={() => setShowCreateModal(true)}
-            className="bg-coral text-blanco hover:bg-coral/80 font-sans font-bold text-xs tracking-wider px-5 py-3 rounded-full shadow-[0_0_20px_rgba(232,67,10,0.3)] transition-all flex items-center gap-2"
+            className="bg-coral hover:bg-coral/90 text-white font-sans font-bold text-xs tracking-wide px-4 py-2.5 rounded-full shadow-sm flex items-center gap-2 transition-all active:scale-95 cursor-pointer"
           >
             <Plus className="w-4 h-4 stroke-[3]" />
-            <span>NUEVA MESA</span>
+            <span>Nueva Mesa</span>
           </button>
         </div>
       </div>
 
-      {/* LUXURY CARDS (PATRÓN 4) PARA KPIS DE SALÓN */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        <LuxuryCard
-          eyebrow="CAPACIDAD TOTAL"
-          title="Mesas Activas"
-          value={totalMesas}
-          subtitle={`Espacio para ~${mesas.reduce((acc, m) => acc + m.capacidad, 0)} comensales`}
-          icon={<LayoutGrid className="w-5 h-5 text-oro" />}
-        />
+      {/* ========================================================= */}
+      {/* 2. BENTO KPIS DE SALÓN (4 COLS)                           */}
+      {/* ========================================================= */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {/* KPI 1: Mesas Totales */}
+        <div className="bg-white dark:bg-[#111111] border border-black/10 dark:border-white/10 rounded-[32px] p-5 shadow-sm flex flex-col justify-between">
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-mono font-bold text-negro/50 dark:text-arena/60 uppercase tracking-wider">
+              Capacidad Total
+            </span>
+            <div className="w-8 h-8 rounded-xl bg-turquesa/10 text-turquesa flex items-center justify-center">
+              <LayoutGrid className="w-4 h-4" />
+            </div>
+          </div>
+          <div className="mt-3">
+            <span className="text-3xl font-sans font-black text-negro dark:text-blanco tracking-tight block">
+              {totalMesas}
+            </span>
+            <span className="text-xs text-negro/50 dark:text-arena/50 font-medium">
+              Espacio para ~{capacidadTotal} comensales
+            </span>
+          </div>
+        </div>
 
-        <LuxuryCard
-          eyebrow="SERVICIO EN VIVO"
-          title="Mesas Ocupadas"
-          value={`${mesasOcupadas} / ${totalMesas}`}
-          subtitle={`${mesas.filter((m) => m.estado === 'libre').length} mesas libres disponibles`}
-          icon={<Utensils className="w-5 h-5 text-oro" />}
-        />
+        {/* KPI 2: Servicio en Vivo */}
+        <div className="bg-white dark:bg-[#111111] border border-black/10 dark:border-white/10 rounded-[32px] p-5 shadow-sm flex flex-col justify-between">
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-mono font-bold text-negro/50 dark:text-arena/60 uppercase tracking-wider">
+              Servicio en Vivo
+            </span>
+            <span className="text-[10px] font-mono font-bold bg-[#16A34B] text-white px-2.5 py-0.5 rounded-full shadow-sm">
+              {mesasLibres} libres
+            </span>
+          </div>
+          <div className="mt-3">
+            <div className="flex items-baseline gap-2">
+              <span className="text-3xl font-sans font-black text-negro dark:text-blanco tracking-tight">
+                {mesasOcupadas}
+              </span>
+              <span className="text-sm font-sans font-bold text-negro/40 dark:text-arena/40">
+                / {totalMesas} ocupadas
+              </span>
+            </div>
+            <span className="text-xs text-coral font-sans font-bold">
+              {mesasOcupadas > 0 ? 'Comandas en salón' : 'Salón listo para comensales'}
+            </span>
+          </div>
+        </div>
 
-        <LuxuryCard
-          eyebrow="OCUPACIÓN"
-          title="Tasa de Ocupación"
-          value={`${porcentajeOcupacion.toFixed(0)}%`}
-          subtitle="Capacidad de salón en uso"
-          icon={<Percent className="w-5 h-5 text-oro" />}
-        />
+        {/* KPI 3: Tasa de Ocupación */}
+        <div className="bg-white dark:bg-[#111111] border border-black/10 dark:border-white/10 rounded-[32px] p-5 shadow-sm flex flex-col justify-between">
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-mono font-bold text-negro/50 dark:text-arena/60 uppercase tracking-wider">
+              Ocupación
+            </span>
+            <div className="w-8 h-8 rounded-xl bg-[#ECC94B]/20 text-[#8B6E00] dark:text-[#ECC94B] flex items-center justify-center">
+              <Percent className="w-4 h-4" />
+            </div>
+          </div>
+          <div className="mt-3">
+            <span className="text-3xl font-sans font-black text-negro dark:text-blanco tracking-tight block">
+              {porcentajeOcupacion.toFixed(0)}%
+            </span>
+            <div className="w-full bg-black/5 dark:bg-white/10 h-1.5 rounded-full mt-1.5 overflow-hidden">
+              <div
+                className="bg-[#16A34B] h-full rounded-full transition-all"
+                style={{ width: `${Math.max(4, porcentajeOcupacion)}%` }}
+              />
+            </div>
+          </div>
+        </div>
 
-        <LuxuryCard
-          eyebrow="VENTAS EN SALÓN"
-          title="Consumo Activo"
-          value={`$${totalEnConsumo.toFixed(0)}`}
-          subtitle="Cuentas abiertas en mesas"
-          icon={<DollarSign className="w-5 h-5 text-oro" />}
-        />
+        {/* KPI 4: Ventas en Salón */}
+        <div className="bg-white dark:bg-[#111111] border border-black/10 dark:border-white/10 rounded-[32px] p-5 shadow-sm flex flex-col justify-between">
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-mono font-bold text-negro/50 dark:text-arena/60 uppercase tracking-wider">
+              Ventas en Salón
+            </span>
+            <div className="w-8 h-8 rounded-xl bg-coral/10 text-coral flex items-center justify-center">
+              <DollarSign className="w-4 h-4" />
+            </div>
+          </div>
+          <div className="mt-3">
+            <span className="text-3xl font-sans font-black text-negro dark:text-blanco tracking-tight block">
+              ${totalEnConsumo.toLocaleString('es-MX', { minimumFractionDigits: 0 })}
+            </span>
+            <span className="text-xs text-negro/50 dark:text-arena/50 font-medium">
+              Cuentas abiertas en mesas
+            </span>
+          </div>
+        </div>
       </div>
 
-      {/* SELECTOR DE VISTA: PLANO INTERACTIVO vs TARJETAS */}
-      <div className="flex items-center justify-between gap-4">
-        <div className="flex items-center gap-2 bg-carbon p-1 rounded-xl border border-arena/20">
+      {/* ========================================================= */}
+      {/* 3. SELECTOR DE VISTA: PLANO INTERACTIVO vs TARJETAS       */}
+      {/* ========================================================= */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-1">
+        <div className="flex items-center gap-1.5 bg-black/5 dark:bg-white/5 p-1 rounded-full border border-black/5 dark:border-white/5 self-start">
           <button
             type="button"
             onClick={() => setViewMode('plano')}
-            className={`px-4 py-2 rounded-lg text-xs font-sans font-bold transition-all ${
+            className={`px-4 py-2 rounded-full text-xs font-sans font-bold transition-all active:scale-95 cursor-pointer ${
               viewMode === 'plano'
-                ? 'bg-turquesa text-negro shadow-md'
-                : 'text-arena/70 hover:text-blanco'
+                ? 'bg-white dark:bg-[#222222] text-negro dark:text-blanco shadow-sm'
+                : 'text-negro/60 dark:text-arena/60 hover:text-negro dark:hover:text-blanco'
             }`}
           >
-            🗺️ PLANO DECORATIVO INTERACTIVO
+            🗺️ Plano Interactivo
           </button>
           <button
             type="button"
             onClick={() => setViewMode('tarjetas')}
-            className={`px-4 py-2 rounded-lg text-xs font-sans font-bold transition-all ${
+            className={`px-4 py-2 rounded-full text-xs font-sans font-bold transition-all active:scale-95 cursor-pointer ${
               viewMode === 'tarjetas'
-                ? 'bg-turquesa text-negro shadow-md'
-                : 'text-arena/70 hover:text-blanco'
+                ? 'bg-white dark:bg-[#222222] text-negro dark:text-blanco shadow-sm'
+                : 'text-negro/60 dark:text-arena/60 hover:text-negro dark:hover:text-blanco'
             }`}
           >
-            📋 VISTA EN TARJETAS
+            📋 Vista en Tarjetas
           </button>
         </div>
 
-        <span className="text-xs font-serif italic text-arena/60 hidden md:block">
+        <span className="text-xs font-sans text-negro/50 dark:text-arena/50">
           Haz clic en cualquier mesa para abrir su comanda, agregar rondas o cobrar.
         </span>
       </div>
 
-      {/* VISTA 1: PLANO INTERACTIVO CON DRAG & DROP */}
+      {/* ========================================================= */}
+      {/* 4. VISTA 1: PLANO INTERACTIVO CON DRAG & DROP             */}
+      {/* ========================================================= */}
       {viewMode === 'plano' && (
         <MesasFloorPlan
           mesas={mesas}
@@ -197,64 +269,63 @@ export function MesasManager({ initialMesas, platillos }: MesasManagerProps) {
         />
       )}
 
-      {/* VISTA 2: LISTA / CUADRÍCULA DE TARJETAS */}
+      {/* ========================================================= */}
+      {/* 5. VISTA 2: CUADRÍCULA BENTO DE TARJETAS                  */}
+      {/* ========================================================= */}
       {viewMode === 'tarjetas' && (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
           {mesas.map((mesa) => {
             const isFree = mesa.estado === 'libre'
+            const isPendingBill = mesa.estado === 'cuenta_pedida'
             const totalMesa = Number(mesa.pedido_activo?.total || 0)
 
             return (
               <div
                 key={mesa.id}
                 onClick={() => setSelectedMesaForComanda(mesa)}
-                className={`bg-white dark:bg-[#050404] bg-dots-pattern border-2 rounded-2xl p-5 flex flex-col justify-between gap-4 cursor-pointer hover:scale-[1.02] active:scale-[0.98] transition-all shadow-lg gold-border-corner ${
-                  isFree
-                    ? 'border-emerald-500/30 hover:border-emerald-400'
-                    : mesa.estado === 'ocupada'
-                    ? 'border-coral shadow-[0_0_15px_rgba(232,67,10,0.25)]'
-                    : 'border-oro shadow-[0_0_15px_rgba(201,168,76,0.3)] animate-pulse'
-                }`}
+                className="bg-white dark:bg-[#111111] border border-black/10 dark:border-white/10 rounded-[32px] p-5 flex flex-col justify-between gap-4 cursor-pointer hover:shadow-md transition-all shadow-sm active:scale-[0.99] group"
               >
-                <div className="flex items-start justify-between">
+                <div className="flex items-start justify-between gap-2">
                   <div className="flex flex-col">
-                    <span className="font-display text-2xl text-negro dark:text-blanco">
+                    <h3 className="font-sans font-black text-xl text-negro dark:text-blanco group-hover:text-coral transition-colors">
                       {mesa.nombre}
-                    </span>
-                    <span className="text-[11px] font-sans text-negro/60 dark:text-arena/60">
-                      Capacidad: {mesa.capacidad} personas · Forma: {mesa.forma}
+                    </h3>
+                    <span className="text-[11px] font-mono text-negro/50 dark:text-arena/50 mt-0.5">
+                      {mesa.capacidad} personas · {mesa.forma}
                     </span>
                   </div>
 
                   <span
-                    className={`text-[9px] font-sans font-bold px-2 py-0.5 rounded-full uppercase border ${
+                    className={`text-[10px] font-mono font-bold px-2.5 py-0.5 rounded-full uppercase shadow-sm ${
                       isFree
-                        ? 'bg-emerald-100 text-emerald-800 border-emerald-300 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-500/30'
-                        : mesa.estado === 'ocupada'
-                        ? 'bg-coral/15 text-coral border-coral/30'
-                        : 'bg-oro/20 text-oro border-oro/30'
+                        ? 'bg-[#16A34B] text-white'
+                        : isPendingBill
+                        ? 'bg-[#ECC94B] text-[#3A2D00]'
+                        : 'bg-coral text-white'
                     }`}
                   >
-                    {isFree ? '🟢 LIBRE' : mesa.estado === 'ocupada' ? '🔴 COMIENDO' : '🟡 CUENTA'}
+                    {isFree ? 'Libre' : isPendingBill ? 'Cuenta' : 'Ocupada'}
                   </span>
                 </div>
 
-                <div className="flex items-center justify-between pt-3 border-t border-arena/20 dark:border-arena/10">
+                <div className="flex items-center justify-between pt-3 border-t border-black/5 dark:border-white/5">
                   <div className="flex flex-col">
-                    <span className="text-[10px] text-negro/50 dark:text-arena/50 uppercase font-bold">Cuenta:</span>
-                    <span className="font-display text-xl text-coral font-bold">
+                    <span className="text-[10px] font-mono font-bold text-negro/40 dark:text-arena/40 uppercase">
+                      Cuenta:
+                    </span>
+                    <span className="font-sans font-black text-lg text-negro dark:text-blanco">
                       ${totalMesa.toFixed(0)}
                     </span>
                   </div>
 
-                  <div className="flex items-center gap-1">
+                  <div className="flex items-center gap-1.5">
                     <button
                       type="button"
                       onClick={(e) => {
                         e.stopPropagation()
                         setSelectedMesaForQr(mesa)
                       }}
-                      className="p-2 text-negro/60 dark:text-arena/60 hover:text-turquesa rounded-lg bg-[#F4F0E8] dark:bg-carbon border border-arena/20"
+                      className="p-2 text-negro/60 dark:text-arena/60 hover:text-turquesa rounded-full bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 transition-colors"
                       title="Ver QR de la mesa"
                     >
                       <QrCode className="w-3.5 h-3.5" />
@@ -265,7 +336,7 @@ export function MesasManager({ initialMesas, platillos }: MesasManagerProps) {
                         e.stopPropagation()
                         setSelectedMesaForConfig(mesa)
                       }}
-                      className="p-2 text-negro/60 dark:text-arena/60 hover:text-oro rounded-lg bg-[#F4F0E8] dark:bg-carbon border border-arena/20"
+                      className="p-2 text-negro/60 dark:text-arena/60 hover:text-oro rounded-full bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 transition-colors"
                       title="Editar configuración"
                     >
                       <Move className="w-3.5 h-3.5" />
@@ -278,7 +349,9 @@ export function MesasManager({ initialMesas, platillos }: MesasManagerProps) {
         </div>
       )}
 
-      {/* MODALES */}
+      {/* ========================================================= */}
+      {/* 6. MODALES                                                */}
+      {/* ========================================================= */}
       {selectedMesaForComanda && (
         <MesaComandaModal
           mesa={selectedMesaForComanda}

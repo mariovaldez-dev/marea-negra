@@ -30,22 +30,25 @@ export function NarrativeCard({
 
   return (
     <div
-      className={`bg-white dark:bg-[#0C0806] border-l-4 ${
-        urgent ? 'border-l-coral' : 'border-l-turquesa'
-      } border-arena/30 dark:border-arena/10 rounded-r-2xl p-6 md:p-7 shadow-lg flex flex-col gap-3 transition-all hover:bg-arena/10 dark:hover:bg-[#120c09]`}
+      className={`bg-white dark:bg-[#141414] border border-black/10 dark:border-white/10 rounded-[24px] p-5 shadow-sm hover:shadow-md transition-all flex flex-col gap-3 relative overflow-hidden`}
     >
-      <div className="flex justify-between items-start gap-3">
-        <div className="flex items-center gap-3">
-          <h4 className="font-sans font-bold text-lg md:text-xl text-negro dark:text-blanco">
+      {/* Indicador de urgencia/tipo en el borde lateral */}
+      <div
+        className={`absolute left-0 top-0 bottom-0 w-1.5 ${
+          urgent ? 'bg-coral' : 'bg-turquesa'
+        }`}
+      />
+
+      <div className="flex justify-between items-start gap-3 pl-1">
+        <div className="flex items-center gap-2.5 flex-wrap">
+          <h4 className="font-sans font-bold text-base md:text-lg text-black dark:text-white">
             {title}
           </h4>
 
           {badgeText && (
             <span
-              className={`text-xs font-sans font-bold uppercase px-2.5 py-0.5 rounded-full border ${
-                urgent
-                  ? 'bg-coral/10 text-coral border-coral/30'
-                  : 'bg-turquesa/10 text-turquesa border-turquesa/30'
+              className={`text-[10px] md:text-xs font-sans font-bold uppercase px-3 py-0.5 rounded-full shrink-0 shadow-sm ${
+                urgent ? 'bg-coral text-white' : 'bg-turquesa text-black'
               }`}
             >
               {badgeText}
@@ -54,28 +57,29 @@ export function NarrativeCard({
         </div>
 
         {displayDate && (
-          <span className="text-xs md:text-sm font-sans font-semibold text-negro/50 dark:text-arena/50 flex-shrink-0">
+          <span className="text-xs font-mono font-bold text-black/50 dark:text-white/50 shrink-0">
             {displayDate}
           </span>
         )}
       </div>
 
       {displaySubtitle && (
-        <p className="font-serif italic text-base md:text-lg text-negro/80 dark:text-arena/70">
-          "{displaySubtitle}"
+        <p className="font-sans font-medium text-xs md:text-sm text-black/75 dark:text-white/75 pl-1 leading-relaxed">
+          {displaySubtitle}
         </p>
       )}
 
-      {/* Separador Oro de 30px */}
-      <div className="w-[35px] h-[2px] bg-oro my-1" />
-
       {author && (
-        <span className="text-xs font-sans text-turquesa uppercase font-semibold">
-          — Registrado por: {author}
-        </span>
+        <div className="pt-2 border-t border-black/5 dark:border-white/5 flex items-center justify-between text-[11px] font-sans text-black/50 dark:text-white/50 pl-1">
+          <span>Registrado por: <strong className="text-turquesa font-bold">{author}</strong></span>
+        </div>
       )}
 
-      {children && <div className="text-sm md:text-base font-sans text-negro/90 dark:text-blanco/90">{children}</div>}
+      {children && (
+        <div className="text-xs md:text-sm font-sans text-black/80 dark:text-white/80 pl-1">
+          {children}
+        </div>
+      )}
     </div>
   )
 }

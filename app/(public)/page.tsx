@@ -16,6 +16,13 @@ const UserHeaderBadge = dynamic(
     loading: () => <div className="h-9 w-32 bg-arena/10 rounded-full animate-pulse shrink-0" />,
   }
 )
+const MobileSidebarUserProfile = dynamic(
+  () => import('@/components/ui/MobileSidebarUserProfile').then((mod) => mod.MobileSidebarUserProfile),
+  {
+    ssr: false,
+    loading: () => <div className="h-20 w-full bg-arena/10 rounded-2xl animate-pulse shrink-0" />,
+  }
+)
 import { ClubBenefitsModal } from '@/components/menu/ClubBenefitsModal'
 import { BrandLogo } from '@/components/ui/BrandLogo'
 import { FloatingShrimp } from '@/components/ui/FloatingShrimp'
@@ -205,7 +212,6 @@ export default function PublicMenuPage() {
 
           {/* BOTÓN HAMBURGUESA Y THEME TOGGLE EN MÓVIL */}
           <div className="flex md:hidden items-center gap-2">
-            <UserHeaderBadge />
             <ThemeToggle />
             <button
               onClick={() => setMobileNavOpen(true)}
@@ -221,8 +227,8 @@ export default function PublicMenuPage() {
       {/* DRAWER DESLIZANTE DE NAVEGACIÓN MÓVIL */}
       {mobileNavOpen && (
         <div className="fixed inset-0 z-50 bg-black/75 flex justify-end animate-in fade-in duration-200">
-          <div className="bg-white text-negro dark:bg-[#050404] dark:text-blanco bg-dots-pattern border-l border-arena/30 dark:border-oro/30 w-4/5 max-w-sm h-full p-6 flex flex-col justify-between shadow-2xl animate-in slide-in-from-right duration-300 transition-colors">
-            <div className="flex flex-col gap-6">
+          <div className="bg-white text-negro dark:bg-[#050404] dark:text-blanco bg-dots-pattern border-l border-arena/30 dark:border-oro/30 w-4/5 max-w-sm h-full p-6 flex flex-col justify-between shadow-2xl animate-in slide-in-from-right duration-300 transition-colors overflow-y-auto">
+            <div className="flex flex-col gap-5">
               <div className="flex items-center justify-between border-b border-arena/30 dark:border-arena/15 pb-4">
                 <BrandLogo size="sm" />
                 <button
@@ -233,7 +239,10 @@ export default function PublicMenuPage() {
                 </button>
               </div>
 
-              <nav className="flex flex-col gap-3 font-sans text-base">
+              {/* PERFIL DE USUARIO / CLUB EN SIDEBAR MÓVIL */}
+              <MobileSidebarUserProfile onNavigate={() => setMobileNavOpen(false)} />
+
+              <nav className="flex flex-col gap-2.5 font-sans text-base">
                 <Link
                   href="/carta"
                   onClick={() => setMobileNavOpen(false)}
@@ -268,18 +277,6 @@ export default function PublicMenuPage() {
                     <span>Pedir Online Directo</span>
                   </span>
                   <ChevronRight className="w-4 h-4 text-turquesa" />
-                </Link>
-
-                <Link
-                  href="/registro"
-                  onClick={() => setMobileNavOpen(false)}
-                  className="p-3.5 rounded-2xl bg-coral/10 border border-coral/30 text-coral font-bold flex items-center justify-between transition-all"
-                >
-                  <span className="flex items-center gap-2.5">
-                    <Gift className="w-5 h-5 text-coral" />
-                    <span>Club Marea (10% OFF)</span>
-                  </span>
-                  <ChevronRight className="w-4 h-4 text-coral" />
                 </Link>
               </nav>
             </div>

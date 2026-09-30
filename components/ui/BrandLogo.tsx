@@ -41,28 +41,6 @@ export function BrandLogo({
     hero: 'text-7xl md:text-9xl leading-[0.84]',
   }
 
-  const shadowStyleSmall = {
-    textShadow: `
-      1.5px 1.5px 0px #C23A0A,
-      3px 3px 0px #C23A0A,
-      4.5px 4.5px 0px #822204,
-      6px 6px 0px #421001
-    `,
-  }
-
-  const shadowStyleLarge = {
-    textShadow: `
-      2px 2px 0px #D93806,
-      4px 4px 0px #D93806,
-      6px 6px 0px #B52B02,
-      8px 8px 0px #8A1E01,
-      10px 10px 0px #5E1200,
-      12px 12px 0px #330800
-    `,
-  }
-
-  const activeShadow = size === 'hero' || size === 'lg' ? shadowStyleLarge : shadowStyleSmall
-
   const letterVariants: Variants = {
     hidden: { opacity: 0, y: 35 },
     visible: (i: number) => ({
@@ -81,8 +59,7 @@ export function BrandLogo({
     if (!animated) {
       return (
         <span
-          style={activeShadow}
-          className={`text-blanco font-bold tracking-wider ${sizeClasses[size]}`}
+          className={`text-negro dark:text-blanco font-display font-bold tracking-wider ${sizeClasses[size]}`}
         >
           {text}
         </span>
@@ -91,8 +68,7 @@ export function BrandLogo({
 
     return (
       <span
-        style={activeShadow}
-        className={`text-blanco font-bold tracking-wider inline-flex ${sizeClasses[size]}`}
+        className={`text-negro dark:text-blanco font-display font-bold tracking-wider inline-flex ${sizeClasses[size]}`}
       >
         {text.split('').map((char, idx) => (
           <motion.span

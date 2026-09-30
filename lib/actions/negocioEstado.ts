@@ -3,6 +3,7 @@
 import { createServerClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 import * as Sentry from '@sentry/nextjs'
+import { DatosSucursal, DEFAULT_SUCURSAL } from '@/lib/types/database'
 
 export interface DiaHorario {
   id: string // 'lunes' | 'martes' | 'miercoles' | 'jueves' | 'viernes' | 'sabado' | 'domingo'
@@ -17,6 +18,7 @@ export interface ConfigHorariosNegocio {
   modo_automatico: boolean
   mensaje_cerrado: string
   horarios_dias: DiaHorario[]
+  sucursal?: DatosSucursal
 }
 
 export interface EstadoRestaurante {
@@ -24,12 +26,16 @@ export interface EstadoRestaurante {
   mensaje_cerrado: string
   es_modo_automatico?: boolean
   horarios_dias?: DiaHorario[]
+  sucursal?: DatosSucursal
 }
+
+export type { DatosSucursal }
 
 const CONFIG_CUPON_KEY = 'CONFIG_NEGOCIO_ESTADO'
 const CONFIG_CUPON_FULL_KEY = 'CONFIG_NEGOCIO_FULL_JSON'
 
 const DEFAULT_HORARIOS: DiaHorario[] = [
+
   { id: 'lunes', nombre: 'Lunes', abierto: true, apertura: '11:00', cierre: '20:00' },
   { id: 'martes', nombre: 'Martes', abierto: true, apertura: '11:00', cierre: '20:00' },
   { id: 'miercoles', nombre: 'Miércoles', abierto: true, apertura: '11:00', cierre: '20:00' },
@@ -62,7 +68,6 @@ function calcularAperturaPorHorario(horarios: DiaHorario[]): boolean {
 
     const currentTimeMin = parseInt(hourStr, 10) * 60 + parseInt(minuteStr, 10)
 
-    // Identificar día de la semana
     let dayId = 'lunes'
     if (weekdayStr.includes('mar')) dayId = 'martes'
     else if (weekdayStr.includes('mié') || weekdayStr.includes('mie')) dayId = 'miercoles'
@@ -107,6 +112,7 @@ export async function getConfigHorariosNegocio(): Promise<ConfigHorariosNegocio>
           data.mensaje_cerrado ||
           'Por el momento nuestro restaurante se encuentra cerrado. Consulta nuestro horario de atención o regresa pronto.',
         horarios_dias: Array.isArray(data.horarios_dias) ? data.horarios_dias : DEFAULT_HORARIOS,
+        sucursal: (data.sucursal && typeof data.sucursal === 'object') ? data.sucursal : DEFAULT_SUCURSAL,
       }
     }
   } catch (e) {
@@ -130,6 +136,7 @@ export async function getConfigHorariosNegocio(): Promise<ConfigHorariosNegocio>
           parsed.mensaje_cerrado ||
           'Por el momento nuestro restaurante se encuentra cerrado. Consulta nuestro horario de atención o regresa pronto.',
         horarios_dias: Array.isArray(parsed.horarios_dias) ? parsed.horarios_dias : DEFAULT_HORARIOS,
+        sucursal: (parsed.sucursal && typeof parsed.sucursal === 'object') ? parsed.sucursal : DEFAULT_SUCURSAL,
       }
     }
   } catch (e) {
@@ -142,6 +149,7 @@ export async function getConfigHorariosNegocio(): Promise<ConfigHorariosNegocio>
     mensaje_cerrado:
       'Por el momento nuestro restaurante se encuentra cerrado. Consulta nuestro horario de atención o regresa pronto.',
     horarios_dias: DEFAULT_HORARIOS,
+    sucursal: DEFAULT_SUCURSAL,
   }
 }
 
@@ -160,49 +168,56 @@ export async function getEstadoRestaurante(): Promise<EstadoRestaurante> {
     mensaje_cerrado: config.mensaje_cerrado,
     es_modo_automatico: config.modo_automatico,
     horarios_dias: config.horarios_dias,
+    sucursal: config.sucursal || DEFAULT_SUCURSAL,
   }
 }
 
-// Guardar la configuración completa de horarios y switch manual
+// Guardar la configuración completa de horarios y sucursal
 export async function saveConfigHorariosNegocio(config: ConfigHorariosNegocio) {
   const supabase = createServerClient()
 
   let mainSaved = false
+
+  const finalConfig: ConfigHorariosNegocio = {
+    ...config,
+    sucursal: config.sucursal || DEFAULT_SUCURSAL,
+  }
 
   // 1. Guardar en 'configuracion_negocio'
   try {
     const { error: errConfig } = await supabase.from('configuracion_negocio').upsert(
       {
         id: 1,
-        abierto: config.abierto_manual,
-        modo_automatico: config.modo_automatico,
-        mensaje_cerrado: config.mensaje_cerrado,
-        horarios_dias: config.horarios_dias,
+        abierto: finalConfig.abierto_manual,
+        modo_automatico: finalConfig.modo_automatico,
+        mensaje_cerrado: finalConfig.mensaje_cerrado,
+        horarios_dias: finalConfig.horarios_dias,
+        sucursal: finalConfig.sucursal,
       },
       { onConflict: 'id' }
     )
     if (errConfig) {
-      console.error('❌ Error Supabase configuracion_negocio:', errConfig)
+      console.warn('Aviso Supabase configuracion_negocio (se intentará fallback en cupones):', errConfig.message)
     } else {
       mainSaved = true
     }
   } catch (err) {
-    console.error('❌ Error capturado en configuracion_negocio:', err)
+    console.warn('Aviso capturado en configuracion_negocio:', err)
     Sentry.captureException(err, { tags: { module: 'negocioEstado', action: 'saveConfig_main' } })
   }
 
-  // 2. Guardar respaldo dual en la tabla 'cupones' (código reservado 'CONFIG_NEGOCIO_FULL_JSON')
+  // 2. Guardar respaldo dual en la tabla 'cupones'
   try {
-    const isCalculatedOpen = config.modo_automatico
-      ? config.abierto_manual && calcularAperturaPorHorario(config.horarios_dias)
-      : config.abierto_manual
+    const isCalculatedOpen = finalConfig.modo_automatico
+      ? finalConfig.abierto_manual && calcularAperturaPorHorario(finalConfig.horarios_dias)
+      : finalConfig.abierto_manual
 
     const { error: err1 } = await supabase.from('cupones').upsert(
       {
         codigo: CONFIG_CUPON_FULL_KEY,
         descuento_porcentaje: isCalculatedOpen ? 100 : 0,
         activo: isCalculatedOpen,
-        notas: JSON.stringify(config),
+        notas: JSON.stringify(finalConfig),
         usos_maximos: 999999,
         fecha_expiracion: null,
       },
@@ -210,7 +225,7 @@ export async function saveConfigHorariosNegocio(config: ConfigHorariosNegocio) {
     )
     if (err1) throw new Error(err1.message)
 
-    // Respaldo secundario para compatibilidad estricta
+    // Respaldo secundario
     const { error: err2 } = await supabase.from('cupones').upsert(
       {
         codigo: CONFIG_CUPON_KEY,
@@ -223,15 +238,14 @@ export async function saveConfigHorariosNegocio(config: ConfigHorariosNegocio) {
     )
     if (err2) throw new Error(err2.message)
     
-    // Si cupones se guardó bien, consideramos éxito aunque negocio fallara (fallback)
     mainSaved = true 
   } catch (errCupon: any) {
-    console.error('❌ Aviso en respaldo dual cupones:', errCupon.message)
+    console.error('Aviso en respaldo dual cupones:', errCupon.message)
     Sentry.captureException(errCupon, { tags: { module: 'negocioEstado', action: 'saveConfig_fallback' } })
   }
 
   if (!mainSaved) {
-    throw new Error('No se pudo guardar la configuración en la base de datos ni en el fallback. Verifica que las tablas configuracion_negocio o cupones existan y tengan políticas de RLS correctas.')
+    throw new Error('No se pudo guardar la configuración. Verifica los permisos de la base de datos.')
   }
 
   revalidatePath('/admin/dashboard')
