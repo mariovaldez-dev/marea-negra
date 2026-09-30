@@ -121,3 +121,92 @@ export async function deletePlatillo(platilloId: number) {
   revalidatePath('/')
   return { success: true }
 }
+
+export interface FavoritoSistemaResult {
+  platillo: Platillo | null
+  motivo: 'top_ventas' | 'promo_activa' | 'recomendado_casa'
+  tituloBadge: string
+  totalVendido?: number
+}
+
+export async function getPlatilloFavoritoDelSistema(): Promise<FavoritoSistemaResult> {
+  const supabase = createServerClient()
+
+  // 1. Obtener todos los platillos disponibles
+  const { data: platillos } = await supabase
+    .from('platillos')
+    .select('*')
+    .eq('disponible', true)
+    .order('id', { ascending: true })
+
+  const platillosDisponibles = (platillos as Platillo[]) || []
+  if (platillosDisponibles.length === 0) {
+    return {
+      platillo: null,
+      motivo: 'recomendado_casa',
+      tituloBadge: 'FAVORITO DE LA CASA',
+    }
+  }
+
+  // 2. Analizar histórico de pedidos reales en la BD para determinar el #1 en ventas
+  try {
+    const { data: items } = await supabase
+      .from('pedido_items')
+      .select('platillo_id, nombre_platillo, cantidad')
+      .limit(500)
+
+    if (items && items.length > 0) {
+      const contador: Record<number, number> = {}
+      const contadorNombres: Record<string, number> = {}
+
+      items.forEach((it) => {
+        const qty = it.cantidad || 1
+        if (it.platillo_id) {
+          contador[it.platillo_id] = (contador[it.platillo_id] || 0) + qty
+        }
+        if (it.nombre_platillo) {
+          const norm = it.nombre_platillo.trim().toLowerCase()
+          contadorNombres[norm] = (contadorNombres[norm] || 0) + qty
+        }
+      })
+
+      // Buscar platillo disponible con más ventas por id o por nombre
+      let maxVentas = 0
+      let topPlatillo: Platillo | null = null
+
+      platillosDisponibles.forEach((p) => {
+        const ventasById = contador[p.id] || 0
+        const ventasByName = contadorNombres[p.nombre.trim().toLowerCase()] || 0
+        const totalVentas = Math.max(ventasById, ventasByName)
+
+        if (totalVentas > maxVentas) {
+          maxVentas = totalVentas
+          topPlatillo = p
+        }
+      })
+
+      if (topPlatillo && maxVentas > 0) {
+        return {
+          platillo: topPlatillo,
+          motivo: 'top_ventas',
+          tituloBadge: 'EL MÁS PEDIDO DE LA CASA',
+          totalVendido: maxVentas,
+        }
+      }
+    }
+  } catch (err) {
+    console.error('Error calculando platillo top del sistema:', err)
+  }
+
+  // 3. Fallback inteligente: Platillo insignia de la casa (Aguachile Negro o primer platillo disponible)
+  const insignia =
+    platillosDisponibles.find((p) => p.nombre.toLowerCase().includes('negro')) ||
+    platillosDisponibles[0]
+
+  return {
+    platillo: insignia,
+    motivo: 'recomendado_casa',
+    tituloBadge: 'FAVORITO DE LA CASA',
+  }
+}
+

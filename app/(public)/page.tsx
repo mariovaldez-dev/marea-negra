@@ -1,663 +1,795 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useMemo } from 'react'
+import Image from 'next/image'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { motion } from 'framer-motion'
-import { createBrowserClient } from '@/lib/supabase/client'
-import { Platillo, Categoria } from '@/lib/types/database'
+import { motion, AnimatePresence } from 'framer-motion'
 import dynamic from 'next/dynamic'
+import { createBrowserClient } from '@/lib/supabase/client'
+import { Platillo, Categoria, DatosSucursal, DEFAULT_SUCURSAL } from '@/lib/types/database'
+import { getEstadoRestaurante, EstadoRestaurante } from '@/lib/actions/negocioEstado'
+import { getPlatilloFavoritoDelSistema, FavoritoSistemaResult } from '@/lib/actions/menu'
+import { isPromoActiveToday, getPromoBannerText } from '@/lib/utils/promo'
+import { BrandLogo } from '@/components/ui/BrandLogo'
+import { AnimatedTagline } from '@/components/ui/AnimatedTagline'
+import { FloatingShrimp } from '@/components/ui/FloatingShrimp'
 import { ThemeToggle } from '@/components/ui/ThemeToggle'
+import { ClubBenefitsModal } from '@/components/menu/ClubBenefitsModal'
+import {
+  ShoppingBag,
+  ArrowRight,
+  MessageCircle,
+  Clock,
+  MapPin,
+  Phone,
+  Flame,
+  Star,
+  Search,
+  ChevronRight,
+  ExternalLink,
+  Menu as MenuIcon,
+  X,
+  Award,
+  FileText,
+  User,
+  Plus,
+  Globe,
+} from 'lucide-react'
 
 const UserHeaderBadge = dynamic(
   () => import('@/components/ui/UserHeaderBadge').then((mod) => mod.UserHeaderBadge),
   {
     ssr: false,
-    loading: () => <div className="h-9 w-32 bg-arena/10 rounded-full animate-pulse shrink-0" />,
+    loading: () => <div className="h-9 w-32 bg-black/5 dark:bg-white/10 rounded-full animate-pulse shrink-0" />,
   }
 )
-const MobileSidebarUserProfile = dynamic(
-  () => import('@/components/ui/MobileSidebarUserProfile').then((mod) => mod.MobileSidebarUserProfile),
-  {
-    ssr: false,
-    loading: () => <div className="h-20 w-full bg-arena/10 rounded-2xl animate-pulse shrink-0" />,
-  }
-)
-import { ClubBenefitsModal } from '@/components/menu/ClubBenefitsModal'
-import { BrandLogo } from '@/components/ui/BrandLogo'
-import { FloatingShrimp } from '@/components/ui/FloatingShrimp'
-import { AnimatedTagline } from '@/components/ui/AnimatedTagline'
-import { RippleButton } from '@/components/ui/RippleButton'
-import { DishCarouselSection } from '@/components/menu/DishCarouselSection'
-import { generateWhatsAppMessageUrl } from '@/lib/utils/whatsapp'
-import { isPromoActiveToday, isPromoItem } from '@/lib/utils/promo'
-import { TraditionalMenuBoard } from '@/components/menu/TraditionalMenuBoard'
-import { getEstadoRestaurante } from '@/lib/actions/negocioEstado'
-import {
-  ShoppingBag,
-  ArrowRight,
-  MessageCircle,
-  Waves,
-  CheckCircle2,
-  ChevronRight,
-  Globe,
-  Menu as MenuIcon,
-  X,
-  Gift,
-  User,
-  Award,
-  FileText,
-  Clock,
-  Flame,
-} from 'lucide-react'
 
 export default function PublicMenuPage() {
   const router = useRouter()
-  const [categorias, setCategorias] = useState<Categoria[]>([])
-  const [platillos, setPlatillos] = useState<Platillo[]>([])
-  const [activeCategory, setActiveCategory] = useState<number | 'all' | 'promos'>('all')
-  const [mobileNavOpen, setMobileNavOpen] = useState(false)
-  const [isLoading, setIsLoading] = useState(true)
-  const [isScrolled, setIsScrolled] = useState(false)
-  const [waLoading, setWaLoading] = useState(false)
-
-  const [restauranteAbierto, setRestauranteAbierto] = useState(true)
-  const [horarios, setHorarios] = useState<any[]>([])
   const supabase = createBrowserClient()
 
+  const [categorias, setCategorias] = useState<Categoria[]>([])
+  const [platillos, setPlatillos] = useState<Platillo[]>([])
+  const [favoritoSistema, setFavoritoSistema] = useState<FavoritoSistemaResult | null>(null)
+  const [estadoRestaurante, setEstadoRestaurante] = useState<EstadoRestaurante | null>(null)
+  const [sucursal, setSucursal] = useState<DatosSucursal>(DEFAULT_SUCURSAL)
+  const [activeCategory, setActiveCategory] = useState<number | 'all' | 'promos'>('all')
+  const [searchTerm, setSearchTerm] = useState('')
+  const [isLoading, setIsLoading] = useState(true)
+  const [isScrolled, setIsScrolled] = useState(false)
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const [showClubModal, setShowClubModal] = useState(false)
+  const [loggedUser, setLoggedUser] = useState<{ name: string; coupons: number } | null>(null)
+
+  // Sincronizar scroll para blur dinámico
   useEffect(() => {
-    const handleScroll = () => {
-      setIsScrolled(window.scrollY > 20)
-    }
+    const handleScroll = () => setIsScrolled(window.scrollY > 20)
     window.addEventListener('scroll', handleScroll, { passive: true })
     return () => window.removeEventListener('scroll', handleScroll)
   }, [])
 
+  // Cargar Sesión del Usuario / Club
   useEffect(() => {
-    async function fetchData() {
+    const checkUser = async () => {
+      const storedName = typeof window !== 'undefined' ? localStorage.getItem('marea_cliente_nombre') : null
+      const storedCoupons = typeof window !== 'undefined' ? localStorage.getItem('marea_user_coupons') : null
+      let coupons = 0
+      if (storedCoupons) {
+        try {
+          const parsed = JSON.parse(storedCoupons)
+          coupons = Array.isArray(parsed) ? parsed.length : 0
+        } catch (e) {}
+      }
+
+      try {
+        const { data: { user } } = await supabase.auth.getUser()
+        if (user) {
+          const name = user.user_metadata?.nombre || storedName || user.email?.split('@')[0] || 'Socio'
+          setLoggedUser({
+            name: name.split(' ')[0],
+            coupons,
+          })
+          return
+        }
+      } catch (err) {}
+
+      if (storedName) {
+        setLoggedUser({
+          name: storedName.trim().split(' ')[0],
+          coupons,
+        })
+      } else {
+        setLoggedUser(null)
+      }
+    }
+
+    checkUser()
+  }, [])
+
+  // Cargar Catálogo, Estado en Vivo y Favorito Elegido por el Sistema
+  useEffect(() => {
+    async function loadData() {
       setIsLoading(true)
       try {
-        const [catRes, platRes, estadoRes] = await Promise.all([
+        const [catRes, platRes, estadoRes, favRes] = await Promise.all([
           supabase.from('categorias').select('*').order('orden', { ascending: true }),
           supabase.from('platillos').select('*').order('id', { ascending: true }),
           getEstadoRestaurante(),
+          getPlatilloFavoritoDelSistema(),
         ])
 
         if (catRes.data) setCategorias(catRes.data)
         if (platRes.data) setPlatillos(platRes.data)
+        if (favRes) setFavoritoSistema(favRes)
         if (estadoRes) {
-          setRestauranteAbierto(estadoRes.abierto)
-          if (estadoRes.horarios_dias) {
-            setHorarios(estadoRes.horarios_dias)
-          }
+          setEstadoRestaurante(estadoRes)
+          if (estadoRes.sucursal) setSucursal(estadoRes.sucursal)
         }
       } catch (err) {
-        console.error('Error al consultar el menú de Supabase:', err)
-        setCategorias([])
-        setPlatillos([])
+        console.error('Error cargando menú:', err)
       } finally {
         setIsLoading(false)
       }
     }
-
-    fetchData()
+    loadData()
   }, [])
 
-  const generateWhatsAppUrl = () => {
-    return generateWhatsAppMessageUrl('Hola, quisiera consultar el menú de Marea Negra para hoy.')
+  // Promociones del día (solo platillos disponibles)
+  const promoPlatillos = useMemo(() => {
+    return platillos.filter((p) => p.disponible && isPromoActiveToday(p))
+  }, [platillos])
+
+  // Platillos disponibles activos para el público
+  const platillosDisponibles = useMemo(() => {
+    return platillos.filter((p) => p.disponible)
+  }, [platillos])
+
+  // Platillo destacado: elegido inteligentemente por el sistema (#1 en ventas reales / promo / insignia)
+  const featuredDish = useMemo(() => {
+    if (favoritoSistema?.platillo && favoritoSistema.platillo.disponible) {
+      // Buscar la versión más fresca del platillo en el catálogo cargado
+      const foundInList = platillosDisponibles.find((p) => p.id === favoritoSistema.platillo?.id)
+      return foundInList || favoritoSistema.platillo
+    }
+    return (
+      promoPlatillos[0] ||
+      platillosDisponibles.find((p) => p.nombre.toLowerCase().includes('negro')) ||
+      platillosDisponibles[0]
+    )
+  }, [favoritoSistema, promoPlatillos, platillosDisponibles])
+
+  // Filtrado de Platillos (solo platillos disponibles)
+  const filteredPlatillos = useMemo(() => {
+    const term = searchTerm.toLowerCase().trim()
+    return platillosDisponibles.filter((p) => {
+      const matchSearch =
+        p.nombre.toLowerCase().includes(term) ||
+        (p.descripcion && p.descripcion.toLowerCase().includes(term))
+
+      let matchCategory = true
+      if (activeCategory === 'promos') {
+        matchCategory = isPromoActiveToday(p)
+      } else if (activeCategory !== 'all') {
+        matchCategory = p.categoria_id === activeCategory
+      }
+
+      return matchSearch && matchCategory
+    })
+  }, [platillosDisponibles, searchTerm, activeCategory])
+
+  // Helper de Picor Sinaloense
+  const getSpiceBadge = (nombre: string) => {
+    const n = nombre.toLowerCase()
+    if (n.includes('negro') || n.includes('chiltep')) {
+      return { label: '🌶️🌶️🌶️ Furia Chiltepín', color: 'bg-neutral-900 dark:bg-black text-coral border border-coral/30' }
+    }
+    if (n.includes('rojo') || n.includes('árbol') || n.includes('arbol')) {
+      return { label: '🌶️ Bravo Árbol', color: 'bg-coral/10 text-coral border border-coral/20' }
+    }
+    if (n.includes('verde') || n.includes('serrano')) {
+      return { label: '🌶️ Serrano Fresco', color: 'bg-[#16A34B]/10 text-[#16A34B] border border-[#16A34B]/20' }
+    }
+    return null
   }
-
-  const handleWhatsAppOrder = () => {
-    if (typeof window !== 'undefined' && 'vibrate' in navigator) {
-      try {
-        navigator.vibrate([25, 15, 50])
-      } catch (e) { }
-    }
-    setWaLoading(true)
-    setTimeout(() => {
-      window.open(generateWhatsAppUrl(), '_blank')
-      setWaLoading(false)
-    }, 800)
-  }
-
-  const handleOnlineOrder = () => {
-    if (typeof window !== 'undefined' && 'vibrate' in navigator) {
-      try {
-        navigator.vibrate(30)
-      } catch (e) { }
-    }
-    router.push('/pedir')
-  }
-
-  // Promos activas HOY (validadas por día de semana en Sinaloa)
-  const promoPlatillos = platillos.filter((p) => isPromoActiveToday(p))
-  // Platillos sin ninguna promoción configurada — siempre visibles en su categoría
-  // Los que tienen es_promocion=true pero hoy NO es su día: se ocultan completamente
-  const platillosNormales = platillos.filter((p) => !isPromoItem(p))
-
-  const filteredPlatillos =
-    activeCategory === 'promos'
-      ? promoPlatillos
-      : activeCategory === 'all'
-      ? platillosNormales
-      : platillosNormales.filter((p) => p.categoria_id === activeCategory)
-
-  // Bloquear scroll del body al abrir el menú de navegación móvil
-  useEffect(() => {
-    if (mobileNavOpen) {
-      document.body.style.overflow = 'hidden'
-      document.body.style.touchAction = 'none'
-    } else {
-      document.body.style.overflow = ''
-      document.body.style.touchAction = ''
-    }
-    return () => {
-      document.body.style.overflow = ''
-      document.body.style.touchAction = ''
-    }
-  }, [mobileNavOpen])
 
   return (
-    <div className="min-h-screen bg-[#F4F0E8] dark:bg-negro text-negro dark:text-blanco flex flex-col justify-between selection:bg-coral transition-colors duration-300">
-      {/* 1. HEADER CON BLUR AL SCROLL Y LOGO ADAPTABLE */}
+    <div className="min-h-screen bg-[#F8F6F0] dark:bg-[#080808] text-neutral-900 dark:text-neutral-100 flex flex-col justify-between selection:bg-coral selection:text-white transition-colors duration-300">
+      {/* MODAL DE BIENVENIDA Y REGISTRO AL CLUB (10% OFF) */}
+      <ClubBenefitsModal
+        isOpen={showClubModal ? true : undefined}
+        onClose={() => setShowClubModal(false)}
+      />
+
+      {/* ── 1. NAVBAR CRISTALINO ────────────────────────────────────────────── */}
       <header
-        className={`sticky top-0 z-40 px-6 py-3 safe-header transition-all duration-300 ${
+        className={`sticky top-0 z-40 transition-all duration-300 ${
           isScrolled
-            ? 'bg-[#F4F0E8]/95 dark:bg-negro/95 backdrop-blur-md border-b border-arena/30 dark:border-arena/10 shadow-lg shadow-black/10'
-            : 'bg-[#F4F0E8]/80 dark:bg-negro/80 backdrop-blur-sm border-b border-arena/20 dark:border-arena/10 md:bg-transparent md:border-transparent'
+            ? 'bg-white/90 dark:bg-[#080808]/90 backdrop-blur-xl border-b border-black/[0.08] dark:border-white/[0.08] shadow-md'
+            : 'bg-transparent border-b border-black/[0.04] dark:border-white/[0.04]'
         }`}
       >
-        <div className="max-w-7xl mx-auto flex items-center justify-between">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3.5 flex items-center justify-between gap-4">
+          {/* LOGO */}
           <div className="flex items-center gap-3">
-            <BrandLogo size={isScrolled ? 'sm' : 'md'} />
+            <BrandLogo size="md" href="/" />
           </div>
 
           {/* NAVEGACIÓN DESKTOP */}
-          <nav className="hidden md:flex items-center gap-2.5 text-xs font-sans tracking-wider">
+          <nav className="hidden md:flex items-center gap-2 font-sans text-xs font-bold">
             <a
               href="#menu"
-              className="bg-negro/10 dark:bg-arena/10 border border-negro/20 dark:border-arena/20 text-negro dark:text-arena hover:bg-turquesa hover:text-negro dark:hover:bg-turquesa dark:hover:text-negro font-bold px-3.5 py-1.5 rounded-full transition-all flex items-center gap-1.5 shadow-sm"
+              className="px-4 py-2 rounded-full text-neutral-700 dark:text-neutral-300 hover:text-neutral-950 dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/5 transition-all"
             >
-              <span>Menú</span>
+              Menú Digital
             </a>
 
             <Link
               href="/carta"
-              className="bg-oro/20 dark:bg-oro/15 border border-oro/40 dark:border-oro/30 text-negro dark:text-oro hover:bg-oro hover:text-negro dark:hover:bg-oro dark:hover:text-negro font-bold px-3.5 py-1.5 rounded-full transition-all flex items-center gap-1.5 shadow-sm"
+              className="px-4 py-2 rounded-full text-neutral-700 dark:text-neutral-300 hover:text-neutral-950 dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/5 transition-all flex items-center gap-1.5"
             >
-              <FileText className="w-3.5 h-3.5" />
+              <FileText className="w-3.5 h-3.5 text-[#C9A84C]" />
               <span>Carta Tradicional</span>
             </Link>
 
             <Link
               href="/micuenta"
-              className="bg-limon dark:bg-limon/15 border border-limon/50 dark:border-limon/30 text-black dark:text-limon hover:bg-black hover:text-white dark:hover:bg-limon dark:hover:text-black font-bold px-3.5 py-1.5 rounded-full transition-all flex items-center gap-1.5 shadow-sm"
+              className="px-4 py-2 rounded-full text-neutral-700 dark:text-neutral-300 hover:text-neutral-950 dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/5 transition-all flex items-center gap-1.5"
             >
-              <User className="w-3.5 h-3.5" />
-              <span>Mi Cuenta</span>
+              <User className="w-3.5 h-3.5 text-[#2ABFBF]" />
+              <span>Mi Tarjeta Club</span>
             </Link>
 
             <Link
               href="/pedir"
-              className="bg-turquesa/20 dark:bg-turquesa/15 border border-turquesa/40 dark:border-turquesa/30 text-negro dark:text-turquesa hover:bg-turquesa hover:text-negro dark:hover:bg-turquesa dark:hover:text-negro font-bold px-3.5 py-1.5 rounded-full transition-all flex items-center gap-1.5 shadow-sm"
+              className="bg-coral text-white hover:bg-coral/90 px-5 py-2.5 rounded-full transition-all shadow-[0_4px_16px_rgba(232,67,10,0.3)] flex items-center gap-2 active:scale-95 ml-2"
             >
-              <ShoppingBag className="w-3.5 h-3.5" />
-              <span>Pedir Online</span>
+              <ShoppingBag className="w-4 h-4" />
+              <span>PEDIR EN LÍNEA</span>
             </Link>
 
             <UserHeaderBadge />
-
             <ThemeToggle />
           </nav>
 
-          {/* BOTÓN HAMBURGUESA Y THEME TOGGLE EN MÓVIL */}
+          {/* MÓVIL: BOTONES RÁPIDOS */}
           <div className="flex md:hidden items-center gap-2">
+            <Link
+              href="/pedir"
+              className="bg-coral text-white text-xs font-bold px-3.5 py-1.5 rounded-full flex items-center gap-1 shadow-sm"
+            >
+              <ShoppingBag className="w-3.5 h-3.5" />
+              <span>Pedir</span>
+            </Link>
             <ThemeToggle />
             <button
-              onClick={() => setMobileNavOpen(true)}
-              className="p-2 text-negro dark:text-blanco hover:text-coral transition-colors rounded-xl bg-arena/20 dark:bg-carbon border border-arena/30 dark:border-arena/10"
-              aria-label="Abrir menú de navegación"
+              type="button"
+              onClick={() => setMobileMenuOpen(true)}
+              className="p-2 rounded-xl bg-black/5 dark:bg-white/10 text-neutral-800 dark:text-neutral-200"
+              aria-label="Abrir menú"
             >
-              <MenuIcon className="w-6 h-6" />
+              <MenuIcon className="w-5 h-5" />
             </button>
           </div>
         </div>
       </header>
 
-      {/* DRAWER DESLIZANTE DE NAVEGACIÓN MÓVIL */}
-      {mobileNavOpen && (
-        <div className="fixed inset-0 z-50 bg-black/75 flex justify-end animate-in fade-in duration-200">
-          <div className="bg-white text-negro dark:bg-[#050404] dark:text-blanco bg-dots-pattern border-l border-arena/30 dark:border-oro/30 w-4/5 max-w-sm h-full p-6 flex flex-col justify-between shadow-2xl animate-in slide-in-from-right duration-300 transition-colors overflow-y-auto">
-            <div className="flex flex-col gap-5">
-              <div className="flex items-center justify-between border-b border-arena/30 dark:border-arena/15 pb-4">
-                <BrandLogo size="sm" />
-                <button
-                  onClick={() => setMobileNavOpen(false)}
-                  className="p-2 text-negro/60 dark:text-arena/70 hover:text-coral dark:hover:text-blanco rounded-full hover:bg-arena/20 dark:hover:bg-carbon transition-colors"
-                >
-                  <X className="w-6 h-6" />
-                </button>
+      {/* ── MENÚ MÓVIL DRAWER ────────────────────────────────────────────────── */}
+      <AnimatePresence>
+        {mobileMenuOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex justify-end md:hidden"
+          >
+            <motion.div
+              initial={{ x: '100%' }}
+              animate={{ x: 0 }}
+              exit={{ x: '100%' }}
+              transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+              className="w-4/5 max-w-sm bg-white dark:bg-[#111317] h-full p-6 flex flex-col justify-between shadow-2xl border-l border-black/10 dark:border-white/10"
+            >
+              <div className="flex flex-col gap-6">
+                <div className="flex items-center justify-between border-b border-black/10 dark:border-white/10 pb-4">
+                  <BrandLogo size="sm" />
+                  <button
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/5"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
+
+                <nav className="flex flex-col gap-2 font-sans font-bold text-sm">
+                  <Link
+                    href="/pedir"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="p-3.5 rounded-2xl bg-coral text-white flex items-center justify-between shadow-md"
+                  >
+                    <span className="flex items-center gap-2.5">
+                      <ShoppingBag className="w-4 h-4" />
+                      <span>Hacer Pedido Online</span>
+                    </span>
+                    <ChevronRight className="w-4 h-4" />
+                  </Link>
+
+                  <Link
+                    href="/carta"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="p-3.5 rounded-2xl bg-black/[0.03] dark:bg-white/[0.04] border border-black/5 dark:border-white/5 flex items-center justify-between"
+                  >
+                    <span className="flex items-center gap-2.5">
+                      <FileText className="w-4 h-4 text-[#C9A84C]" />
+                      <span>Carta Tradicional</span>
+                    </span>
+                    <ChevronRight className="w-4 h-4" />
+                  </Link>
+
+                  <Link
+                    href="/micuenta"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="p-3.5 rounded-2xl bg-black/[0.03] dark:bg-white/[0.04] border border-black/5 dark:border-white/5 flex items-center justify-between"
+                  >
+                    <span className="flex items-center gap-2.5">
+                      <Award className="w-4 h-4 text-[#2ABFBF]" />
+                      <span>Club de Lealtad & Cupones</span>
+                    </span>
+                    <ChevronRight className="w-4 h-4" />
+                  </Link>
+                </nav>
               </div>
 
-              {/* PERFIL DE USUARIO / CLUB EN SIDEBAR MÓVIL */}
-              <MobileSidebarUserProfile onNavigate={() => setMobileNavOpen(false)} />
-
-              <nav className="flex flex-col gap-2.5 font-sans text-base">
-                <Link
-                  href="/carta"
-                  onClick={() => setMobileNavOpen(false)}
-                  className="p-3.5 rounded-2xl bg-[#F4F0E8] dark:bg-carbon/80 border border-oro/40 dark:border-oro/30 text-negro dark:text-oro font-bold flex items-center justify-between transition-all"
+              <div className="pt-4 border-t border-black/10 dark:border-white/10 flex flex-col gap-2">
+                <a
+                  href={`https://wa.me/52${sucursal.telefono_whatsapp.replace(/\D/g, '')}?text=${encodeURIComponent('¡Hola! Me gustaría consultar el menú del día.')}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="w-full bg-[#25D366] text-white py-3 rounded-xl font-bold text-xs flex items-center justify-center gap-2 shadow-sm"
                 >
-                  <span className="flex items-center gap-2.5">
-                    <FileText className="w-5 h-5 text-oro" />
-                    <span>Carta Tradicional</span>
-                  </span>
-                  <ChevronRight className="w-4 h-4 text-oro" />
-                </Link>
+                  <MessageCircle className="w-4 h-4 fill-current" />
+                  <span>PEDIR POR WHATSAPP</span>
+                </a>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
-                <Link
-                  href="/micuenta"
-                  onClick={() => setMobileNavOpen(false)}
-                  className="p-3.5 rounded-2xl bg-limon dark:bg-carbon/80 border border-limon/50 dark:border-limon/30 text-black dark:text-limon font-bold flex items-center justify-between transition-all shadow-sm"
-                >
-                  <span className="flex items-center gap-2.5">
-                    <Award className="w-5 h-5 text-black dark:text-limon" />
-                    <span>Mi Cuenta & Lealtad</span>
-                  </span>
-                  <ChevronRight className="w-4 h-4 text-black dark:text-limon" />
-                </Link>
-
-                <Link
-                  href="/pedir"
-                  onClick={() => setMobileNavOpen(false)}
-                  className="p-3.5 rounded-2xl bg-[#F4F0E8] dark:bg-carbon/80 border border-turquesa/40 dark:border-turquesa/30 text-negro dark:text-turquesa font-bold flex items-center justify-between transition-all"
-                >
-                  <span className="flex items-center gap-2.5">
-                    <ShoppingBag className="w-5 h-5 text-turquesa" />
-                    <span>Pedir Online Directo</span>
-                  </span>
-                  <ChevronRight className="w-4 h-4 text-turquesa" />
-                </Link>
-              </nav>
-            </div>
-
-            <div className="pt-4 border-t border-arena/15 flex flex-col gap-3">
-              <a
-                href={generateWhatsAppUrl()}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="w-full bg-limon text-black uppercase font-sans font-bold text-xs py-3.5 rounded-xl flex items-center justify-center gap-2 shadow-md"
-              >
-                <MessageCircle className="w-4 h-4 fill-black" />
-                <span>PEDIR POR WHATSAPP</span>
-              </a>
-
-              <span className="text-[10px] font-sans italic text-arena/50 text-center">
-                Marea Negra · Sinaloa, México
-              </span>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* 2. HERO BANNER CON CAMARÓN FLOTANTE Y ENTRADA SECUENCIAL */}
-      <section className="relative bg-[#EBE5D8] dark:bg-negro overflow-hidden px-6 pt-14 pb-20 border-b border-arena/30 dark:border-arena/10 transition-colors">
-        {/* Blobs de Fondo Estáticos Ligeros */}
+      {/* ── 2. HERO BENTO SECTION CON BRANDING ORIGINAL COMPLETO ─────────────── */}
+      {/* ── 2. HERO BANNER FULL-WIDTH CON BRANDING ORIGINAL COMPLETO (ESTILO V1) ── */}
+      <section className="relative w-full bg-[#EFEAE1] dark:bg-[#111317] overflow-hidden px-4 sm:px-6 lg:px-8 pt-8 sm:pt-12 pb-12 sm:pb-16 border-b border-black/[0.08] dark:border-white/[0.08] transition-colors">
+        {/* Glows de fondo */}
         <div className="absolute -top-24 -left-24 w-96 h-96 bg-coral/10 dark:bg-coral/15 rounded-full filter blur-3xl pointer-events-none" />
-        <div className="absolute top-1/2 -right-24 w-96 h-96 bg-turquesa/10 dark:bg-turquesa/15 rounded-full filter blur-3xl pointer-events-none" />
+        <div className="absolute top-1/2 -right-24 w-96 h-96 bg-[#2ABFBF]/10 dark:bg-[#2ABFBF]/15 rounded-full filter blur-3xl pointer-events-none" />
 
-        {/* CAMARÓN FLOTANTE INTERACTIVO EN MÓVIL */}
+        {/* CAMARÓN FLOTANTE INTERACTIVO */}
         <FloatingShrimp />
 
-        <div className="max-w-7xl mx-auto relative z-10 flex flex-col items-start gap-6">
-          {/* Badge Superior Animado */}
-          <motion.span
-            initial={{ opacity: 0, y: -25 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, ease: 'easeOut' }}
-            className="text-xs font-sans font-semibold text-black uppercase bg-limon px-3.5 py-1 rounded-full shadow-sm"
-          >
-            SINALOA AUTÉNTICO · MARISCOS DEL DÍA
-          </motion.span>
+        <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-8 items-center relative z-10">
+          {/* LADO IZQUIERDO: HERO BRANDING OPEN & FULL WIDTH (8 COLS) */}
+          <div className="lg:col-span-8 flex flex-col justify-between gap-6">
+            <div className="flex flex-col gap-5">
+              {/* Badge Superior Animado Original */}
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="text-xs font-sans font-semibold text-black uppercase bg-[#2ABFBF] px-3.5 py-1 rounded-full shadow-sm">
+                  SINALOA AUTÉNTICO · MARISCOS DEL DÍA
+                </span>
+                <span className="text-xs font-sans text-neutral-600 dark:text-neutral-400 font-medium">
+                  📍 {sucursal.ciudad}
+                </span>
+              </div>
 
-          {/* Logo y Tagline con Entrada Stagger */}
-          <div className="py-2 flex flex-col md:flex-row md:items-center gap-4 md:gap-10 w-full">
-            <BrandLogo size="hero" stacked withSubtext animated />
-            <AnimatedTagline />
+              {/* LOGO DE MARCA Y SLOGAN ORIGINAL ANIMADO */}
+              <div className="py-2 flex flex-col md:flex-row md:items-center gap-4 md:gap-8 w-full">
+                <BrandLogo size="hero" stacked withSubtext animated />
+                <AnimatedTagline />
+              </div>
+
+              {/* Descripción de Texto Original */}
+              <p className="font-sans text-sm md:text-base text-neutral-700 dark:text-neutral-300 max-w-xl leading-relaxed">
+                Personaliza el nivel de picor y notas para la cocina con nuestro nuevo sistema de pedido directo en 4 pasos.
+              </p>
+            </div>
+
+            {/* Acciones Principales y Social Proof */}
+            <div className="pt-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-t border-black/[0.08] dark:border-white/[0.08]">
+              <div className="flex flex-wrap items-center gap-3">
+                <button
+                  type="button"
+                  onClick={() => router.push('/pedir')}
+                  className="bg-coral text-white hover:bg-coral/90 font-sans font-bold text-xs tracking-wider px-8 py-4 rounded-2xl shadow-[0_4px_24px_rgba(232,67,10,0.35)] transition-all flex items-center gap-2 group active:scale-95 cursor-pointer"
+                >
+                  <Globe className="w-4 h-4" />
+                  <span>HACER PEDIDO EN LÍNEA</span>
+                  <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => router.push('/carta')}
+                  className="bg-[#C9A84C] text-black hover:bg-[#C9A84C]/90 font-sans font-bold text-xs tracking-wider px-6 py-4 rounded-2xl shadow-sm transition-all flex items-center gap-2 active:scale-95 cursor-pointer"
+                >
+                  <FileText className="w-4 h-4 text-black" />
+                  <span>CARTA TRADICIONAL</span>
+                </button>
+
+                <a
+                  href={`https://wa.me/52${sucursal.telefono_whatsapp.replace(/\D/g, '')}?text=${encodeURIComponent('¡Hola! Me gustaría hacer un pedido.')}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="bg-[#25D366] text-white hover:bg-[#1EBE5D] font-sans font-bold text-xs tracking-wider px-6 py-4 rounded-2xl shadow-sm transition-all flex items-center gap-2 active:scale-95"
+                >
+                  <MessageCircle className="w-4 h-4 fill-current" />
+                  <span>POR WHATSAPP</span>
+                </a>
+              </div>
+
+              {/* Calificación */}
+              <div className="flex items-center gap-2 text-xs font-sans font-bold">
+                <div className="flex text-[#C9A84C]">
+                  {[1, 2, 3, 4, 5].map((s) => (
+                    <Star key={s} className="w-4 h-4 fill-current" />
+                  ))}
+                </div>
+                <span className="text-neutral-700 dark:text-neutral-300">4.9 / 5</span>
+              </div>
+            </div>
           </div>
 
-          {/* Descripción de Texto */}
-          <motion.p
-            initial={{ opacity: 0, y: 15 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 1.0, duration: 0.5, ease: 'easeOut' }}
-            className="font-sans text-sm md:text-base text-negro/70 dark:text-arena/70 max-w-xl leading-relaxed"
-          >
-            Personaliza el nivel de picor y notas para la cocina con nuestro nuevo sistema de pedido directo en 4 pasos.
-          </motion.p>
-
-          {/* Botones de Acción con Ripple y Feedback Táctil */}
-          <motion.div
-            initial={{ opacity: 0, y: 25 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 1.2, duration: 0.55, ease: 'easeOut' }}
-            className="flex flex-wrap items-center gap-4 pt-2"
-          >
-            <RippleButton
-              onClick={handleOnlineOrder}
-              haptic
-              className="bg-turquesa text-negro hover:bg-blanco font-sans font-bold text-sm tracking-wider px-8 py-4 rounded-full shadow-[0_0_25px_rgba(42,191,191,0.3)] transition-colors flex items-center gap-2 group"
-            >
-              <Globe className="w-5 h-5" />
-              <span>HACER PEDIDO EN LÍNEA</span>
-              <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
-            </RippleButton>
-
-            <RippleButton
-              onClick={() => router.push('/carta')}
-              className="bg-oro text-negro hover:bg-oro/90 dark:hover:bg-oro/80 font-sans font-bold text-sm tracking-wider px-6 py-4 rounded-full border border-oro/30 transition-colors flex items-center gap-2 shadow-lg"
-            >
-              <FileText className="w-4 h-4 text-negro" />
-              <span>CARTA TRADICIONAL</span>
-            </RippleButton>
-
-            <RippleButton
-              onClick={handleWhatsAppOrder}
-              haptic
-              className="bg-limon text-black hover:bg-negro hover:text-white dark:hover:bg-negro dark:hover:text-blanco uppercase font-sans font-bold text-sm tracking-wider px-6 py-4 rounded-full border border-arena/20 transition-colors flex items-center gap-2"
-            >
-              {waLoading ? (
-                <>
-                  <CheckCircle2 className="w-4 h-4 text-emerald-600 animate-bounce" />
-                  <span>¡ABRIENDO WHATSAPP...</span>
-                </>
+          {/* TARJETA EDITORIAL FULL-BLEED PLATILLO ESTRELLA (4 COLS) */}
+          {isLoading ? (
+            <div className="lg:col-span-4 rounded-[32px] overflow-hidden min-h-[420px] bg-neutral-900 dark:bg-[#111317] border border-black/10 dark:border-white/10 p-6 flex flex-col justify-between animate-pulse">
+              <div className="flex items-start justify-between">
+                <div className="w-36 h-7 bg-coral/40 rounded-full" />
+                <div className="w-24 h-7 bg-white/15 rounded-full" />
+              </div>
+              <div className="flex flex-col gap-3">
+                <div className="w-3/4 h-8 bg-white/20 rounded-xl" />
+                <div className="w-5/6 h-4 bg-white/10 rounded-full" />
+                <div className="w-full h-12 bg-[#2ABFBF]/30 rounded-2xl mt-2" />
+              </div>
+            </div>
+          ) : featuredDish ? (
+            <div className="lg:col-span-4 rounded-[32px] overflow-hidden shadow-2xl relative group min-h-[420px] flex flex-col justify-between border border-black/10 dark:border-white/10 bg-neutral-950">
+              {/* IMAGEN DE FONDO FULL-BLEED (Colores 100% naturales y vivos) */}
+              {featuredDish.imagen_url ? (
+                <Image
+                  src={featuredDish.imagen_url}
+                  alt={featuredDish.nombre}
+                  fill
+                  className="object-cover md:group-hover:scale-105 transition-transform duration-700"
+                  sizes="(max-width: 1024px) 100vw, 33vw"
+                  priority
+                />
               ) : (
-                <>
-                  <MessageCircle className="w-4 h-4 fill-blanco" />
-                  <span>POR WHATSAPP</span>
-                </>
+                <div className="absolute inset-0 bg-gradient-to-br from-neutral-900 via-neutral-950 to-black flex items-center justify-center">
+                  <span className="text-8xl opacity-20 select-none">{featuredDish.emoji || '🦐'}</span>
+                </div>
               )}
-            </RippleButton>
-          </motion.div>
+
+              {/* OVERLAY GRADIENTE SOLO EN LA BASE PARA TEXTO */}
+              <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/60 via-45% to-transparent pointer-events-none" />
+
+              {/* FILA SUPERIOR: BADGE Y PRECIO */}
+              <div className="relative z-10 p-5 sm:p-6 flex items-start justify-between gap-2">
+                <span className="bg-coral text-white text-[11px] font-sans font-bold px-3.5 py-1.5 rounded-full uppercase tracking-wider shadow-lg flex items-center gap-1.5 border border-white/20">
+                  <Flame className="w-3.5 h-3.5 fill-current" />
+                  <span>{favoritoSistema?.tituloBadge || 'EL MÁS PEDIDO DE LA CASA'}</span>
+                </span>
+
+                <div className="bg-black/70 backdrop-blur-md px-3.5 py-1.5 rounded-full border border-white/15 shrink-0 flex items-center whitespace-nowrap">
+                  <span className="font-display text-xl text-coral font-bold tracking-tight">
+                    ${featuredDish.precio.toFixed(0)} MXN
+                  </span>
+                </div>
+              </div>
+
+              {/* FILA INFERIOR: TÍTULO, DESCRIPCIÓN Y BOTÓN CTA */}
+              <div className="relative z-10 p-5 sm:p-6 flex flex-col gap-2">
+                <h3 className="font-bold font-sans text-2xl sm:text-3xl text-white tracking-tight leading-tight drop-shadow-md">
+                  {featuredDish.nombre}
+                </h3>
+
+                <p className="text-xs sm:text-sm text-neutral-100 line-clamp-2 leading-relaxed font-sans drop-shadow-md">
+                  {featuredDish.descripcion || 'Marisco fresco sinaloense sazonado al momento.'}
+                </p>
+
+                <button
+                  type="button"
+                  onClick={() => router.push('/pedir')}
+                  className="mt-2 w-full bg-[#2ABFBF] text-black hover:bg-white active:scale-95 font-sans font-bold text-xs tracking-wider py-3.5 px-4 rounded-2xl shadow-[0_4px_20px_rgba(42,191,191,0.35)] transition-all flex items-center justify-center gap-2 touch-manipulation cursor-pointer"
+                >
+                  <Plus className="w-4 h-4 stroke-[3]" />
+                  <span>ORDENAR ESTE PLATILLO</span>
+                </button>
+              </div>
+            </div>
+          ) : null}
         </div>
       </section>
 
-      {/* 3. NAVEGACIÓN POR CATEGORÍAS */}
-      {categorias.length > 0 && (
-        <section id="menu" className="sticky top-[60px] z-30 bg-[#EFEAE1] dark:bg-carbon border-b border-arena/30 dark:border-arena/10 px-6 py-4 transition-colors">
-          <div className="max-w-7xl mx-auto flex items-center gap-3 overflow-x-auto no-scrollbar">
+      {/* ── 4. BARRA STICKY DE CATEGORÍAS & BUSCADOR ────────────────────────── */}
+      <section id="menu" className="sticky top-[68px] z-30 bg-[#F8F6F0]/95 dark:bg-[#080808]/95 backdrop-blur-xl border-y border-black/[0.08] dark:border-white/[0.08] px-4 sm:px-6 lg:px-8 py-3.5 transition-colors">
+        <div className="max-w-7xl mx-auto flex flex-col md:flex-row md:items-center justify-between gap-3">
+          {/* CATEGORÍAS PILLS */}
+          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar">
             <button
               onClick={() => setActiveCategory('all')}
-              className={`px-5 py-2 rounded-full font-sans text-xs font-semibold tracking-wider transition-all whitespace-nowrap ${activeCategory === 'all'
-                ? 'bg-coral text-blanco shadow-[0_0_15px_rgba(232,67,10,0.3)]'
-                : 'bg-white dark:bg-negro text-negro/80 dark:text-arena/80 border border-arena/30 dark:border-arena/10'
-                }`}
+              className={`px-4 py-2.5 rounded-xl text-xs font-sans font-bold transition-all whitespace-nowrap shrink-0 touch-manipulation active:scale-95 ${
+                activeCategory === 'all'
+                  ? 'bg-neutral-950 text-white dark:bg-white dark:text-black shadow-sm'
+                  : 'bg-white dark:bg-[#111317] border border-black/[0.08] dark:border-white/[0.08] text-neutral-600 dark:text-neutral-400 hover:text-neutral-950 dark:hover:text-white'
+              }`}
             >
-              TODOS LOS PLATILLOS
+              🍽️ Todos ({platillosDisponibles.length})
             </button>
 
             {promoPlatillos.length > 0 && (
               <button
                 onClick={() => setActiveCategory('promos')}
-                className={`px-5 py-2 rounded-full font-sans text-xs font-extrabold tracking-wider transition-all whitespace-nowrap flex items-center gap-1.5 ${activeCategory === 'promos'
-                  ? 'bg-gradient-to-r from-coral via-coral to-oro text-blanco shadow-[0_0_20px_rgba(232,67,10,0.4)]'
-                  : 'bg-coral/10 text-coral border border-coral/30 hover:bg-coral/20'
-                  }`}
+                className={`px-4 py-2.5 rounded-xl text-xs font-sans font-bold transition-all whitespace-nowrap shrink-0 touch-manipulation active:scale-95 flex items-center gap-1.5 ${
+                  activeCategory === 'promos'
+                    ? 'bg-coral text-white shadow-sm'
+                    : 'bg-coral/10 text-coral border border-coral/30 hover:bg-coral/20'
+                }`}
               >
-                <Flame className="w-3.5 h-3.5 fill-coral animate-pulse" />
-                <span>🔥 PROMOCIONES ({promoPlatillos.length})</span>
+                <Flame className="w-3.5 h-3.5 fill-current animate-pulse" />
+                <span>🔥 Promos de Hoy ({promoPlatillos.length})</span>
               </button>
             )}
 
-            {categorias.map((cat) => (
-              <button
-                key={cat.id}
-                onClick={() => setActiveCategory(cat.id)}
-                className={`px-5 py-2 rounded-full font-sans text-xs font-semibold tracking-wider transition-all whitespace-nowrap ${activeCategory === cat.id
-                  ? 'bg-coral text-blanco shadow-[0_0_15px_rgba(232,67,10,0.3)]'
-                  : 'bg-white dark:bg-negro text-negro/80 dark:text-arena/80 border border-arena/30 dark:border-arena/10'
+            {categorias.map((cat) => {
+              const count = platillosDisponibles.filter((p) => p.categoria_id === cat.id).length
+              return (
+                <button
+                  key={cat.id}
+                  onClick={() => setActiveCategory(cat.id)}
+                  className={`px-4 py-2.5 rounded-xl text-xs font-sans font-bold transition-all whitespace-nowrap shrink-0 touch-manipulation active:scale-95 ${
+                    activeCategory === cat.id
+                      ? 'bg-[#2ABFBF] text-black shadow-sm'
+                      : 'bg-white dark:bg-[#111317] border border-black/[0.08] dark:border-white/[0.08] text-neutral-600 dark:text-neutral-400 hover:text-neutral-950 dark:hover:text-white'
                   }`}
+                >
+                  {cat.nombre} ({count})
+                </button>
+              )
+            })}
+          </div>
+
+          {/* BUSCADOR */}
+          <div className="relative w-full md:w-72 shrink-0">
+            <Search className="w-4 h-4 absolute left-3.5 top-3 text-neutral-400" />
+            <input
+              type="text"
+              placeholder="Buscar platillo o ingrediente..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full bg-white dark:bg-[#111317] border border-black/[0.08] dark:border-white/[0.08] rounded-xl pl-10 pr-3.5 py-2 text-xs font-sans font-medium text-neutral-900 dark:text-white placeholder:text-neutral-400 dark:placeholder:text-neutral-500 focus:border-[#2ABFBF] focus:outline-none shadow-sm"
+            />
+          </div>
+        </div>
+      </section>
+
+      {/* ── 5. GRID DE PRODUCTOS EDITORIAL FULL-BLEED ────────────────────────── */}
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 w-full flex-1">
+        {isLoading ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 animate-pulse">
+            {[1, 2, 3, 4, 5, 6].map((i) => (
+              <div
+                key={i}
+                className="bg-neutral-900 dark:bg-[#111317] border border-black/[0.08] dark:border-white/[0.08] rounded-[28px] p-5 h-96 flex flex-col justify-between gap-4"
               >
-                {cat.nombre.toUpperCase()}
-              </button>
+                <div className="flex justify-between items-center">
+                  <div className="w-28 h-6 bg-white/10 rounded-full" />
+                  <div className="w-20 h-6 bg-coral/30 rounded-full" />
+                </div>
+                <div className="flex flex-col gap-2.5">
+                  <div className="h-6 w-3/4 bg-white/20 rounded-xl" />
+                  <div className="h-3.5 w-5/6 bg-white/10 rounded-full" />
+                  <div className="h-11 w-full bg-[#2ABFBF]/30 rounded-xl mt-2" />
+                </div>
+              </div>
             ))}
           </div>
-        </section>
-      )}
+        ) : filteredPlatillos.length > 0 ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {filteredPlatillos.map((platillo) => {
+              const spice = getSpiceBadge(platillo.nombre)
+              const promoText = platillo.es_promocion ? getPromoBannerText(platillo) : null
 
-      {/* 4. GRID DE PLATILLOS CON CARRUSEL MÓVIL (SWIPE SNAP) & DESKTOP ANIMADO */}
-      <main className="max-w-7xl mx-auto px-6 py-12 w-full flex-1" id="menu">
-        {/* ESTADO CARGANDO (SKELETON GRID) */}
-        {isLoading && (
-          <div className="flex flex-col gap-8">
-            <div className="h-8 w-48 bg-[#EBE5D8] dark:bg-carbon rounded-lg animate-pulse" />
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {[1, 2, 3, 4, 5, 6].map((n) => (
+              return (
                 <div
-                  key={n}
-                  className="bg-white dark:bg-[#080808] border border-arena/30 dark:border-arena/10 rounded-3xl p-6 flex flex-col justify-between h-[280px] animate-pulse relative overflow-hidden shadow-sm transition-colors"
+                  key={platillo.id}
+                  className="relative rounded-[28px] overflow-hidden shadow-xl flex flex-col justify-between p-5 sm:p-6 min-h-[400px] bg-neutral-950 border border-black/10 dark:border-white/10 group md:hover:border-[#2ABFBF]/50 transition-all duration-300 touch-manipulation"
                 >
-                  <div className="flex justify-between items-start">
-                    <div className="h-6 w-24 bg-[#EBE5D8] dark:bg-carbon rounded-full" />
-                    <div className="h-8 w-8 bg-[#EBE5D8] dark:bg-carbon rounded-full" />
+                  {/* FOTO FULL-BLEED DE FONDO (Colores 100% naturales, frescos y sin tintes grises) */}
+                  {platillo.imagen_url ? (
+                    <Image
+                      src={platillo.imagen_url}
+                      alt={platillo.nombre}
+                      fill
+                      className="object-cover md:group-hover:scale-105 transition-transform duration-700"
+                      sizes="(max-width: 768px) 100vw, 33vw"
+                    />
+                  ) : (
+                    <div className="absolute inset-0 bg-gradient-to-br from-neutral-900 via-neutral-950 to-black flex items-center justify-center">
+                      <span className="text-7xl opacity-20 select-none">{platillo.emoji || '🦐'}</span>
+                    </div>
+                  )}
+
+                  {/* OVERLAY GRADIENTE SOLO EN LA BASE PARA CONTRASTE DE TEXTO (Parte superior 100% clara) */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/60 via-45% to-transparent pointer-events-none" />
+
+                  {/* FILA SUPERIOR: BADGES & PRECIO */}
+                  <div className="relative z-10 flex items-start justify-between gap-2">
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      {promoText ? (
+                        <span className="bg-coral text-white text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wider shadow-md flex items-center gap-1 backdrop-blur-md border border-white/20">
+                          <Flame className="w-3 h-3 fill-current" />
+                          <span>{promoText}</span>
+                        </span>
+                      ) : (
+                        <span className="bg-[#2ABFBF]/95 text-black text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wider shadow-md backdrop-blur-md flex items-center gap-1">
+                          <span className="w-1.5 h-1.5 rounded-full bg-black animate-pulse" />
+                          <span>DISPONIBLE HOY</span>
+                        </span>
+                      )}
+
+                      {spice && (
+                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase backdrop-blur-md ${spice.color}`}>
+                          {spice.label}
+                        </span>
+                      )}
+                    </div>
+
+                    <div className="bg-black/70 backdrop-blur-md px-3 py-1 rounded-full border border-white/15 shrink-0 flex flex-col items-end">
+                      <span className="font-display text-xl text-coral font-bold tracking-tight">
+                        ${platillo.precio.toFixed(0)} MXN
+                      </span>
+                      {platillo.precio_anterior && platillo.precio_anterior > platillo.precio && (
+                        <span className="text-[10px] text-neutral-400 line-through">
+                          ${platillo.precio_anterior.toFixed(0)}
+                        </span>
+                      )}
+                    </div>
                   </div>
-                  <div className="flex flex-col gap-2.5 my-auto">
-                    <div className="h-8 w-3/4 bg-[#EBE5D8] dark:bg-carbon rounded-md" />
-                    <div className="h-4 w-full bg-[#EBE5D8] dark:bg-carbon rounded-md" />
-                    <div className="h-4 w-2/3 bg-[#EBE5D8] dark:bg-carbon rounded-md" />
-                  </div>
-                  <div className="flex justify-between items-center pt-4 border-t border-arena/30 dark:border-arena/10">
-                    <div className="h-8 w-24 bg-coral/20 rounded-md" />
-                    <div className="h-10 w-28 bg-turquesa/20 rounded-full" />
+
+                  {/* FILA INFERIOR: TÍTULO, DESCRIPCIÓN Y BOTÓN DE PEDIDO */}
+                  <div className="relative z-10 flex flex-col gap-2 pt-12">
+                    <h3 className="font-bold font-sans text-xl sm:text-2xl text-white tracking-tight leading-snug drop-shadow-md">
+                      {platillo.nombre}
+                    </h3>
+
+                    <p className="text-xs text-neutral-100 line-clamp-2 leading-relaxed font-sans drop-shadow-md">
+                      {platillo.descripcion || 'Marisco fresco sinaloense sazonado al momento.'}
+                    </p>
+
+                    <button
+                      type="button"
+                      onClick={() => router.push('/pedir')}
+                      className="mt-2 w-full py-3.5 px-4 rounded-xl text-xs font-sans font-bold bg-[#2ABFBF] text-black hover:bg-white active:scale-95 active:bg-white transition-all flex items-center justify-center gap-2 shadow-[0_4px_16px_rgba(42,191,191,0.3)] touch-manipulation cursor-pointer"
+                    >
+                      <ShoppingBag className="w-3.5 h-3.5 stroke-[2.5]" />
+                      <span>AGREGAR AL PEDIDO</span>
+                    </button>
                   </div>
                 </div>
-              ))}
-            </div>
+              )
+            })}
+          </div>
+        ) : (
+          <div className="p-16 text-center bg-white dark:bg-[#111317] rounded-[32px] border border-dashed border-black/10 dark:border-white/10">
+            <p className="font-sans font-medium text-sm text-neutral-500">
+              No se encontraron platillos con el término &quot;{searchTerm}&quot;.
+            </p>
           </div>
         )}
+      </main>
 
-        {/* ESTADO VACÍO (SIN PLATILLOS EN LA BASE DE DATOS) */}
-        {!isLoading && platillos.length === 0 && (
-          <div className="flex flex-col items-center justify-center text-center py-16 px-6 max-w-xl mx-auto gap-6 bg-white dark:bg-carbon/80 border border-arena/30 dark:border-arena/15 rounded-3xl my-8 shadow-xl">
-            <div className="w-20 h-20 rounded-full bg-coral/10 border border-coral/30 flex items-center justify-center text-coral shadow-[0_0_30px_rgba(232,67,10,0.2)]">
-              <Waves className="w-10 h-10 animate-pulse" />
-            </div>
-            <div className="flex flex-col gap-2">
-              <h3 className="font-display text-3xl md:text-4xl text-negro dark:text-blanco tracking-wide">
-                NO HAY PLATILLOS DISPONIBLES
-              </h3>
-              <p className="font-sans text-sm md:text-base text-negro/70 dark:text-arena/70 leading-relaxed">
-                Actualmente no hay productos registrados en el menú del restaurante. Te invitamos a consultar la pesca fresca del día directamente por WhatsApp.
+      {/* ── 6. SECCIÓN BENTO DE SUCURSAL & HORARIOS EN VIVO ──────────────────── */}
+      <section className="bg-white dark:bg-[#0E0E0E] border-t border-black/[0.08] dark:border-white/[0.08] px-4 sm:px-6 lg:px-8 py-14 transition-colors">
+        <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-8">
+          {/* SUCURSAL & CONTACTO (7 COLS) */}
+          <div className="lg:col-span-7 flex flex-col justify-between gap-6">
+            <div className="flex flex-col gap-3">
+              <span className="text-[11px] font-sans font-bold uppercase tracking-wider text-[#2ABFBF] bg-[#2ABFBF]/10 px-3 py-1 rounded-full w-fit">
+                MATRIZ & ATENCIÓN DIRECTA
+              </span>
+              <h2 className="font-display text-3xl sm:text-4xl text-neutral-900 dark:text-white">
+                {sucursal.nombre_sucursal.toUpperCase()}
+              </h2>
+              <p className="font-serif italic text-sm text-neutral-500 dark:text-neutral-400">
+                {sucursal.slogan}
               </p>
             </div>
-            <a
-              href={generateWhatsAppUrl()}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="bg-turquesa text-negro font-sans font-bold text-xs tracking-wider px-8 py-4 rounded-full shadow-[0_0_25px_rgba(42,191,191,0.3)] hover:bg-blanco transition-all flex items-center gap-2"
-            >
-              <MessageCircle className="w-4 h-4 fill-negro" />
-              <span>CONSULTAR PESCA DEL DÍA POR WHATSAPP</span>
-            </a>
-          </div>
-        )}
 
-        {/* 1. SECCIÓN DESTACADA DE PROMOCIONES Y ESPECIALES EN PRIMER LUGAR */}
-        {!isLoading && (activeCategory === 'all' || activeCategory === 'promos') && promoPlatillos.length > 0 && (
-          <section className="mb-16 bg-gradient-to-b from-coral/10 via-transparent to-transparent p-4 sm:p-6 rounded-3xl border border-coral/20">
-            <div className="flex items-center justify-between mb-8 border-b border-coral/30 pb-4">
-              <div className="flex items-center gap-3">
-                <span className="font-sans text-xs font-bold text-blanco tracking-widest uppercase bg-gradient-to-r from-coral to-oro px-3 py-1 rounded-full flex items-center gap-1 shadow-md">
-                  <Flame className="w-3.5 h-3.5 fill-blanco animate-pulse" />
-                  <span>DESTACADO DE HOY</span>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 font-sans text-xs">
+              <div className="p-4 rounded-2xl bg-black/[0.02] dark:bg-white/[0.02] border border-black/5 dark:border-white/5 flex flex-col gap-1">
+                <span className="font-bold text-neutral-900 dark:text-white flex items-center gap-1.5">
+                  <MapPin className="w-4 h-4 text-coral" />
+                  <span>Ubicación:</span>
                 </span>
-                <h3 className="font-display text-4xl text-negro dark:text-blanco tracking-wider">
-                  🔥 PROMOCIONES & ESPECIALES
-                </h3>
+                <p className="text-neutral-600 dark:text-neutral-400">
+                  {sucursal.direccion}, {sucursal.colonia}, {sucursal.ciudad}
+                </p>
+                {sucursal.google_maps_url && (
+                  <a
+                    href={sucursal.google_maps_url}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-[#2ABFBF] font-bold hover:underline inline-flex items-center gap-1 mt-2"
+                  >
+                    <span>Abrir en Google Maps</span>
+                    <ExternalLink className="w-3 h-3" />
+                  </a>
+                )}
               </div>
-              <span className="text-xs font-sans font-bold text-coral uppercase tracking-wider hidden sm:inline-block">
-                ¡Aprovecha por tiempo limitado!
+
+              <div className="p-4 rounded-2xl bg-black/[0.02] dark:bg-white/[0.02] border border-black/5 dark:border-white/5 flex flex-col gap-1">
+                <span className="font-bold text-neutral-900 dark:text-white flex items-center gap-1.5">
+                  <Phone className="w-4 h-4 text-[#2ABFBF]" />
+                  <span>Teléfonos & WhatsApp:</span>
+                </span>
+                <p className="text-neutral-600 dark:text-neutral-400">
+                  WhatsApp: +52 {sucursal.telefono_whatsapp}
+                </p>
+                <p className="text-neutral-600 dark:text-neutral-400">
+                  Fijo: +52 {sucursal.telefono_fijo || sucursal.telefono_whatsapp}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* HORARIOS EN VIVO (5 COLS) */}
+          <div className="lg:col-span-5 bg-black/[0.02] dark:bg-white/[0.02] border border-black/5 dark:border-white/5 rounded-[28px] p-6 flex flex-col gap-4">
+            <div className="flex items-center justify-between border-b border-black/5 dark:border-white/5 pb-3">
+              <span className="font-sans font-bold text-xs text-neutral-900 dark:text-white flex items-center gap-1.5">
+                <Clock className="w-4 h-4 text-[#C9A84C]" />
+                <span>Horario Semanal de Atención</span>
+              </span>
+              <span className="text-[10px] text-neutral-500 font-bold uppercase">
+                Hora Sinaloa
               </span>
             </div>
 
-            <DishCarouselSection
-              platillos={promoPlatillos}
-              onSelect={() => router.push('/pedir')}
-              categoryIndex={0}
-            />
-          </section>
-        )}
-
-        {/* 2. LISTADO DE PLATILLOS POR CATEGORÍA CON PROMOCIONES PRIORIZADAS AL INICIO */}
-        {!isLoading &&
-          platillos.length > 0 &&
-          activeCategory !== 'promos' &&
-          (categorias.length > 0 ? categorias : [{ id: 1, nombre: 'Menú General', orden: 1 }])
-            .filter((cat) => activeCategory === 'all' || activeCategory === cat.id)
-            .map((cat, idx) => {
-              const catPlatillos = filteredPlatillos
-                .filter((p) => p.categoria_id === cat.id || (!p.categoria_id && cat.id === 1))
-
-              if (catPlatillos.length === 0) return null
-
-              return (
-                <section key={cat.id} className="mb-16">
-                  <div className="flex items-center gap-3 mb-8 border-b border-arena/30 dark:border-arena/10 pb-4">
-                    <span className="font-sans text-xs font-semibold text-coral tracking-widest uppercase">
-                      CATEGORÍA - 0{idx + 1}
-                    </span>
-                    <h3 className="font-display text-4xl text-negro dark:text-blanco tracking-wider">
-                      {cat.nombre.toUpperCase()}
-                    </h3>
-                  </div>
-
-                  <DishCarouselSection
-                    platillos={catPlatillos}
-                    onSelect={() => router.push('/pedir')}
-                    categoryIndex={idx + 1}
-                  />
-                </section>
-              )
-            })}
-      </main>
-
-      {/* 5. HORARIOS DE ATENCIÓN */}
-      {!isLoading && horarios.length > 0 && (
-        <section className="bg-white dark:bg-[#080808] border-t border-arena/30 dark:border-arena/10 px-6 py-16 transition-colors">
-          <div className="max-w-4xl mx-auto flex flex-col items-center text-center gap-8">
-            <div className="flex items-center gap-2">
-              <Clock className="w-6 h-6 text-turquesa" />
-              <h3 className="font-display text-3xl text-negro dark:text-blanco tracking-widest uppercase">
-                HORARIOS DE SERVICIO
-              </h3>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 w-full">
-              {horarios.map((dia) => (
+            <div className="flex flex-col gap-2 font-sans text-xs">
+              {estadoRestaurante?.horarios_dias?.map((h) => (
                 <div
-                  key={dia.id}
-                  className={`flex flex-col items-center justify-center p-4 rounded-2xl border transition-colors ${dia.abierto
-                    ? 'bg-[#F4F0E8] dark:bg-carbon border-arena/30 dark:border-arena/10'
-                    : 'bg-coral/5 border-coral/20'
-                    }`}
+                  key={h.id}
+                  className="flex items-center justify-between py-1.5 border-b border-black/[0.03] dark:border-white/[0.03] last:border-none"
                 >
-                  <span className="font-sans font-bold text-sm text-negro dark:text-blanco mb-1 uppercase tracking-wider">
-                    {dia.nombre}
+                  <span className="font-medium text-neutral-700 dark:text-neutral-300">
+                    {h.nombre}
                   </span>
-                  {dia.abierto ? (
-                    <span className="font-sans text-xs text-negro/70 dark:text-arena/70">
-                      {dia.apertura} — {dia.cierre}
-                    </span>
-                  ) : (
-                    <span className="font-sans font-bold text-xs text-coral">CERRADO</span>
-                  )}
+                  <span className="font-bold text-neutral-900 dark:text-white">
+                    {h.abierto ? `${h.apertura} - ${h.cierre}` : 'Cerrado'}
+                  </span>
                 </div>
-              ))}
-            </div>
-            <p className="font-sans text-xs text-negro/50 dark:text-arena/40 italic">
-              * Horarios sujetos a la disponibilidad de pesca fresca del día.
-            </p>
-          </div>
-        </section>
-      )}
-
-      {/* FOOTER */}
-      <footer className="bg-[#EFEAE1] dark:bg-[#050404] border-t border-arena/30 dark:border-arena/10 px-6 py-12 lg:py-16 mt-auto transition-colors">
-        <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 lg:gap-8">
-
-          {/* Columna 1: Marca */}
-          <div className="flex flex-col items-center md:items-start text-center md:text-left gap-4">
-            <h4 className="font-display text-2xl text-negro dark:text-blanco tracking-wider">MAREA NEGRA</h4>
-            <p className="font-sans text-xs sm:text-sm text-negro/70 dark:text-arena/70 leading-relaxed max-w-xs">
-              Sinaloa, México.<br />
-              ¡Al vrgazo!, como nos gusta.<br />
-              Mariscos frescos y picor a tu medida.
-            </p>
-          </div>
-
-          {/* Columna 2: Contacto Rápido */}
-          <div className="flex flex-col items-center md:items-start text-center md:text-left gap-4">
-            <h4 className="font-display text-xl text-negro dark:text-blanco tracking-widest uppercase">
-              CONTACTO
-            </h4>
-            <div className="flex flex-col gap-2 font-sans text-sm text-negro/80 dark:text-arena/80">
-              <a href={generateWhatsAppUrl()} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 hover:text-turquesa transition-colors">
-                <MessageCircle className="w-4 h-4" />
-                <span>+{process.env.NEXT_PUBLIC_WHATSAPP_NUMBER}</span>
-              </a>
+              )) || (
+                <p className="text-xs text-neutral-500 italic">
+                  Lunes a Domingo: 11:00 AM - 8:00 PM
+                </p>
+              )}
             </div>
           </div>
-
-          {/* Columna 3: Ubicación */}
-          <div className="flex flex-col items-center md:items-start text-center md:text-left gap-4">
-            <h4 className="font-display text-xl text-negro dark:text-blanco tracking-widest uppercase">
-              UBICACIÓN
-            </h4>
-            <p className="font-sans text-sm text-negro/80 dark:text-arena/80 leading-relaxed max-w-[200px]">
-              Al momento de hacer el pedido se compartirá la ubicación por whatsapp <br />
-            </p>
-          </div>
-
-          {/* Columna 4: Redes y Decoración */}
-          <div className="flex flex-col items-center md:items-start text-center md:text-left gap-6">
-            <h4 className="font-display text-xl text-negro dark:text-blanco tracking-widest uppercase">
-              SÍGUENOS
-            </h4>
-            <div className="flex items-center gap-4">
-              <a href="https://www.instagram.com/mareanegra.aguachiles" target="_blank" rel="noopener noreferrer" className="w-10 h-10 rounded-full bg-negro/5 dark:bg-carbon border border-arena/20 flex items-center justify-center hover:bg-turquesa hover:text-negro transition-all">
-                IG
-              </a>
-              <a href="https://facebook.com" target="_blank" rel="noopener noreferrer" className="w-10 h-10 rounded-full bg-negro/5 dark:bg-carbon border border-arena/20 flex items-center justify-center hover:bg-turquesa hover:text-negro transition-all">
-                FB
-              </a>
-            </div>
-
-            <div className="flex items-center gap-2 mt-2">
-              <span className="w-3 h-3 rounded-full bg-negro border border-arena/20" />
-              <span className="w-3 h-3 rounded-full bg-carbon border border-arena/20" />
-              <span className="w-3 h-3 rounded-full bg-coral" />
-              <span className="w-3 h-3 rounded-full bg-turquesa" />
-              <span className="w-3 h-3 rounded-full bg-arena" />
-              <span className="w-3 h-3 rounded-full bg-oro" />
-            </div>
-          </div>
-
         </div>
+      </section>
 
-        <div className="max-w-7xl mx-auto border-t border-arena/30 dark:border-arena/10 mt-10 pt-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs font-sans text-negro/50 dark:text-arena/40">
-          <span>&copy; {new Date().getFullYear()} Marea Negra. Todos los derechos reservados.</span>
+      {/* ── FOOTER ELEGANTE ─────────────────────────────────────────────────── */}
+      <footer className="bg-neutral-950 text-white border-t border-white/10 px-4 sm:px-6 lg:px-8 py-8 text-xs font-sans">
+        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4 text-neutral-400">
+          <div className="flex items-center gap-2">
+            <BrandLogo size="sm" />
+            <span>© {new Date().getFullYear()} Marea Negra · Todos los derechos reservados</span>
+          </div>
           <div className="flex items-center gap-4">
-            <Link href="/privacidad" className="hover:text-coral transition-colors underline underline-offset-4">
-              Aviso de Privacidad (LFPDPPP)
-            </Link>
-            <span>·</span>
-            <span>Sinaloa, México.</span>
+            <Link href="/privacidad" className="hover:text-white">Aviso de Privacidad</Link>
+            <span>•</span>
+            <Link href="/login" className="text-[#2ABFBF] hover:underline font-bold">Acceso Personal</Link>
           </div>
         </div>
       </footer>
-
-      {/* MODAL LEAD MAGNET CLUB MAREA NEGRA */}
-      <ClubBenefitsModal />
     </div>
   )
 }

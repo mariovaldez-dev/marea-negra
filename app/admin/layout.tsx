@@ -169,17 +169,13 @@ export default function AdminLayout({
     <div className="min-h-screen bg-[#F5F5F5] dark:bg-[#080808] text-negro dark:text-blanco flex flex-col md:flex-row transition-colors duration-300">
       {/* SIDEBAR ADMIN (Bento / Linear Navigation) */}
       <aside
-        className={`w-64 lg:w-72 bg-white dark:bg-[#0C0D0E] border-r border-black/[0.07] dark:border-white/[0.07] flex flex-col justify-between p-4 lg:p-5 fixed inset-y-0 left-0 z-40 transform transition-transform duration-300 md:sticky md:top-0 md:h-screen md:overflow-y-auto md:shrink-0 md:translate-x-0 ${
-          mobileOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full'
-        }`}
+        className={`w-64 lg:w-72 bg-white dark:bg-[#0C0D0E] border-r border-black/[0.07] dark:border-white/[0.07] flex flex-col justify-between p-4 lg:p-5 fixed inset-y-0 left-0 z-40 transform transition-transform duration-300 md:sticky md:top-0 md:h-screen md:overflow-y-auto md:shrink-0 md:translate-x-0 ${mobileOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full'
+          }`}
       >
         <div className="flex flex-col gap-5">
           {/* Logo Brand Header */}
           <div className="flex flex-col pb-4 border-b border-black/[0.06] dark:border-white/[0.06]">
             <BrandLogo size="md" href="/admin/dashboard" />
-            <span className="font-serif italic text-xs text-coral font-bold tracking-widest mt-1">
-              — terminal de operaciones —
-            </span>
           </div>
 
           {/* Menú de Navegación Segmentado en Secciones */}
@@ -209,19 +205,17 @@ export default function AdminLayout({
                           key={item.href}
                           href={item.href}
                           onClick={() => setMobileOpen(false)}
-                          className={`group relative flex items-center justify-between px-3.5 py-2.5 rounded-2xl font-sans text-xs tracking-wide transition-all duration-200 active:scale-[0.98] ${
-                            isActive
+                          className={`group relative flex items-center justify-between px-3.5 py-2.5 rounded-2xl font-sans text-xs tracking-wide transition-all duration-200 active:scale-[0.98] ${isActive
                               ? 'bg-neutral-950 text-white dark:bg-white/[0.10] dark:text-white dark:border dark:border-white/[0.08] font-bold shadow-sm shadow-black/10'
                               : 'text-neutral-600 dark:text-neutral-400 hover:text-neutral-950 dark:hover:text-white hover:bg-neutral-100/80 dark:hover:bg-white/[0.05] font-medium'
-                          }`}
+                            }`}
                         >
                           <div className="flex items-center gap-3 min-w-0">
                             <Icon
-                              className={`w-4 h-4 shrink-0 transition-transform duration-200 group-hover:scale-110 ${
-                                isActive
+                              className={`w-4 h-4 shrink-0 transition-transform duration-200 group-hover:scale-110 ${isActive
                                   ? 'text-[#2ABFBF]'
                                   : 'text-neutral-400 dark:text-neutral-500 group-hover:text-neutral-900 dark:group-hover:text-white'
-                              }`}
+                                }`}
                             />
                             <span className="truncate">{item.name}</span>
                           </div>
@@ -229,9 +223,8 @@ export default function AdminLayout({
                           {/* Badge Opcional (ej. LIVE) */}
                           {item.badge && (
                             <span
-                              className={`text-[9px] font-mono font-bold uppercase px-1.5 py-0.5 rounded-full ${
-                                item.badgeColor || 'bg-[#2ABFBF] text-black'
-                              }`}
+                              className={`text-[9px] font-mono font-bold uppercase px-1.5 py-0.5 rounded-full ${item.badgeColor || 'bg-[#2ABFBF] text-black'
+                                }`}
                             >
                               {item.badge}
                             </span>

@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { Gift, Sparkles, X, CheckCircle2, ArrowRight, ShieldCheck } from 'lucide-react'
+import { Gift, Sparkles, X, ArrowRight, Zap, Award, Ticket } from 'lucide-react'
 
 export function ClubBenefitsModal({
   isOpen: externalIsOpen,
@@ -69,97 +69,95 @@ export function ClubBenefitsModal({
   if (!isModalOpen) return null
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-3 overflow-hidden touch-none overscroll-contain selection:bg-coral animate-in fade-in duration-200">
-      {/* TARJETA MODAL FIJA ADAPTABLE A LIGHT MODE Y DARK MODE */}
-      <div className="bg-white text-negro dark:bg-[#050404] dark:text-blanco bg-dots-pattern border-2 border-arena/40 dark:border-oro/40 rounded-2xl sm:rounded-3xl w-[92vw] max-w-md sm:max-w-lg p-4 sm:p-6 gold-border-corner shadow-2xl relative flex flex-col justify-between gap-3 sm:gap-4 overflow-hidden my-auto max-h-[94vh] touch-auto transition-colors">
-        {/* Adorno Glow de Fondo */}
-        <div className="absolute -top-20 -right-20 w-48 h-48 bg-limon/20 dark:bg-limon/15 rounded-full filter blur-3xl pointer-events-none" />
-        <div className="absolute -bottom-20 -left-20 w-48 h-48 bg-coral/20 dark:bg-coral/20 rounded-full filter blur-3xl pointer-events-none" />
+    <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4 overflow-hidden touch-none overscroll-contain animate-in fade-in duration-200">
+      {/* TARJETA MODAL MODERNA BENTO MINIMALISTA */}
+      <div className="bg-white dark:bg-[#111317] text-neutral-900 dark:text-neutral-100 border border-black/[0.08] dark:border-white/[0.08] rounded-[32px] w-full max-w-md p-6 sm:p-8 shadow-2xl relative flex flex-col justify-between gap-5 overflow-hidden my-auto max-h-[92vh] touch-auto transition-colors">
+        {/* Glows de fondo sutiles */}
+        <div className="absolute top-0 right-0 w-60 h-60 bg-[#2ABFBF]/10 dark:bg-[#2ABFBF]/15 rounded-full filter blur-3xl pointer-events-none" />
+        <div className="absolute bottom-0 left-0 w-60 h-60 bg-coral/10 dark:bg-coral/15 rounded-full filter blur-3xl pointer-events-none" />
 
         {/* Botón Cerrar */}
         <button
+          type="button"
           onClick={handleClose}
-          className="absolute top-2.5 right-2.5 sm:top-3.5 sm:right-3.5 p-1.5 text-negro/60 dark:text-arena/60 hover:text-coral dark:hover:text-blanco rounded-full hover:bg-arena/20 dark:hover:bg-carbon transition-colors z-20"
+          className="absolute top-4 right-4 p-2 text-neutral-400 hover:text-neutral-900 dark:hover:text-white rounded-full hover:bg-black/5 dark:hover:bg-white/5 transition-colors z-20"
           title="Cerrar ventana"
         >
-          <X className="w-4 h-4 sm:w-5 sm:h-5" />
+          <X className="w-5 h-5" />
         </button>
 
         {/* Cabecera Lead Magnet */}
-        <div className="flex flex-col items-center text-center gap-1 sm:gap-1.5 relative z-10 pt-0.5">
-          <span className="text-[9px] sm:text-xs font-sans font-bold tracking-widest text-black dark:text-limon uppercase bg-limon dark:bg-limon/10 border border-limon/50 dark:border-limon/30 px-2.5 py-0.5 rounded-full flex items-center gap-1 shadow-md">
-            <Gift className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-black dark:text-limon shrink-0" />
-            <span>BENEFICIO DE BIENVENIDA EXCLUSIVO</span>
+        <div className="flex flex-col items-center text-center gap-2 relative z-10 pt-2">
+          {/* Badge Icon */}
+          <div className="w-14 h-14 rounded-2xl bg-coral/10 text-coral border border-coral/20 flex items-center justify-center text-2xl shadow-sm mb-1">
+            🎁
+          </div>
+
+          <span className="text-[11px] font-sans font-bold tracking-wider text-[#2ABFBF] uppercase bg-[#2ABFBF]/10 px-3 py-1 rounded-full">
+            BENEFICIO DE BIENVENIDA
           </span>
 
-          <h2 className="font-display text-2xl xs:text-3xl sm:text-4xl text-negro dark:text-blanco tracking-wide mt-0.5 leading-tight">
-            ¡RECIBE UN <span className="text-coral">10% DE DESCUENTO</span> EN TU PRIMER PEDIDO!
+          <h2 className="font-sans font-black text-2xl sm:text-3xl text-neutral-900 dark:text-white tracking-tight leading-snug mt-1">
+            ¡10% OFF EN TU PRIMERA ORDEN!
           </h2>
 
-          <p className="font-sans italic text-[11px] sm:text-xs md:text-sm text-negro/80 dark:text-arena/90 max-w-sm">
-            Únete gratis al <strong>Club Marea Negra</strong> en 10 segundos y desbloquea beneficios inmediatos:
+          <p className="font-sans text-xs sm:text-sm text-neutral-600 dark:text-neutral-400 max-w-xs leading-relaxed">
+            Únete al <strong>Club Marea Negra</strong> en 10 segundos y desbloquea tu cupón exclusivo para hoy.
           </p>
         </div>
 
-        {/* Lista de Beneficios Exclusivos (Formato Compacto Fijo) */}
-        <div className="bg-[#F4F0E8] dark:bg-carbon/90 border border-arena/30 dark:border-arena/15 rounded-xl p-2.5 sm:p-3.5 flex flex-col gap-1.5 sm:gap-2 relative z-10 transition-colors">
-          <div className="flex items-center gap-2 text-[10px] xs:text-[11px] sm:text-xs">
-            <CheckCircle2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-turquesa dark:text-limon shrink-0" />
+        {/* 3 Beneficios Claros y Minimalistas */}
+        <div className="flex flex-col gap-2.5 relative z-10 font-sans text-xs">
+          <div className="p-3.5 rounded-2xl bg-black/[0.03] dark:bg-white/[0.03] border border-black/5 dark:border-white/5 flex items-center gap-3">
+            <div className="w-8 h-8 rounded-xl bg-coral/10 text-coral flex items-center justify-center shrink-0">
+              <Ticket className="w-4 h-4" />
+            </div>
             <div className="flex flex-col">
-              <span className="font-sans font-bold text-negro dark:text-blanco leading-none">Cupón Personal Único del 10% OFF</span>
-              <span className="text-negro/70 dark:text-arena/70 font-sans italic text-[9px] sm:text-[11px]">Válido en platillos a precio regular en tu próximo pedido.</span>
+              <span className="font-bold text-neutral-900 dark:text-white">Cupón del 10% de Descuento</span>
+              <span className="text-[11px] text-neutral-500 dark:text-neutral-400">Aplicable en cualquier platillo a precio regular.</span>
             </div>
           </div>
 
-          <div className="flex items-center gap-2 text-[10px] xs:text-[11px] sm:text-xs border-t border-arena/20 dark:border-arena/10 pt-1.5">
-            <CheckCircle2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-turquesa shrink-0" />
+          <div className="p-3.5 rounded-2xl bg-black/[0.03] dark:bg-white/[0.03] border border-black/5 dark:border-white/5 flex items-center gap-3">
+            <div className="w-8 h-8 rounded-xl bg-[#2ABFBF]/10 text-[#2ABFBF] flex items-center justify-center shrink-0">
+              <Award className="w-4 h-4" />
+            </div>
             <div className="flex flex-col">
-              <span className="font-sans font-bold text-negro dark:text-blanco leading-none">Programa de Referidos Personal</span>
-              <span className="text-negro/70 dark:text-arena/70 font-sans italic text-[9px] sm:text-[11px]">Gana 10% extra por cada amigo que invites.</span>
+              <span className="font-bold text-neutral-900 dark:text-white">Puntos en Cada Pedido</span>
+              <span className="text-[11px] text-neutral-500 dark:text-neutral-400">Acumula saldo y canjea aguachiles y bebidas gratis.</span>
             </div>
           </div>
 
-          <div className="flex items-center gap-2 text-[10px] xs:text-[11px] sm:text-xs border-t border-arena/20 dark:border-arena/10 pt-1.5">
-            <CheckCircle2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-coral dark:text-oro shrink-0" />
+          <div className="p-3.5 rounded-2xl bg-black/[0.03] dark:bg-white/[0.03] border border-black/5 dark:border-white/5 flex items-center gap-3">
+            <div className="w-8 h-8 rounded-xl bg-[#C9A84C]/10 text-[#C9A84C] flex items-center justify-center shrink-0">
+              <Zap className="w-4 h-4" />
+            </div>
             <div className="flex flex-col">
-              <span className="font-sans font-bold text-negro dark:text-blanco leading-none">Promociones Secretas del Día</span>
-              <span className="text-negro/70 dark:text-arena/70 font-sans italic text-[9px] sm:text-[11px]">Acceso anticipado a la pesca fresca del día y platillos exclusivos.</span>
+              <span className="font-bold text-neutral-900 dark:text-white">Pedidos en 1 Clic</span>
+              <span className="text-[11px] text-neutral-500 dark:text-neutral-400">Guarda tus datos para ordenar más rápido por WhatsApp.</span>
             </div>
           </div>
         </div>
 
         {/* Botones de Acción */}
-        <div className="flex flex-col gap-1.5 sm:gap-2 relative z-10">
+        <div className="flex flex-col gap-2 relative z-10 pt-1">
           <button
+            type="button"
             onClick={handleAccept}
-            className="w-full bg-turquesa text-negro hover:bg-negro hover:text-blanco dark:hover:bg-blanco dark:hover:text-negro font-sans font-bold text-[11px] sm:text-xs tracking-wider py-3 sm:py-3.5 px-2 rounded-xl shadow-[0_0_25px_rgba(42,191,191,0.4)] transition-all flex items-center justify-center gap-1.5 group active:scale-95"
+            className="w-full bg-coral text-white hover:bg-coral/90 font-sans font-bold text-xs tracking-wider py-4 px-4 rounded-2xl shadow-[0_4px_20px_rgba(232,67,10,0.35)] transition-all flex items-center justify-center gap-2 group active:scale-95 touch-manipulation cursor-pointer"
           >
-            <Sparkles className="w-3.5 h-3.5 shrink-0" />
-            <span>OBTENER MI 10% DE DESCUENTO AHORA</span>
-            <ArrowRight className="w-3.5 h-3.5 shrink-0 transition-transform group-hover:translate-x-1" />
+            <Sparkles className="w-4 h-4" />
+            <span>DESBLOQUEAR MI 10% OFF</span>
+            <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
           </button>
 
           <button
+            type="button"
             onClick={handleClose}
-            className="text-[10px] sm:text-xs font-sans font-semibold text-negro/60 dark:text-arena/60 hover:text-negro dark:hover:text-blanco text-center py-0.5 transition-colors"
+            className="text-xs font-sans font-semibold text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200 text-center py-1 transition-colors cursor-pointer"
           >
-            No por ahora, continuar viendo el menú
+            Continuar viendo el menú
           </button>
-        </div>
-
-        {/* Footer Garantía & Privacidad */}
-        <div className="flex flex-col items-center justify-center gap-1 text-[9px] font-sans text-negro/50 dark:text-arena/50 pt-1 border-t border-arena/20 dark:border-arena/10 text-center">
-          <div className="flex items-center gap-1">
-            <ShieldCheck className="w-3 h-3 text-turquesa shrink-0" />
-            <span>Tus datos están protegidos conforme a la LFPDPPP</span>
-          </div>
-          <Link
-            href="/privacidad"
-            target="_blank"
-            className="text-turquesa hover:underline"
-          >
-            Ver Aviso de Privacidad Integral
-          </Link>
         </div>
       </div>
     </div>

@@ -38,7 +38,7 @@ export function FloatingShrimp() {
   }
 
   return (
-    <div className="block md:hidden absolute right-3 top-20 z-20 select-none">
+    <div className="block md:hidden absolute right-4 top-2 z-20 select-none pointer-events-auto">
       <motion.div
         onClick={handleTap}
         className="cursor-pointer relative flex items-center justify-center p-2 touch-manipulation"
