@@ -386,9 +386,9 @@ export default function PublicMenuPage() {
                 <AnimatedTagline />
               </div>
 
-              {/* Descripción de Texto Original */}
+              {/* Descripción de Texto */}
               <p className="font-sans text-sm md:text-base text-neutral-700 dark:text-neutral-300 max-w-xl leading-relaxed">
-                Personaliza el nivel de picor y notas para la cocina con nuestro nuevo sistema de pedido directo en 4 pasos.
+                Personaliza el nivel de picor y notas para la cocina con nuestro nuevo sistema de pedido directo y rápido.
               </p>
             </div>
 
