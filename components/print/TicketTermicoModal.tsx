@@ -72,8 +72,8 @@ export function TicketTermicoModal({ pedido, tipo = 'cuenta_cliente', onClose }:
   const servicioLabel = (pedido.mesa_nombre || pedido.tipo_entrega === 'mesa')
     ? `🍽️ COMEDOR · ${pedido.mesa_nombre || 'MESA'}`
     : pedido.tipo_entrega === 'didi'
-    ? '🛵 ENVÍO DIDI / UBER'
-    : '🚗 RECOGER EN LOCAL'
+      ? '🛵 ENVÍO DIDI / UBER'
+      : '🚗 RECOGER EN LOCAL'
 
   const handleCopiarTexto = async () => {
     const origin = typeof window !== 'undefined' ? window.location.origin : 'https://marea-negra.com'
@@ -207,10 +207,7 @@ ${linkRastreo}
               MAREA NEGRA
             </span>
             <span className="text-[10px] font-bold tracking-widest uppercase text-gray-700 mt-1">
-              AGUACHILES & COCTELES
-            </span>
-            <span className="text-[9px] text-gray-500">
-              Sinaloa, México · Cocina de Mariscos
+              AGUACHILES
             </span>
 
             {/* BANNER DE SERVICIO */}

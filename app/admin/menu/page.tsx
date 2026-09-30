@@ -83,7 +83,7 @@ const FALLBACK_PLATILLOS: Platillo[] = [
 ]
 
 export default async function MenuAdminPage() {
-  const supabase = createServerClient()
+  const supabase = await createServerClient()
 
   let platillos: Platillo[] = FALLBACK_PLATILLOS
   let categorias: Categoria[] = FALLBACK_CATEGORIAS

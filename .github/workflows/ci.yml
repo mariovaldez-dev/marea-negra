@@ -1,0 +1,173 @@
+name: CI & Enterprise Security Pipeline
+
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  security-events: write
+  pull-requests: write
+
+jobs:
+  # ── FASE 1: HARD STOPPER - SECRETOS (GITLEAKS) & SCA (TRIVY) ────────────────
+  secrets-and-sca:
+    name: 1. 🔒 Secretos & Vulnerabilidades SCA (Trivy + Gitleaks)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Código
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # Gitleaks: Falla inmediatamente si detecta alguna clave secreta o token
+      - name: Gitleaks - Escaneo Estricto de Secretos
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # Trivy (Aqua Security - Open Source SCA): Escanea vulnerabilidades críticas en dependencias
+      - name: Trivy - Escaneo de Seguridad de Dependencias (SCA)
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'fs'
+          scan-ref: '.'
+          severity: 'CRITICAL,HIGH'
+          exit-code: '1'
+          ignore-unfixed: true
+
+  # ── FASE 2: HARD STOPPER - CALIDAD, DUPLICACIÓN (JSCPD) & TYPECHECK ──────────
+  code-quality-gate:
+    name: 2. 🧹 Calidad, Duplicación & TypeScript
+    needs: [secrets-and-sca]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Código
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'npm'
+
+      - name: Instalar Dependencias
+        run: npm ci
+
+      # TypeCheck estricto: Falla si hay algún error de tipos en TypeScript
+      - name: TypeScript Strict TypeCheck
+        run: npx tsc --noEmit
+
+      # ESLint: Detección de malas prácticas y syntax errors
+      - name: ESLint Linter Check
+        run: npm run lint
+
+      # JSCPD (SonarQube-style Duplication): Falla si la duplicación de código supera el 8%
+      - name: JSCPD - Control de Duplicación de Código
+        run: |
+          npx jscpd app/ components/ lib/ --threshold 8 --reporters console,markdown > jscpd-report.md 2>&1
+          cat jscpd-report.md
+          echo "### 📋 Reporte de Duplicación de Código (JSCPD)" >> $GITHUB_STEP_SUMMARY
+          echo '```text' >> $GITHUB_STEP_SUMMARY
+          tail -n 20 jscpd-report.md >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+
+  # ── FASE 3: HARD STOPPER - DEEP SAST (GITHUB CODEQL + SEMGREP) ──────────────
+  deep-sast-scan:
+    name: 3. 🛡️ Deep SAST (CodeQL + Semgrep OWASP)
+    needs: [code-quality-gate]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Código
+        uses: actions/checkout@v4
+
+      # Inicializar CodeQL (El motor open-source de análisis de flujo de datos de GitHub)
+      - name: Inicializar GitHub CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: javascript-typescript
+          queries: security-extended,security-and-quality
+
+      - name: Ejecutar Análisis de Flujo de Datos CodeQL
+        uses: github/codeql-action/analyze@v3
+        with:
+          category: "/language:javascript-typescript"
+
+      # Semgrep: Escaneo complementario con reglas OWASP Top 10 y Next.js
+      - name: Semgrep SAST Scan (OWASP & Next.js)
+        uses: returntocorp/semgrep-action@v1
+        with:
+          config: >-
+            p/security-audit
+            p/owasp-top-ten
+            p/javascript
+            p/typescript
+
+  # ── FASE 4: HARD STOPPER - BUILD Y BUNDLE SIZE ───────────────────────────────
+  build-and-bundle:
+    name: 4. 📦 Next.js Build & Bundle Analysis
+    needs: [deep-sast-scan]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Código
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'npm'
+
+      - name: Instalar Dependencias
+        run: npm ci
+
+      - name: Compilar Producción y Analizar Bundle
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL || 'https://dummy.supabase.co' }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'dummy_anon_key' }}
+        run: |
+          npm run build > build-output.log 2>&1
+          cat build-output.log
+          echo "### 📊 Resumen de Bundle Size de Next.js" >> $GITHUB_STEP_SUMMARY
+          echo '```text' >> $GITHUB_STEP_SUMMARY
+          grep -E "(Route \(app\)|┌|├|└|λ|○|●)" build-output.log || tail -n 25 build-output.log >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+
+  # ── FASE 5: HARD STOPPER - E2E Y LIGHTHOUSE ─────────────────────────────────
+  e2e-and-lighthouse:
+    name: 5. 🎭 Pruebas E2E & Lighthouse
+    needs: [build-and-bundle]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Código
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'npm'
+
+      - name: Instalar Dependencias
+        run: npm ci
+
+      - name: Instalar Navegadores de Playwright
+        run: npx playwright install --with-deps chromium
+
+      - name: Build de Producción
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL || 'https://dummy.supabase.co' }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'dummy_anon_key' }}
+        run: npm run build
+
+      - name: Ejecutar Pruebas E2E (Playwright)
+        run: npx playwright test
+
+      - name: Ejecutar Auditoría Lighthouse
+        uses: treosh/lighthouse-ci-action@v12
+        with:
+          uploadArtifacts: true
+          temporaryPublicStorage: true
+          configPath: './lighthouserc.json'

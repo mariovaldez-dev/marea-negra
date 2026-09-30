@@ -6,7 +6,7 @@ import { getMazatlanDateString } from '@/lib/utils/date'
 import { revalidatePath } from 'next/cache'
 
 export async function getGastosDeFecha(fecha?: string): Promise<GastoCaja[]> {
-  const supabase = createServerClient()
+  const supabase = await createServerClient()
   const targetFecha = fecha || getMazatlanDateString()
 
   try {
@@ -36,7 +36,7 @@ export async function registrarGastoCaja(formData: {
   metodo_pago?: 'efectivo' | 'transferencia'
   comprobante_url?: string
 }) {
-  const supabase = createServerClient()
+  const supabase = await createServerClient()
   const fecha = formData.fecha || getMazatlanDateString()
 
   const {
@@ -67,7 +67,7 @@ export async function registrarGastoCaja(formData: {
 }
 
 export async function eliminarGastoCaja(id: number) {
-  const supabase = createServerClient()
+  const supabase = await createServerClient()
   const { error } = await supabase.from('gastos_caja').delete().eq('id', id)
 
   if (error) {

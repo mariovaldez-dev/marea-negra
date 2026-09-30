@@ -87,7 +87,7 @@ export function MesaQrModal({ mesa, onClose }: MesaQrModalProps) {
               MAREA NEGRA
             </span>
             <span className="font-sans font-medium text-xs text-black/60 -mt-0.5">
-              Aguachiles & Cocteles · Sinaloa
+              Aguachiles
             </span>
           </div>
 

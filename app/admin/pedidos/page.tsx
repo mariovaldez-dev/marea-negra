@@ -6,7 +6,7 @@ import { Pedido, Platillo } from '@/lib/types/database'
 export const revalidate = 0
 
 export default async function PedidosPage() {
-  const supabase = createServerClient()
+  const supabase = await createServerClient()
 
   let initialPedidos: Pedido[] = []
   let platillosDisponibles: Platillo[] = []

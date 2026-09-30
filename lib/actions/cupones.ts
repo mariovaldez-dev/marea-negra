@@ -57,7 +57,7 @@ export async function getMazatlanMidnightExpiration(dateStr?: string | null, day
 
 // Obtener todos los cupones promocionales para el panel de administración
 export async function getCupones() {
-  const supabase = createServerClient()
+  const supabase = await createServerClient()
   const { data, error } = await supabase
     .from('cupones')
     .select('*')
@@ -75,7 +75,7 @@ export async function getCupones() {
 
 // Crear o editar un cupón
 export async function saveCupon(cupon: CuponData) {
-  const supabase = createServerClient()
+  const supabase = await createServerClient()
   const cleanCodigo = cupon.codigo.trim().toUpperCase()
 
   // Forzar expiración siempre a medianoche 11:59:59 PM horario Mazatlán
@@ -113,7 +113,7 @@ export async function saveCupon(cupon: CuponData) {
 
 // Alternar estado activo / inactivo en 1 solo clic
 export async function toggleCuponActivo(id: number, currentActivo: boolean) {
-  const supabase = createServerClient()
+  const supabase = await createServerClient()
   const { error } = await supabase
     .from('cupones')
     .update({ activo: !currentActivo })
@@ -128,7 +128,7 @@ export async function toggleCuponActivo(id: number, currentActivo: boolean) {
 
 // Eliminar un cupón
 export async function deleteCupon(id: number) {
-  const supabase = createServerClient()
+  const supabase = await createServerClient()
   const { error } = await supabase
     .from('cupones')
     .delete()
@@ -142,7 +142,7 @@ export async function deleteCupon(id: number) {
 
 // Validar cupón en tiempo real durante el checkout público en /pedir
 export async function validateCuponAction(codigoInput: string, clienteTelefono?: string) {
-  const supabase = createServerClient()
+  const supabase = await createServerClient()
   const cleanCodigo = codigoInput.trim().toUpperCase()
 
   if (!cleanCodigo) {
@@ -223,7 +223,7 @@ export async function validateCuponAction(codigoInput: string, clienteTelefono?:
 
 // Incrementar atómicamente el contador de usos del cupón al realizar el pedido
 export async function incrementCuponUsos(codigoInput: string) {
-  const supabase = createServerClient()
+  const supabase = await createServerClient()
   const cleanCodigo = codigoInput.trim().toUpperCase()
 
   const { data: cupon } = await supabase
@@ -242,7 +242,7 @@ export async function incrementCuponUsos(codigoInput: string) {
 
 // Obtener cupones asignados exclusivamente al cliente autenticado / teléfono ingresado
 export async function getAvailableCuponesPublic(clienteTelefono?: string): Promise<AvailableCouponPublic[]> {
-  const supabase = createServerClient()
+  const supabase = await createServerClient()
   const availableList: AvailableCouponPublic[] = []
   const now = new Date()
   const cleanPhone = (clienteTelefono || '').replace(/\D/g, '')

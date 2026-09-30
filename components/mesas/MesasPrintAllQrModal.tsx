@@ -145,7 +145,7 @@ export function MesasPrintAllQrModal({ mesas, onClose }: MesasPrintAllQrModalPro
                 MAREA NEGRA
               </h2>
               <span style={{ fontSize: '9pt', fontStyle: 'italic', marginBottom: '3mm' }}>
-                Aguachiles & Cocteles · Sinaloa
+                Aguachiles
               </span>
 
               <div style={{ padding: '3mm', border: '1px solid #ccc', borderRadius: '4mm', margin: '2mm 0' }}>

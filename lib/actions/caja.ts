@@ -9,7 +9,7 @@ export async function abrirCajaTurno(formData: {
   monto_apertura_desglose?: any
   notas_apertura?: string
 }) {
-  const supabase = createServerClient()
+  const supabase = await createServerClient()
 
   const {
     data: { user },
@@ -48,7 +48,7 @@ export async function abrirCajaTurno(formData: {
 }
 
 export async function reabrirCajaTurno(fecha: string) {
-  const supabase = createServerClient()
+  const supabase = await createServerClient()
 
   const { data, error } = await supabase
     .from('cierres_caja')
@@ -83,7 +83,7 @@ export async function guardarCierreCaja(formData: {
   notas?: string
   cerrar_turno?: boolean
 }) {
-  const supabase = createServerClient()
+  const supabase = await createServerClient()
 
   // Obtener ID del perfil autenticado
   const {

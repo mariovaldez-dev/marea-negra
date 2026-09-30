@@ -6,7 +6,7 @@ import { Pedido } from '@/lib/types/database'
 export const revalidate = 0
 
 export default async function PantallaCocinaPage() {
-  const supabase = createServerClient()
+  const supabase = await createServerClient()
 
   let initialPedidos: Pedido[] = []
 

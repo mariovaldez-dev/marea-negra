@@ -76,8 +76,8 @@ export function PosThermalTicketModal({ isOpen, onClose, pedido }: PosThermalTic
   const servicioLabel = (pedido.mesa_nombre || pedido.tipo_entrega === 'mesa')
     ? `🍽️ COMEDOR · ${pedido.mesa_nombre || 'MESA'}`
     : pedido.tipo_entrega === 'didi'
-    ? '🛵 ENVÍO DIDI / UBER'
-    : '🚗 RECOGER EN LOCAL'
+      ? '🛵 ENVÍO DIDI / UBER'
+      : '🚗 RECOGER EN LOCAL'
 
   // 1. IMPRIMIR / PDF
   const handleImprimir = () => {
@@ -179,10 +179,7 @@ ${linkRastreo}
                 MAREA NEGRA
               </span>
               <span className="text-[9px] font-bold tracking-widest uppercase text-gray-700 mt-0.5">
-                AGUACHILES & COCTELES
-              </span>
-              <span className="text-[8.5px] text-gray-500">
-                Sinaloa, México · Cocina de Mariscos
+                AGUACHILES
               </span>
               <div className="w-full bg-black text-white text-center font-bold text-[10.5px] py-1 px-2 rounded mt-1.5 uppercase">
                 {servicioLabel}

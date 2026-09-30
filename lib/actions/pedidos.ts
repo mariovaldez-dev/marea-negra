@@ -6,7 +6,7 @@ import { revalidatePath } from 'next/cache'
 import * as Sentry from '@sentry/nextjs'
 
 export async function updatePedidoEstado(pedidoId: number, nuevoEstado: EstadoPedido) {
-  const supabase = createServerClient()
+  const supabase = await createServerClient()
   const { error } = await supabase
     .from('pedidos')
     .update({ estado: nuevoEstado })
@@ -113,7 +113,7 @@ export async function createNuevoPedido(formData: {
     cantidad: number
   }[]
 }) {
-  const supabase = createServerClient()
+  const supabase = await createServerClient()
 
   const total = formData.items.reduce(
     (sum, item) => sum + item.precio_unitario * item.cantidad,

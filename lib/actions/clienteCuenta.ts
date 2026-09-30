@@ -459,7 +459,7 @@ export async function restablecerPasswordCliente(telefonoInput: string, nuevaPas
 }
 
 export async function getClienteCuentaByTelefono(telefonoInput: string): Promise<ClientePerfilStats | null> {
-  const supabase = createServerClient()
+  const supabase = await createServerClient()
   const cleanPhone = telefonoInput.replace(/\D/g, '')
 
   if (!cleanPhone || cleanPhone.length < 5) {

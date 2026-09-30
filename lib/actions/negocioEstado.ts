@@ -94,7 +94,7 @@ function calcularAperturaPorHorario(horarios: DiaHorario[]): boolean {
 
 // Obtener la configuración completa y calcular estado en tiempo real (Mazatlán)
 export async function getConfigHorariosNegocio(): Promise<ConfigHorariosNegocio> {
-  const supabase = createServerClient()
+  const supabase = await createServerClient()
 
   // 1. Intentar desde tabla 'configuracion_negocio'
   try {
@@ -174,7 +174,7 @@ export async function getEstadoRestaurante(): Promise<EstadoRestaurante> {
 
 // Guardar la configuración completa de horarios y sucursal
 export async function saveConfigHorariosNegocio(config: ConfigHorariosNegocio) {
-  const supabase = createServerClient()
+  const supabase = await createServerClient()
 
   let mainSaved = false
 

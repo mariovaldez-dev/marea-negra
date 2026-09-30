@@ -6,7 +6,7 @@ import { revalidatePath } from 'next/cache'
 import crypto from 'crypto'
 
 export async function getEmpleados(): Promise<Profile[]> {
-  const supabase = createServerClient()
+  const supabase = await createServerClient()
   try {
     const { data, error } = await supabase
       .from('profiles')
@@ -73,7 +73,7 @@ export async function crearEmpleado(formData: {
 
   // Si no se pudo obtener ID de Auth (o dev mode sin service key), generar UUID
   const finalId = authUserId || crypto.randomUUID()
-  const supabase = createServerClient()
+  const supabase = await createServerClient()
 
   // 2. Guardar en tabla profiles
   const { data, error } = await supabase
@@ -114,7 +114,7 @@ export async function actualizarEmpleado(
     activo?: boolean
   }
 ) {
-  const supabase = createServerClient()
+  const supabase = await createServerClient()
   const cleanNombre = formData.nombre.trim()
 
   // Actualizar en tabla profiles
@@ -172,7 +172,7 @@ export async function cambiarPasswordEmpleado(id: string, newPassword: string) {
 }
 
 export async function toggleEstadoEmpleado(id: string, activo: boolean) {
-  const supabase = createServerClient()
+  const supabase = await createServerClient()
 
   const { data, error } = await supabase
     .from('profiles')
@@ -190,7 +190,7 @@ export async function toggleEstadoEmpleado(id: string, activo: boolean) {
 }
 
 export async function eliminarEmpleado(id: string) {
-  const supabase = createServerClient()
+  const supabase = await createServerClient()
 
   // Eliminar en profiles
   const { error } = await supabase
@@ -214,7 +214,7 @@ export async function eliminarEmpleado(id: string) {
 
 export async function verificarPinEmpleado(pin: string): Promise<Profile | null> {
   if (!pin || pin.length < 3) return null
-  const supabase = createServerClient()
+  const supabase = await createServerClient()
 
   try {
     const { data, error } = await supabase

@@ -63,7 +63,7 @@ export interface BentoDashboardData {
 }
 
 export async function getBentoDashboardMetrics(): Promise<BentoDashboardData> {
-  const supabase = createServerClient()
+  const supabase = await createServerClient()
   const hoyStr = getMazatlanDateString()
 
   // 1. Obtener usuario

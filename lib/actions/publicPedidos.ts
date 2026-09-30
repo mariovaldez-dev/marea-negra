@@ -27,7 +27,7 @@ export async function createPublicPedido(formData: {
     notas_item?: string
   }[]
 }) {
-  const supabase = createServerClient()
+  const supabase = await createServerClient()
 
   // 1. Calcular Subtotal bruto sumando los platillos
   const rawSubtotal = formData.subtotal !== undefined
@@ -132,7 +132,7 @@ export async function createPublicPedido(formData: {
 }
 
 export async function updateComprobantePedido(pedidoId: number, comprobanteUrl: string) {
-  const supabase = createServerClient()
+  const supabase = await createServerClient()
   const { error } = await supabase
     .from('pedidos')
     .update({ comprobante_url: comprobanteUrl })

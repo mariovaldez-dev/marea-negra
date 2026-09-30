@@ -18,7 +18,7 @@ export interface RecompensaLealtadItem {
 
 // Obtener la lista N-dinámica de cupones de lealtad registrados en Supabase BDD
 export async function getRecompensasLealtadList(): Promise<RecompensaLealtadItem[]> {
-  const supabase = createServerClient()
+  const supabase = await createServerClient()
 
   // 1. Intentar consultar tabla dedicada recompensas_lealtad
   try {
@@ -84,7 +84,7 @@ export async function getRecompensasLealtadList(): Promise<RecompensaLealtadItem
 
 // Guardar o crear un nuevo cupón de lealtad con fallback transparente si la tabla no existe aún en Supabase
 export async function saveRecompensaLealtad(item: RecompensaLealtadItem) {
-  const supabase = createServerClient()
+  const supabase = await createServerClient()
   const cleanCodigo = item.codigo.trim().toUpperCase()
 
   const payload = {
@@ -151,7 +151,7 @@ export async function saveRecompensaLealtad(item: RecompensaLealtadItem) {
 
 // Eliminar un cupón de lealtad N-dinámico
 export async function deleteRecompensaLealtad(id: number) {
-  const supabase = createServerClient()
+  const supabase = await createServerClient()
 
   try {
     await supabase.from('recompensas_lealtad').delete().eq('id', id)
@@ -168,7 +168,7 @@ export async function deleteRecompensaLealtad(id: number) {
 
 // Alternar estado activo / inactivo en 1 solo clic
 export async function toggleRecompensaLealtadActivo(id: number, currentActivo: boolean) {
-  const supabase = createServerClient()
+  const supabase = await createServerClient()
 
   try {
     await supabase
