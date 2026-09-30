@@ -1,0 +1,40 @@
+name: Automated Release & Changelog
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: 🏷️ Crear Release y Changelog Automático
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Código
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Determinar Siguiente Versión
+        id: versioning
+        run: |
+          # Extraer el último tag o inicializar en v1.0.0
+          LATEST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "v1.0.0")
+          COMMIT_COUNT=$(git rev-list --count HEAD)
+          DATE_TAG="v$(date +'%Y.%m.%d')-${COMMIT_COUNT}"
+          echo "tag_name=$DATE_TAG" >> $GITHUB_OUTPUT
+          echo "release_name=Marea Negra Release $DATE_TAG" >> $GITHUB_OUTPUT
+
+      - name: Generar Release en GitHub
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.versioning.outputs.tag_name }}
+          name: ${{ steps.versioning.outputs.release_name }}
+          generate_release_notes: true
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
