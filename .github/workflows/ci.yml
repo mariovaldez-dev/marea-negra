@@ -1,0 +1,148 @@
+name: CI & Quality Pipeline
+
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  security-events: write
+  pull-requests: write
+
+jobs:
+  # ── FASE 1: SECRETOS Y DEPENDENCIAS (FAIL-FAST) ─────────────────────────────
+  security-and-dependencies:
+    name: 1. 🔒 Secretos y Dependencias (SCA)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Código
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Gitleaks - Detección de Secretos Expuestos
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'npm'
+
+      - name: Instalar Dependencias
+        run: npm ci
+
+      - name: NPM Audit (Dependencias)
+        run: npm audit --audit-level=high
+        continue-on-error: true
+
+  # ── FASE 2: SAST Y CALIDAD DE CÓDIGO (REQUIERE FASE 1) ──────────────────────
+  code-quality-sast:
+    name: 2. 🛡️ SAST & TypeCheck
+    needs: [security-and-dependencies]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Código
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'npm'
+
+      - name: Instalar Dependencias
+        run: npm ci
+
+      - name: TypeScript TypeCheck
+        run: npx tsc --noEmit
+
+      - name: ESLint Check
+        run: npm run lint
+        continue-on-error: true
+
+      - name: Semgrep SAST Scan (OWASP & Next.js)
+        uses: returntocorp/semgrep-action@v1
+        with:
+          config: >-
+            p/security-audit
+            p/owasp-top-ten
+            p/javascript
+            p/typescript
+
+  # ── FASE 3: BUILD Y BUNDLE SIZE (REQUIERE FASE 2) ───────────────────────────
+  build-and-bundle:
+    name: 3. 📦 Build & Bundle Analysis
+    needs: [code-quality-sast]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Código
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'npm'
+
+      - name: Instalar Dependencias
+        run: npm ci
+
+      - name: Compilar Producción y Analizar Bundle
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL || 'https://dummy.supabase.co' }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'dummy_anon_key' }}
+        run: |
+          npm run build > build-output.log 2>&1
+          cat build-output.log
+          echo "### 📊 Resumen de Bundle Size de Next.js" >> $GITHUB_STEP_SUMMARY
+          echo '```text' >> $GITHUB_STEP_SUMMARY
+          grep -E "(Route \(app\)|┌|├|└|λ|○|●)" build-output.log || tail -n 25 build-output.log >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+
+  # ── FASE 4: E2E Y LIGHTHOUSE (REQUIERE FASE 3) ──────────────────────────────
+  e2e-and-lighthouse:
+    name: 4. 🎭 Pruebas E2E & Lighthouse
+    needs: [build-and-bundle]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Código
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'npm'
+
+      - name: Instalar Dependencias
+        run: npm ci
+
+      - name: Instalar Navegadores de Playwright
+        run: npx playwright install --with-deps chromium
+
+      - name: Build de Producción
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL || 'https://dummy.supabase.co' }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'dummy_anon_key' }}
+        run: npm run build
+
+      - name: Ejecutar Pruebas E2E (Playwright)
+        run: npx playwright test
+
+      - name: Ejecutar Auditoría Lighthouse
+        uses: treosh/lighthouse-ci-action@v12
+        with:
+          startServerCommand: npm run start
+          startServerReadyPattern: 'started server on'
+          startServerReadyTimeout: 30000
+          urls: |
+            http://localhost:3000/
+            http://localhost:3000/pedir
+          uploadArtifacts: true
+          temporaryPublicStorage: true
+          configPath: './lighthouserc.json'
