@@ -182,6 +182,13 @@ export function OrderStepper({
     } catch (e) {}
   }, [cart])
 
+  // Scroll automático al inicio de pantalla al cambiar de paso
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      window.scrollTo({ top: 0, left: 0, behavior: 'instant' })
+    }
+  }, [currentStep])
+
   // Cargar datos pre-guardados del cliente
   useEffect(() => {
     if (typeof window === 'undefined') return

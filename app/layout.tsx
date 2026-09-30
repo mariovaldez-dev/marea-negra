@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next'
 import { Bebas_Neue, Cormorant_Garamond, Space_Grotesk } from 'next/font/google'
 import { ThemeProvider } from '@/components/ui/ThemeProvider'
 import { CustomCursor } from '@/components/ui/CustomCursor'
+import { ScrollToTopOnNavigate } from '@/components/ui/ScrollToTopOnNavigate'
 import './globals.css'
 
 const bebasNeue = Bebas_Neue({
@@ -137,6 +138,7 @@ export default function RootLayout({
         />
       </head>
       <body className="bg-[#F5F5F5] text-[#171717] dark:bg-negro dark:text-blanco min-h-screen antialiased selection:bg-coral selection:text-blanco transition-colors duration-300">
+        <ScrollToTopOnNavigate />
         <CustomCursor />
         <ThemeProvider>{children}</ThemeProvider>
       </body>
