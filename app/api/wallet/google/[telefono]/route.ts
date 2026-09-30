@@ -5,9 +5,10 @@ export const dynamic = 'force-dynamic'
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { telefono: string } }
+  { params }: { params: Promise<{ telefono: string }> }
 ) {
-  const telefono = params.telefono?.replace(/\D/g, '')
+  const resolvedParams = await params
+  const telefono = resolvedParams.telefono?.replace(/\D/g, '')
 
   if (!telefono || telefono.length < 7) {
     return NextResponse.json({ error: 'Teléfono inválido' }, { status: 400 })
