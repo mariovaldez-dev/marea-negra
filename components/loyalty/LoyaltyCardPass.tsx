@@ -53,7 +53,7 @@ export function LoyaltyCardPass({ perfil }: LoyaltyCardPassProps) {
   const handleShareReferral = () => {
     const origin = typeof window !== 'undefined' ? window.location.origin : 'https://marea-negra.com'
     const link = `${origin}/pedir?ref=${perfil.codigoReferido || numeroSocio}`
-    const msg = `¡Compa, tienes que probar los aguachiles y cocteles de *Marea Negra*! 🦐🔥\n\nUsa mi código de socio *${perfil.codigoReferido || numeroSocio}* para recibir *10% de descuento* en tu primer pedido.\n\n👇 Pide directo desde el menú aquí:\n${link}`
+    const msg = `¡Compa, tienes que probar los aguachiles de *Marea Negra*! 🦐🔥\n\nUsa mi código de socio *${perfil.codigoReferido || numeroSocio}* para recibir *10% de descuento* en tu primer pedido.\n\n👇 Pide directo desde el menú aquí:\n${link}`
     window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank')
   }
 

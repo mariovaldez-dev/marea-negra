@@ -230,11 +230,10 @@ export function HorariosManager({ initialConfig }: HorariosManagerProps) {
         <button
           type="button"
           onClick={() => setActiveTab('horarios')}
-          className={`py-3 px-4 rounded-2xl text-xs sm:text-sm font-sans font-bold transition-all flex items-center justify-center gap-2 ${
-            activeTab === 'horarios'
+          className={`py-3 px-4 rounded-2xl text-xs sm:text-sm font-sans font-bold transition-all flex items-center justify-center gap-2 ${activeTab === 'horarios'
               ? 'bg-[#2ABFBF] text-black shadow-sm'
               : 'text-negro/70 dark:text-arena/70 hover:text-negro dark:hover:text-blanco'
-          }`}
+            }`}
         >
           <Clock className="w-4 h-4" />
           <span>HORARIOS & APERTURA EN VIVO</span>
@@ -243,11 +242,10 @@ export function HorariosManager({ initialConfig }: HorariosManagerProps) {
         <button
           type="button"
           onClick={() => setActiveTab('sucursal')}
-          className={`py-3 px-4 rounded-2xl text-xs sm:text-sm font-sans font-bold transition-all flex items-center justify-center gap-2 ${
-            activeTab === 'sucursal'
+          className={`py-3 px-4 rounded-2xl text-xs sm:text-sm font-sans font-bold transition-all flex items-center justify-center gap-2 ${activeTab === 'sucursal'
               ? 'bg-[#C9A84C] text-black shadow-sm'
               : 'text-negro/70 dark:text-arena/70 hover:text-negro dark:hover:text-blanco'
-          }`}
+            }`}
         >
           <Building2 className="w-4 h-4" />
           <span>DATOS DE LA SUCURSAL & CONTACTO</span>
@@ -287,11 +285,10 @@ export function HorariosManager({ initialConfig }: HorariosManagerProps) {
                 <button
                   type="button"
                   onClick={() => setConfig({ ...config, abierto_manual: !config.abierto_manual })}
-                  className={`w-full sm:w-auto px-6 py-4 rounded-2xl font-sans font-bold text-xs sm:text-sm flex items-center justify-center gap-3 transition-all shadow-md cursor-pointer ${
-                    config.abierto_manual
+                  className={`w-full sm:w-auto px-6 py-4 rounded-2xl font-sans font-bold text-xs sm:text-sm flex items-center justify-center gap-3 transition-all shadow-md cursor-pointer ${config.abierto_manual
                       ? 'bg-[#16A34B] text-white shadow-[#16A34B]/20'
                       : 'bg-coral text-white shadow-coral/20'
-                  }`}
+                    }`}
                 >
                   {config.abierto_manual ? (
                     <>
@@ -341,11 +338,10 @@ export function HorariosManager({ initialConfig }: HorariosManagerProps) {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div
                 onClick={() => setConfig({ ...config, modo_automatico: false })}
-                className={`p-5 rounded-2xl border cursor-pointer flex flex-col gap-2 transition-all ${
-                  !config.modo_automatico
+                className={`p-5 rounded-2xl border cursor-pointer flex flex-col gap-2 transition-all ${!config.modo_automatico
                     ? 'bg-[#2ABFBF]/10 border-[#2ABFBF] shadow-sm'
                     : 'bg-black/[0.02] dark:bg-white/[0.02] border-black/10 dark:border-white/10 hover:border-black/20'
-                }`}
+                  }`}
               >
                 <div className="flex items-center justify-between">
                   <span className="font-sans font-bold text-sm text-negro dark:text-blanco">
@@ -362,11 +358,10 @@ export function HorariosManager({ initialConfig }: HorariosManagerProps) {
 
               <div
                 onClick={() => setConfig({ ...config, modo_automatico: true })}
-                className={`p-5 rounded-2xl border cursor-pointer flex flex-col gap-2 transition-all ${
-                  config.modo_automatico
+                className={`p-5 rounded-2xl border cursor-pointer flex flex-col gap-2 transition-all ${config.modo_automatico
                     ? 'bg-[#2ABFBF]/10 border-[#2ABFBF] shadow-sm'
                     : 'bg-black/[0.02] dark:bg-white/[0.02] border-black/10 dark:border-white/10 hover:border-black/20'
-                }`}
+                  }`}
               >
                 <div className="flex items-center justify-between">
                   <span className="font-sans font-bold text-sm text-negro dark:text-blanco">
@@ -401,21 +396,19 @@ export function HorariosManager({ initialConfig }: HorariosManagerProps) {
               {config.horarios_dias.map((dia) => (
                 <div
                   key={dia.id}
-                  className={`p-4 rounded-2xl border flex flex-col md:flex-row items-start md:items-center justify-between gap-4 transition-all font-sans ${
-                    dia.abierto
+                  className={`p-4 rounded-2xl border flex flex-col md:flex-row items-start md:items-center justify-between gap-4 transition-all font-sans ${dia.abierto
                       ? 'bg-black/[0.02] dark:bg-white/[0.02] border-black/[0.08] dark:border-white/[0.08] hover:border-[#2ABFBF]/40'
                       : 'bg-black/[0.01] dark:bg-white/[0.01] border-black/5 dark:border-white/5 opacity-50'
-                  }`}
+                    }`}
                 >
                   <div className="flex items-center gap-3 min-w-[160px]">
                     <button
                       type="button"
                       onClick={() => handleToggleDia(dia.id)}
-                      className={`w-6 h-6 rounded-lg flex items-center justify-center font-bold text-xs transition-colors ${
-                        dia.abierto
+                      className={`w-6 h-6 rounded-lg flex items-center justify-center font-bold text-xs transition-colors ${dia.abierto
                           ? 'bg-[#16A34B] text-white'
                           : 'bg-black/10 dark:bg-white/10 text-negro/40 dark:text-arena/40'
-                      }`}
+                        }`}
                     >
                       {dia.abierto ? '✓' : ''}
                     </button>
@@ -489,7 +482,7 @@ export function HorariosManager({ initialConfig }: HorariosManagerProps) {
                   required
                   value={sucursalData.nombre_sucursal}
                   onChange={(e) => handleSucursalChange('nombre_sucursal', e.target.value)}
-                  placeholder="Marea Negra - Aguachiles & Cocteles"
+                  placeholder="Marea Negra - Aguachiles"
                   className="bg-black/[0.02] dark:bg-white/[0.02] border border-black/10 dark:border-white/10 rounded-xl px-4 py-3 text-sm text-negro dark:text-blanco font-medium focus:border-[#C9A84C] focus:outline-none"
                 />
               </div>
@@ -502,7 +495,7 @@ export function HorariosManager({ initialConfig }: HorariosManagerProps) {
                   type="text"
                   value={sucursalData.slogan}
                   onChange={(e) => handleSucursalChange('slogan', e.target.value)}
-                  placeholder="Aguachiles & Cocteles · Sinaloa Mar & Tierra"
+                  placeholder="Aguachiles"
                   className="bg-black/[0.02] dark:bg-white/[0.02] border border-black/10 dark:border-white/10 rounded-xl px-4 py-3 text-sm text-negro dark:text-blanco font-medium focus:border-[#C9A84C] focus:outline-none"
                 />
               </div>

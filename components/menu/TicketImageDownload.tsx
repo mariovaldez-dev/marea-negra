@@ -146,7 +146,7 @@ export function TicketImageDownload({
 
       ctx.fillStyle = '#404040'
       ctx.font = 'bold 11px system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
-      ctx.fillText('AGUACHILES & COCTELES · SINALOA', width / 2, currentY + 34)
+      ctx.fillText('AGUACHILES', width / 2, currentY + 34)
 
       ctx.font = '10px system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
       ctx.fillStyle = '#737373'

@@ -82,10 +82,7 @@ export function TicketPrintModal({ pedido, onClose }: TicketPrintModalProps) {
               MAREA NEGRA
             </span>
             <span className="text-[10px] font-bold tracking-widest uppercase text-gray-700 mt-1">
-              AGUACHILES & COCTELES
-            </span>
-            <span className="text-[9px] text-gray-500">
-              Sinaloa, México · Cocina de Mariscos
+              AGUACHILES
             </span>
 
             {/* BANNER DE SERVICIO */}

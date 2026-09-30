@@ -50,8 +50,8 @@ export function generateTicketHtml(pedido: Pedido, tipo: 'comanda_cocina' | 'cue
   const servicioLabel = (pedido.mesa_nombre || pedido.tipo_entrega === 'mesa')
     ? `🍽️ COMEDOR · ${pedido.mesa_nombre || 'MESA'}`
     : pedido.tipo_entrega === 'didi'
-    ? '🛵 ENVÍO DIDI / UBER'
-    : '🚗 RECOGER EN LOCAL'
+      ? '🛵 ENVÍO DIDI / UBER'
+      : '🚗 RECOGER EN LOCAL'
 
   const itemsRows = items.map((item) => {
     const { exclusions, customNote: itemNote } = parseItemTicketNotes(item.notas_item)
@@ -242,8 +242,7 @@ export function generateTicketHtml(pedido: Pedido, tipo: 'comanda_cocina' | 'cue
           <!-- CABECERA -->
           <div class="header-brand">
             <div class="brand-title">MAREA NEGRA</div>
-            <div class="brand-tag">AGUACHILES & COCTELES</div>
-            <div class="brand-loc">Sinaloa, México · Cocina de Mariscos Frescos</div>
+            <div class="brand-tag">AGUACHILES</div>
             <div class="badge-service">${servicioLabel}</div>
           </div>
 
@@ -390,7 +389,7 @@ export function printOrderTicket(pedido: Pedido, tipo: 'comanda_cocina' | 'cuent
     setTimeout(() => {
       try {
         document.body.removeChild(iframe)
-      } catch {}
+      } catch { }
     }, 2000)
   }, 300)
 }
@@ -506,7 +505,7 @@ export function generateCierreHtml(data: CierrePrintData): string {
         <div class="ticket-card">
           <div class="header-brand">
             <div class="brand-title">MAREA NEGRA</div>
-            <div class="brand-tag">AGUACHILES & COCTELES · SINALOA</div>
+            <div class="brand-tag">AGUACHILES · SINALOA</div>
             <div class="corte-badge">CORTE Z · CIERRE DE CAJA</div>
           </div>
 
@@ -607,7 +606,7 @@ export function printCierreTicket(data: CierrePrintData) {
     setTimeout(() => {
       try {
         document.body.removeChild(iframe)
-      } catch {}
+      } catch { }
     }, 2000)
   }, 300)
 }
