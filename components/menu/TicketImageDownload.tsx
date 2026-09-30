@@ -123,7 +123,7 @@ export function TicketImageDownload({
 
       const notesHeight = effectiveNotas ? 52 : 0
       const discountHeight = numDiscount > 0 ? 36 : 0
-      const totalHeight = 150 + itemsHeight + notesHeight + discountHeight + 175
+      const totalHeight = 150 + itemsHeight + notesHeight + discountHeight + 145
 
       canvas.width = width * scale
       canvas.height = totalHeight * scale
@@ -363,27 +363,16 @@ export function TicketImageDownload({
       // ── 8. PIE DE TICKET TÉRMICO ─────────────────────────────────────────────
       ctx.textAlign = 'center'
       ctx.fillStyle = '#000000'
-      ctx.font = 'bold 12px system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
-      ctx.fillText('¡GRACIAS POR SU PREFERENCIA!', width / 2, currentY)
+      ctx.font = '900 12px system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
+      ctx.fillText('¡Al Vrgazo!, como nos gusta.', width / 2, currentY)
 
-      ctx.fillStyle = '#737373'
+      ctx.fillStyle = '#525252'
       ctx.font = '10px system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
-      ctx.fillText('Muestra este comprobante en barra · Sinaloa, México', width / 2, currentY + 16)
-
-      // Simulación de código de barras compacto
-      currentY += 28
-      const barCount = 38
-      const barWidth = 4
-      const startX = (width - barCount * (barWidth + 2)) / 2
-      ctx.fillStyle = '#000000'
-      for (let b = 0; b < barCount; b++) {
-        const h = (b % 3 === 0 || b % 5 === 0) ? 20 : 14
-        ctx.fillRect(startX + b * (barWidth + 2), currentY, barWidth, h)
-      }
+      ctx.fillText('¡Gracias por tu preferencia! · Muestra este ticket en barra', width / 2, currentY + 16)
 
       ctx.font = 'bold 9px system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
-      ctx.fillStyle = '#737373'
-      ctx.fillText(`* MN-${pedidoId}-ORDER *`, width / 2, currentY + 32)
+      ctx.fillStyle = '#888888'
+      ctx.fillText(`Marea Negra · Culiacán, Sinaloa · Folio #${pedidoId}`, width / 2, currentY + 32)
 
       const imageUrl = canvas.toDataURL('image/png')
       setModalImageUrl(imageUrl)
@@ -453,15 +442,15 @@ export function TicketImageDownload({
 
             {/* Header Modal */}
             <div className="flex flex-col gap-1 pr-6">
-              <span className="text-[11px] font-sans font-bold text-coral uppercase tracking-wider flex items-center justify-center gap-1">
-                <Printer className="w-3.5 h-3.5" />
-                <span>TICKET DE COMANDA IMPRESA</span>
+              <span className="text-[11px] font-sans font-bold text-coral uppercase tracking-wider flex items-center justify-center gap-1.5">
+                <Receipt className="w-3.5 h-3.5" />
+                <span>TICKET OFICIAL · MAREA NEGRA</span>
               </span>
               <h3 className="font-display text-2xl sm:text-3xl text-neutral-900 dark:text-white">
                 FOLIO #{pedidoId}
               </h3>
-              <p className="font-sans text-xs text-neutral-500 dark:text-neutral-400">
-                Comprobante térmico listo para guardar en fotos o imprimir.
+              <p className="font-sans text-xs text-neutral-500 dark:text-neutral-400 max-w-[280px] sm:max-w-none mx-auto">
+                Tu comprobante digital listo para guardar o mostrar al recoger.
               </p>
             </div>
 

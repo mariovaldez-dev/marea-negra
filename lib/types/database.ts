@@ -217,7 +217,7 @@ export interface DatosSucursal {
 
 export const DEFAULT_SUCURSAL: DatosSucursal = {
   nombre_sucursal: 'Marea Negra',
-  slogan: 'Aguachiles · Sinaloa',
+  slogan: '¡Al Vrgazo!, como nos gusta.',
   telefono_whatsapp: '6676820396',
   telefono_fijo: '6676820396',
   direccion: 'Av. del Mar #1200, Fracc. Tellerías',
