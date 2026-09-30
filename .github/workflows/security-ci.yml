@@ -1,0 +1,91 @@
+name: Security & Quality CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+  security-events: write
+
+jobs:
+  # ── 1. AUDITORÍA DE DEPENDENCIAS Y SECRETOS ──────────────────────────────────
+  secret-and-dependency-scan:
+    name: 🔒 Secretos y Dependencias (SCA)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Código
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Gitleaks - Detección de Secretos Expuestos
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Instalar Dependencias
+        run: npm ci
+
+      - name: NPM Audit (Vulnerabilidades en Dependencias)
+        run: npm audit --audit-level=high
+        continue-on-error: true
+
+  # ── 2. SAST (ANÁLISIS ESTÁTICO DE SEGURIDAD CON SEMGREP) ──────────────────────
+  sast-analysis:
+    name: 🛡️ SAST (Semgrep Security Scan)
+    runs-on: ubuntu-latest
+    container:
+      image: returntocorp/semgrep
+    steps:
+      - name: Checkout Código
+        uses: actions/checkout@v4
+
+      - name: Escaneo SAST de OWASP, TypeScript y Next.js
+        run: |
+          semgrep scan \
+            --config "p/security-audit" \
+            --config "p/owasp-top-ten" \
+            --config "p/javascript" \
+            --config "p/typescript" \
+            --error \
+            --exclude "node_modules" \
+            --exclude ".next"
+
+  # ── 3. CALIDAD DE CÓDIGO & BUILD DE PRODUCCIÓN ────────────────────────────────
+  build-and-typecheck:
+    name: ⚡ TypeCheck & Next.js Build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Código
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Instalar Dependencias
+        run: npm ci
+
+      - name: TypeScript TypeCheck
+        run: npx tsc --noEmit
+
+      - name: ESLint Check
+        run: npm run lint
+        continue-on-error: true
+
+      - name: Validar Build de Next.js
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL || 'https://dummy.supabase.co' }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'dummy_anon_key' }}
+        run: npm run build
